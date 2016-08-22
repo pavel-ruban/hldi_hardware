@@ -1,0 +1,1032 @@
+Archive member included to satisfy reference by file (symbol)
+
+lib/hardware_libs.a(mfrc522.o)
+                              c_entry.o (mfrc522_write)
+binds/binds.a(spi_binds.o)    lib/hardware_libs.a(mfrc522.o) (spi_transmit)
+lib/libstm32.a(stm32f10x_exti.o)
+                              c_entry.o (EXTI_Init)
+lib/libstm32.a(stm32f10x_flash.o)
+                              c_entry.o (FLASH_SetLatency)
+lib/libstm32.a(stm32f10x_gpio.o)
+                              c_entry.o (GPIO_Init)
+lib/libstm32.a(stm32f10x_pwr.o)
+                              c_entry.o (PWR_BackupAccessCmd)
+lib/libstm32.a(stm32f10x_rcc.o)
+                              c_entry.o (RCC_DeInit)
+lib/libstm32.a(stm32f10x_rtc.o)
+                              c_entry.o (RTC_GetCounter)
+lib/libstm32.a(stm32f10x_spi.o)
+                              c_entry.o (SPI_Init)
+lib/libstm32.a(misc.o)        c_entry.o (NVIC_Init)
+lib/newlib.a(assert.o)        lib/libstm32.a(stm32f10x_exti.o) (assert_failed)
+lib/newlib.a(_exit.o)         lib/newlib.a(assert.o) (abort)
+lib/newlib.a(_startup.o)      entry.o (_start)
+lib/newlib.a(_syscalls.o)     lib/newlib.a(_startup.o) (__initialize_args)
+/usr/lib/gcc/arm-none-eabi/6.1.1/../../../../arm-none-eabi/lib/libc.a(lib_a-errno.o)
+                              lib/newlib.a(_syscalls.o) (__errno)
+/usr/lib/gcc/arm-none-eabi/6.1.1/../../../../arm-none-eabi/lib/libc.a(lib_a-impure.o)
+                              /usr/lib/gcc/arm-none-eabi/6.1.1/../../../../arm-none-eabi/lib/libc.a(lib_a-errno.o) (_impure_ptr)
+
+Allocating common symbols
+Common symbol       size              file
+
+errno               0x4               lib/newlib.a(_syscalls.o)
+
+Discarded input sections
+
+ .data          0x0000000000000000        0x0 c_entry.o
+ .data          0x0000000000000000        0x0 entry.o
+ .bss           0x0000000000000000        0x0 entry.o
+ .data          0x0000000000000000        0x0 lib/hardware_libs.a(mfrc522.o)
+ .bss           0x0000000000000000        0x0 lib/hardware_libs.a(mfrc522.o)
+ .data          0x0000000000000000        0x0 binds/binds.a(spi_binds.o)
+ .bss           0x0000000000000000        0x0 binds/binds.a(spi_binds.o)
+ .data          0x0000000000000000        0x0 lib/libstm32.a(stm32f10x_exti.o)
+ .bss           0x0000000000000000        0x0 lib/libstm32.a(stm32f10x_exti.o)
+ .data          0x0000000000000000        0x0 lib/libstm32.a(stm32f10x_flash.o)
+ .bss           0x0000000000000000        0x0 lib/libstm32.a(stm32f10x_flash.o)
+ .data          0x0000000000000000        0x0 lib/libstm32.a(stm32f10x_gpio.o)
+ .bss           0x0000000000000000        0x0 lib/libstm32.a(stm32f10x_gpio.o)
+ .data          0x0000000000000000        0x0 lib/libstm32.a(stm32f10x_pwr.o)
+ .bss           0x0000000000000000        0x0 lib/libstm32.a(stm32f10x_pwr.o)
+ .bss           0x0000000000000000        0x0 lib/libstm32.a(stm32f10x_rcc.o)
+ .data          0x0000000000000000        0x0 lib/libstm32.a(stm32f10x_rtc.o)
+ .bss           0x0000000000000000        0x0 lib/libstm32.a(stm32f10x_rtc.o)
+ .data          0x0000000000000000        0x0 lib/libstm32.a(stm32f10x_spi.o)
+ .bss           0x0000000000000000        0x0 lib/libstm32.a(stm32f10x_spi.o)
+ .data          0x0000000000000000        0x0 lib/libstm32.a(misc.o)
+ .bss           0x0000000000000000        0x0 lib/libstm32.a(misc.o)
+ .data          0x0000000000000000        0x0 lib/newlib.a(assert.o)
+ .bss           0x0000000000000000        0x0 lib/newlib.a(assert.o)
+ .data          0x0000000000000000        0x0 lib/newlib.a(_exit.o)
+ .bss           0x0000000000000000        0x0 lib/newlib.a(_exit.o)
+ .text          0x0000000000000000      0x110 lib/newlib.a(_startup.o)
+ .data          0x0000000000000000        0x0 lib/newlib.a(_startup.o)
+ .bss           0x0000000000000000        0x0 lib/newlib.a(_startup.o)
+ .data          0x0000000000000000        0x0 newlib_stubs.o
+ .text          0x0000000000000000        0x0 /usr/lib/gcc/arm-none-eabi/6.1.1/../../../../arm-none-eabi/lib/libc.a(lib_a-errno.o)
+ .data          0x0000000000000000        0x0 /usr/lib/gcc/arm-none-eabi/6.1.1/../../../../arm-none-eabi/lib/libc.a(lib_a-errno.o)
+ .bss           0x0000000000000000        0x0 /usr/lib/gcc/arm-none-eabi/6.1.1/../../../../arm-none-eabi/lib/libc.a(lib_a-errno.o)
+ .text          0x0000000000000000        0x0 /usr/lib/gcc/arm-none-eabi/6.1.1/../../../../arm-none-eabi/lib/libc.a(lib_a-impure.o)
+ .data          0x0000000000000000        0x0 /usr/lib/gcc/arm-none-eabi/6.1.1/../../../../arm-none-eabi/lib/libc.a(lib_a-impure.o)
+ .bss           0x0000000000000000        0x0 /usr/lib/gcc/arm-none-eabi/6.1.1/../../../../arm-none-eabi/lib/libc.a(lib_a-impure.o)
+ .rodata._global_impure_ptr
+                0x0000000000000000        0x4 /usr/lib/gcc/arm-none-eabi/6.1.1/../../../../arm-none-eabi/lib/libc.a(lib_a-impure.o)
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+RAM              0x0000000020000000 0x0000000000005000 xrw
+CCMRAM           0x0000000000000000 0x0000000000000000 xrw
+FLASH            0x0000000008000000 0x0000000000010000 xr
+FLASHB1          0x0000000000000000 0x0000000000000000 xr
+EXTMEMB0         0x0000000000000000 0x0000000000000000 xr
+EXTMEMB1         0x0000000000000000 0x0000000000000000 xr
+EXTMEMB2         0x0000000000000000 0x0000000000000000 xr
+EXTMEMB3         0x0000000000000000 0x0000000000000000 xr
+MEMORY_ARRAY     0x0000000000000000 0x0000000000000000 xrw
+*default*        0x0000000000000000 0xffffffffffffffff
+
+Linker script and memory map
+
+LOAD c_entry.o
+LOAD entry.o
+LOAD lib/hardware_libs.a
+LOAD binds/binds.a
+LOAD lib/libstm32.a
+LOAD lib/newlib.a
+LOAD newlib_stubs.o
+LOAD /usr/lib/gcc/arm-none-eabi/6.1.1/../../../../arm-none-eabi/lib/libstdc++.a
+LOAD /usr/lib/gcc/arm-none-eabi/6.1.1/../../../../arm-none-eabi/lib/libm.a
+START GROUP
+LOAD /usr/lib/gcc/arm-none-eabi/6.1.1/libgcc.a
+LOAD /usr/lib/gcc/arm-none-eabi/6.1.1/../../../../arm-none-eabi/lib/libc.a
+END GROUP
+                0x0000000020005000                __stack = (ORIGIN (RAM) + LENGTH (RAM))
+                0x0000000020005000                _estack = __stack
+                0x0000000000000400                __Main_Stack_Size = 0x400
+                [!provide]                        PROVIDE (_Main_Stack_Size, __Main_Stack_Size)
+                0x0000000020004c00                __Main_Stack_Limit = (__stack - __Main_Stack_Size)
+                [!provide]                        PROVIDE (_Main_Stack_Limit, __Main_Stack_Limit)
+                0x0000000000000100                _Minimum_Stack_Size = 0x100
+                [!provide]                        PROVIDE (_Heap_Begin, _end_noinit)
+                [!provide]                        PROVIDE (_Heap_Limit, (__stack - __Main_Stack_Size))
+
+.vectors        0x0000000008000000      0x284
+ FILL mask 0xff
+                0x0000000008000000                __vectors_start = ABSOLUTE (.)
+                0x0000000008000000                __vectors_start__ = ABSOLUTE (.)
+                0x0000000008000000                . = ALIGN (0x4)
+ *(.vectors)
+ .vectors       0x0000000008000000      0x109 entry.o
+                0x000000000800010c                . = ALIGN (0x4)
+ *fill*         0x0000000008000109        0x3 ff
+ *(.cfmconfig)
+                0x000000000800010c                . = ALIGN (0x4)
+ *(.after_vectors .after_vectors.*)
+ .after_vectors
+                0x000000000800010c      0x178 lib/newlib.a(_startup.o)
+                0x000000000800010c                _start
+
+.inits          0x0000000008000284       0x28
+                0x0000000008000284                . = ALIGN (0x4)
+                0x0000000008000284                __data_regions_array_start = .
+                0x0000000008000284        0x4 LONG 0x80056a4 LOADADDR (.data)
+                0x0000000008000288        0x4 LONG 0x20000000 ADDR (.data)
+                0x000000000800028c        0x4 LONG 0x20000454 (ADDR (.data) + SIZEOF (.data))
+                0x0000000008000290        0x4 LONG 0x80056a4 LOADADDR (.data_CCMRAM)
+                0x0000000008000294        0x4 LONG 0x0 ADDR (.data_CCMRAM)
+                0x0000000008000298        0x4 LONG 0x0 (ADDR (.data_CCMRAM) + SIZEOF (.data_CCMRAM))
+                0x000000000800029c                __data_regions_array_end = .
+                0x000000000800029c                __bss_regions_array_start = .
+                0x000000000800029c        0x4 LONG 0x20000454 ADDR (.bss)
+                0x00000000080002a0        0x4 LONG 0x20000940 (ADDR (.bss) + SIZEOF (.bss))
+                0x00000000080002a4        0x4 LONG 0x0 ADDR (.bss_CCMRAM)
+                0x00000000080002a8        0x4 LONG 0x0 (ADDR (.bss_CCMRAM) + SIZEOF (.bss_CCMRAM))
+                0x00000000080002ac                __bss_regions_array_end = .
+ *(.init)
+ *(.fini)
+                0x00000000080002ac                . = ALIGN (0x4)
+                0x00000000080002ac                PROVIDE (__preinit_array_start, .)
+ *(.preinit_array_sysinit .preinit_array_sysinit.*)
+ *(.preinit_array_platform .preinit_array_platform.*)
+ *(.preinit_array .preinit_array.*)
+                0x00000000080002ac                PROVIDE (__preinit_array_end, .)
+                0x00000000080002ac                . = ALIGN (0x4)
+                0x00000000080002ac                PROVIDE (__init_array_start, .)
+ *(SORT(.init_array.*))
+ *(.init_array)
+                0x00000000080002ac                PROVIDE (__init_array_end, .)
+                0x00000000080002ac                . = ALIGN (0x4)
+                0x00000000080002ac                PROVIDE (__fini_array_start, .)
+ *(SORT(.fini_array.*))
+ *(.fini_array)
+                0x00000000080002ac                PROVIDE (__fini_array_end, .)
+
+.flashtext      0x00000000080002ac        0x0
+                0x00000000080002ac                . = ALIGN (0x4)
+ *(.flashtext .flashtext.*)
+
+.text           0x00000000080002ac     0x53f8
+                0x00000000080002ac                . = ALIGN (0x4)
+ *(.text .text.*)
+ .text          0x00000000080002ac      0x4f0 c_entry.o
+                0x00000000080002e0                __initialize_hardware_early
+                0x00000000080002f4                RTC_Configuration()
+                0x0000000008000332                WRONG_IRQ_EXCEPTION
+                0x0000000008000338                EXTI4_IRQHandler
+                0x000000000800033e                rfid_irq_tag_handler()
+                0x0000000008000428                EXTI15_10_IRQHandler
+                0x00000000080004c2                __initialize_hardware
+                0x00000000080005e0                __reset_hardware
+                0x00000000080005ec                rc522_irq_prepare()
+                0x000000000800060c                main
+                0x0000000008000644                interrupt_initialize
+                0x000000000800069e                RCC_Configuration()
+                0x0000000008000754                NVIC_Configuration()
+                0x0000000008000766                Delay(unsigned long)
+                0x0000000008000790                assert_failed(unsigned char*, unsigned long)
+ .text          0x000000000800079c       0x20 entry.o
+                0x000000000800079c                reset_asm
+                0x00000000080007a6                custom_asm
+ .text          0x00000000080007bc      0x396 lib/hardware_libs.a(mfrc522.o)
+                0x00000000080007bc                mfrc522_init
+                0x0000000008000832                mfrc522_write
+                0x0000000008000870                mfrc522_read
+                0x00000000080008b4                mfrc522_reset
+                0x00000000080008c4                mfrc522_request
+                0x000000000800090e                mfrc522_to_card
+                0x0000000008000ad8                mfrc522_get_card_serial
+ *fill*         0x0000000008000b52        0x2 
+ .text          0x0000000008000b54       0xc0 binds/binds.a(spi_binds.o)
+                0x0000000008000b54                spi_transmit
+                0x0000000008000bbc                rc522_select
+                0x0000000008000be8                rc522_release
+ .text          0x0000000008000c14      0x408 lib/libstm32.a(stm32f10x_exti.o)
+                0x0000000008000c14                EXTI_DeInit
+                0x0000000008000c48                EXTI_Init
+                0x0000000008000d98                EXTI_StructInit
+                0x0000000008000dc2                EXTI_GenerateSWInterrupt
+                0x0000000008000e00                EXTI_GetFlagStatus
+                0x0000000008000ecc                EXTI_ClearFlag
+                0x0000000008000f04                EXTI_GetITStatus
+                0x0000000008000fe4                EXTI_ClearITPendingBit
+ .text          0x000000000800101c      0xb3c lib/libstm32.a(stm32f10x_flash.o)
+                0x000000000800101c                FLASH_SetLatency
+                0x0000000008001070                FLASH_HalfCycleAccessCmd
+                0x00000000080010b8                FLASH_PrefetchBufferCmd
+                0x0000000008001100                FLASH_Unlock
+                0x0000000008001124                FLASH_UnlockBank1
+                0x0000000008001148                FLASH_Lock
+                0x0000000008001164                FLASH_LockBank1
+                0x0000000008001180                FLASH_ErasePage
+                0x0000000008001208                FLASH_EraseAllPages
+                0x0000000008001264                FLASH_EraseAllBank1Pages
+                0x00000000080012c0                FLASH_EraseOptionBytes
+                0x0000000008001394                FLASH_ProgramWord
+                0x000000000800144c                FLASH_ProgramHalfWord
+                0x00000000080014cc                FLASH_ProgramOptionByteData
+                0x000000000800156c                FLASH_EnableWriteProtection
+                0x0000000008001698                FLASH_ReadOutProtection
+                0x0000000008001788                FLASH_UserOptionByteConfig
+                0x0000000008001860                FLASH_GetUserOptionByte
+                0x0000000008001878                FLASH_GetWriteProtectionOptionByte
+                0x000000000800188c                FLASH_GetReadOutProtectionStatus
+                0x00000000080018bc                FLASH_GetPrefetchBufferStatus
+                0x00000000080018ec                FLASH_ITConfig
+                0x000000000800195c                FLASH_GetFlagStatus
+                0x00000000080019f0                FLASH_ClearFlag
+                0x0000000008001a28                FLASH_GetStatus
+                0x0000000008001a7c                FLASH_GetBank1Status
+                0x0000000008001ad0                FLASH_WaitForLastOperation
+                0x0000000008001b14                FLASH_WaitForLastBank1Operation
+ .text          0x0000000008001b58      0xf94 lib/libstm32.a(stm32f10x_gpio.o)
+                0x0000000008001b58                GPIO_DeInit
+                0x0000000008001c80                GPIO_AFIODeInit
+                0x0000000008001c98                GPIO_Init
+                0x0000000008001ee8                GPIO_StructInit
+                0x0000000008001f0e                GPIO_ReadInputDataBit
+                0x000000000800201c                GPIO_ReadInputData
+                0x0000000008002094                GPIO_ReadOutputDataBit
+                0x00000000080021a0                GPIO_ReadOutputData
+                0x0000000008002218                GPIO_SetBits
+                0x00000000080022a4                GPIO_ResetBits
+                0x0000000008002330                GPIO_WriteBit
+                0x0000000008002450                GPIO_Write
+                0x00000000080024cc                GPIO_PinLockConfig
+                0x0000000008002580                GPIO_EventOutputConfig
+                0x0000000008002660                GPIO_EventOutputCmd
+                0x0000000008002698                GPIO_PinRemapConfig
+                0x0000000008002994                GPIO_EXTILineConfig
+                0x0000000008002ab8                GPIO_ETH_MediaInterfaceConfig
+ .text          0x0000000008002aec      0x27c lib/libstm32.a(stm32f10x_pwr.o)
+                0x0000000008002aec                PWR_DeInit
+                0x0000000008002b08                PWR_BackupAccessCmd
+                0x0000000008002b3c                PWR_PVDCmd
+                0x0000000008002b70                PWR_PVDLevelConfig
+                0x0000000008002be0                PWR_WakeUpPinCmd
+                0x0000000008002c14                PWR_EnterSTOPMode
+                0x0000000008002ca0                PWR_EnterSTANDBYMode
+                0x0000000008002cdc                PWR_GetFlagStatus
+                0x0000000008002d2c                PWR_ClearFlag
+ .text          0x0000000008002d68      0xc80 lib/libstm32.a(stm32f10x_rcc.o)
+                0x0000000008002d68                RCC_DeInit
+                0x0000000008002dc4                RCC_HSEConfig
+                0x0000000008002e40                RCC_WaitForHSEStartUp
+                0x0000000008002e90                RCC_AdjustHSICalibrationValue
+                0x0000000008002edc                RCC_HSICmd
+                0x0000000008002f14                RCC_PLLConfig
+                0x0000000008002ff4                RCC_PLLCmd
+                0x000000000800302c                RCC_SYSCLKConfig
+                0x0000000008003080                RCC_GetSYSCLKSource
+                0x000000000800309c                RCC_HCLKConfig
+                0x0000000008003114                RCC_PCLK1Config
+                0x000000000800317c                RCC_PCLK2Config
+                0x00000000080031e8                RCC_ITConfig
+                0x0000000008003264                RCC_USBCLKConfig
+                0x0000000008003298                RCC_ADCCLKConfig
+                0x00000000080032f8                RCC_LSEConfig
+                0x0000000008003358                RCC_LSICmd
+                0x0000000008003390                RCC_RTCCLKConfig
+                0x00000000080033d8                RCC_RTCCLKCmd
+                0x0000000008003410                RCC_GetClocksFreq
+                0x0000000008003570                RCC_AHBPeriphClockCmd
+                0x00000000080035e4                RCC_APB2PeriphClockCmd
+                0x0000000008003658                RCC_APB1PeriphClockCmd
+                0x00000000080036cc                RCC_APB2PeriphResetCmd
+                0x0000000008003740                RCC_APB1PeriphResetCmd
+                0x00000000080037b4                RCC_BackupResetCmd
+                0x00000000080037ec                RCC_ClockSecuritySystemCmd
+                0x0000000008003824                RCC_MCOConfig
+                0x000000000800386c                RCC_GetFlagStatus
+                0x000000000800392c                RCC_ClearFlag
+                0x0000000008003948                RCC_GetITStatus
+                0x00000000080039ac                RCC_ClearITPendingBit
+ .text          0x00000000080039e8      0x380 lib/libstm32.a(stm32f10x_rtc.o)
+                0x00000000080039e8                RTC_ITConfig
+                0x0000000008003a64                RTC_EnterConfigMode
+                0x0000000008003a84                RTC_ExitConfigMode
+                0x0000000008003aa4                RTC_GetCounter
+                0x0000000008003ad0                RTC_SetCounter
+                0x0000000008003b00                RTC_SetPrescaler
+                0x0000000008003b48                RTC_SetAlarm
+                0x0000000008003b78                RTC_GetDivider
+                0x0000000008003bb0                RTC_WaitForLastTask
+                0x0000000008003bd0                RTC_WaitForSynchro
+                0x0000000008003c00                RTC_GetFlagStatus
+                0x0000000008003c64                RTC_ClearFlag
+                0x0000000008003cb0                RTC_GetITStatus
+                0x0000000008003d1c                RTC_ClearITPendingBit
+ .text          0x0000000008003d68      0xe4c lib/libstm32.a(stm32f10x_spi.o)
+                0x0000000008003d68                SPI_I2S_DeInit
+                0x0000000008003e00                SPI_Init
+                0x0000000008003fd0                I2S_Init
+                0x0000000008004238                SPI_StructInit
+                0x0000000008004280                I2S_StructInit
+                0x00000000080042b6                SPI_Cmd
+                0x000000000800433c                I2S_Cmd
+                0x00000000080043b4                SPI_I2S_ITConfig
+                0x0000000008004478                SPI_I2S_DMACmd
+                0x0000000008004520                SPI_I2S_SendData
+                0x000000000800456c                SPI_I2S_ReceiveData
+                0x00000000080045b4                SPI_NSSInternalSoftwareConfig
+                0x0000000008004644                SPI_SSOutputCmd
+                0x00000000080046c8                SPI_DataSizeConfig
+                0x0000000008004748                SPI_TransmitCRC
+                0x000000000800479c                SPI_CalculateCRC
+                0x0000000008004820                SPI_GetCRC
+                0x0000000008004898                SPI_GetCRCPolynomial
+                0x00000000080048e0                SPI_BiDirectionalLineConfig
+                0x000000000800496c                SPI_I2S_GetFlagStatus
+                0x0000000008004a0c                SPI_I2S_ClearFlag
+                0x0000000008004a6c                SPI_I2S_GetITStatus
+                0x0000000008004b40                SPI_I2S_ClearITPendingBit
+ .text          0x0000000008004bb4      0x270 lib/libstm32.a(misc.o)
+                0x0000000008004bb4                NVIC_PriorityGroupConfig
+                0x0000000008004c0c                NVIC_Init
+                0x0000000008004d0c                NVIC_SetVectorTable
+                0x0000000008004d64                NVIC_SystemLPConfig
+                0x0000000008004dd4                SysTick_CLKSourceConfig
+ .text          0x0000000008004e24       0x3c lib/newlib.a(assert.o)
+                0x0000000008004e24                __assert_func
+                0x0000000008004e48                assert_failed
+ .text          0x0000000008004e60       0x20 lib/newlib.a(_exit.o)
+                0x0000000008004e6a                abort
+ .text          0x0000000008004e80      0x2d4 lib/newlib.a(_syscalls.o)
+                0x0000000008004e80                __initialize_args
+                0x0000000008004ea4                raise
+                0x0000000008004ec2                kill
+                0x0000000008004ee2                _chown
+                0x0000000008004f94                _gettimeofday
+                0x0000000008005032                _open
+                0x0000000008005076                _readlink
+                0x00000000080050b8                _symlink
+ .text          0x0000000008005154      0x320 newlib_stubs.o
+                0x0000000008005154                _exit
+                0x000000000800516c                _close
+                0x0000000008005182                _execve
+                0x00000000080051a8                _fork
+                0x00000000080051c4                _fstat
+                0x00000000080051e2                _getpid
+                0x00000000080051f0                _isatty
+                0x000000000800521c                _kill
+                0x0000000008005240                _link
+                0x0000000008005264                _lseek
+                0x000000000800527c                _sbrk
+                0x00000000080052ec                _read
+                0x0000000008005360                _stat
+                0x000000000800537e                _times
+                0x0000000008005394                _unlink
+                0x00000000080053b4                _wait
+                0x00000000080053d4                _write
+ .text.__errno  0x0000000008005474       0x10 /usr/lib/gcc/arm-none-eabi/6.1.1/../../../../arm-none-eabi/lib/libc.a(lib_a-errno.o)
+                0x0000000008005474                __errno
+ *(.rodata .rodata.* .constdata .constdata.*)
+ .rodata        0x0000000008005484       0x2e lib/libstm32.a(stm32f10x_exti.o)
+ *fill*         0x00000000080054b2        0x2 
+ .rodata        0x00000000080054b4       0x2f lib/libstm32.a(stm32f10x_flash.o)
+ *fill*         0x00000000080054e3        0x1 
+ .rodata        0x00000000080054e4       0x2e lib/libstm32.a(stm32f10x_gpio.o)
+ *fill*         0x0000000008005512        0x2 
+ .rodata        0x0000000008005514       0x2d lib/libstm32.a(stm32f10x_pwr.o)
+ *fill*         0x0000000008005541        0x3 
+ .rodata        0x0000000008005544       0x2d lib/libstm32.a(stm32f10x_rcc.o)
+ *fill*         0x0000000008005571        0x3 
+ .rodata        0x0000000008005574       0x2d lib/libstm32.a(stm32f10x_rtc.o)
+ *fill*         0x00000000080055a1        0x3 
+ .rodata        0x00000000080055a4       0x2d lib/libstm32.a(stm32f10x_spi.o)
+ *fill*         0x00000000080055d1        0x3 
+ .rodata        0x00000000080055d4       0x24 lib/libstm32.a(misc.o)
+ .rodata        0x00000000080055f8       0x6f lib/newlib.a(assert.o)
+ *fill*         0x0000000008005667        0x1 
+ .rodata        0x0000000008005668       0x14 lib/newlib.a(_exit.o)
+ .rodata        0x000000000800567c       0x22 newlib_stubs.o
+ *fill*         0x000000000800569e        0x2 
+ .rodata.str1.4
+                0x00000000080056a0        0x4 /usr/lib/gcc/arm-none-eabi/6.1.1/../../../../arm-none-eabi/lib/libc.a(lib_a-impure.o)
+                                          0x2 (size before relaxing)
+ *(vtable)
+ *(.eh_frame*)
+ *(.glue_7)
+ .glue_7        0x00000000080056a4        0x0 linker stubs
+ *(.glue_7t)
+ .glue_7t       0x00000000080056a4        0x0 linker stubs
+
+.vfp11_veneer   0x00000000080056a4        0x0
+ .vfp11_veneer  0x00000000080056a4        0x0 linker stubs
+
+.v4_bx          0x00000000080056a4        0x0
+ .v4_bx         0x00000000080056a4        0x0 linker stubs
+
+.iplt           0x00000000080056a4        0x0
+ .iplt          0x00000000080056a4        0x0 c_entry.o
+
+.rel.dyn        0x00000000080056a4        0x0
+ .rel.iplt      0x00000000080056a4        0x0 c_entry.o
+
+.ARM.extab      0x00000000080056a4        0x0
+                0x00000000080056a4                . = ALIGN (0x4)
+ *(.ARM.extab* .gnu.linkonce.armextab.*)
+                0x00000000080056a4                . = ALIGN (0x4)
+                0x00000000080056a4                __exidx_start = .
+
+.ARM.exidx      0x00000000080056a4        0x0
+                0x00000000080056a4                . = ALIGN (0x4)
+ *(.ARM.exidx* .gnu.linkonce.armexidx.*)
+                0x00000000080056a4                __exidx_end = .
+                0x00000000080056a4                . = ALIGN (0x4)
+                0x00000000080056a4                _etext = .
+                0x00000000080056a4                __etext = .
+
+.data_CCMRAM    0x0000000000000000        0x0 load address 0x00000000080056a4
+                0x0000000000000000                . = ALIGN (0x4)
+ FILL mask 0xff
+ *(.data.CCMRAM .data.CCMRAM.*)
+                0x0000000000000000                . = ALIGN (0x4)
+                0x00000000080056a4                _sidata = LOADADDR (.data)
+
+.data           0x0000000020000000      0x454 load address 0x00000000080056a4
+                0x0000000020000000                . = ALIGN (0x4)
+ FILL mask 0xff
+                0x0000000020000000                _sdata = .
+                0x0000000020000000                __data_start__ = .
+ *(.data_begin .data_begin.*)
+ .data_begin    0x0000000020000000        0x4 lib/newlib.a(_startup.o)
+ *(.data .data.*)
+ .data          0x0000000020000004       0x14 lib/libstm32.a(stm32f10x_rcc.o)
+ .data          0x0000000020000018        0xc lib/newlib.a(_syscalls.o)
+                0x0000000020000018                environ
+ .data._impure_ptr
+                0x0000000020000024        0x4 /usr/lib/gcc/arm-none-eabi/6.1.1/../../../../arm-none-eabi/lib/libc.a(lib_a-impure.o)
+                0x0000000020000024                _impure_ptr
+ .data.impure_data
+                0x0000000020000028      0x428 /usr/lib/gcc/arm-none-eabi/6.1.1/../../../../arm-none-eabi/lib/libc.a(lib_a-impure.o)
+ *(.data_end .data_end.*)
+ .data_end      0x0000000020000450        0x4 lib/newlib.a(_startup.o)
+                0x0000000020000454                . = ALIGN (0x4)
+                0x0000000020000454                _edata = .
+                0x0000000020000454                __data_end__ = .
+
+.igot.plt       0x0000000020000454        0x0 load address 0x0000000008005af8
+ .igot.plt      0x0000000020000454        0x0 c_entry.o
+
+.bss_CCMRAM     0x0000000000000000        0x0
+                0x0000000000000000                . = ALIGN (0x4)
+ *(.bss.CCMRAM .bss.CCMRAM.*)
+
+.bss            0x0000000020000454      0x4ec
+                0x0000000020000454                . = ALIGN (0x4)
+                0x0000000020000454                __bss_start__ = .
+                0x0000000020000454                _sbss = .
+ *(.bss_begin .bss_begin.*)
+ .bss_begin     0x0000000020000454        0x4 lib/newlib.a(_startup.o)
+ *(.bss .bss.*)
+ .bss           0x0000000020000458      0x4cf c_entry.o
+                0x0000000020000458                SPI_InitStructure
+                0x000000002000046c                GPIO_InitStructure
+                0x0000000020000470                HSEStartUpStatus
+                0x0000000020000474                access_cache
+                0x0000000020000924                access_cache_index
+ *fill*         0x0000000020000927        0x1 
+ .bss           0x0000000020000928        0x9 lib/newlib.a(_syscalls.o)
+                0x0000000020000928                __dso_handle
+                0x000000002000092c                __env
+ *fill*         0x0000000020000931        0x3 
+ .bss           0x0000000020000934        0x4 newlib_stubs.o
+ *(COMMON)
+ COMMON         0x0000000020000938        0x4 lib/newlib.a(_syscalls.o)
+                0x0000000020000938                errno
+ *(.bss_end .bss_end.*)
+ .bss_end       0x000000002000093c        0x4 lib/newlib.a(_startup.o)
+                0x0000000020000940                . = ALIGN (0x4)
+                0x0000000020000940                __bss_end__ = .
+                0x0000000020000940                _ebss = .
+
+.noinit_CCMRAM  0x0000000000000000        0x0
+                0x0000000000000000                . = ALIGN (0x4)
+ *(.noinit.CCMRAM .noinit.CCMRAM.*)
+
+.noinit         0x0000000020000940        0x0
+                0x0000000020000940                . = ALIGN (0x4)
+                0x0000000020000940                _noinit = .
+ *(.noinit .noinit.*)
+                0x0000000020000940                . = ALIGN (0x4)
+                0x0000000020000940                _end_noinit = .
+                [!provide]                        PROVIDE (end, _end_noinit)
+                [!provide]                        PROVIDE (_end, _end_noinit)
+                [!provide]                        PROVIDE (__end, _end_noinit)
+                [!provide]                        PROVIDE (__end__, _end_noinit)
+
+._check_stack   0x0000000020000940      0x100
+                0x0000000020000940                . = ALIGN (0x4)
+                0x0000000020000a40                . = (. + _Minimum_Stack_Size)
+ *fill*         0x0000000020000940      0x100 
+
+.b1text         0x0000000000000000        0x0
+                0x0000000000000000                . = ALIGN (0x4)
+ *(.b1text)
+ *(.b1rodata)
+ *(.b1rodata.*)
+
+.eb0text        0x0000000000000000        0x0
+                0x0000000000000000                . = ALIGN (0x4)
+ *(.eb0text)
+ *(.eb0rodata)
+ *(.eb0rodata.*)
+
+.eb1text        0x0000000000000000        0x0
+                0x0000000000000000                . = ALIGN (0x4)
+ *(.eb1text)
+ *(.eb1rodata)
+ *(.eb1rodata.*)
+
+.eb2text        0x0000000000000000        0x0
+                0x0000000000000000                . = ALIGN (0x4)
+ *(.eb2text)
+ *(.eb2rodata)
+ *(.eb2rodata.*)
+
+.eb3text        0x0000000000000000        0x0
+                0x0000000000000000                . = ALIGN (0x4)
+ *(.eb3text)
+ *(.eb3rodata)
+ *(.eb3rodata.*)
+
+.stab           0x0000000000000000    0x10b48
+ *(.stab)
+ .stab          0x0000000000000000     0x1e90 c_entry.o
+ .stab          0x0000000000001e90       0xe4 entry.o
+                                         0xf0 (size before relaxing)
+ .stab          0x0000000000001f74      0xd38 lib/hardware_libs.a(mfrc522.o)
+                                        0xd44 (size before relaxing)
+ .stab          0x0000000000002cac      0xbe8 binds/binds.a(spi_binds.o)
+                                        0xe4c (size before relaxing)
+ .stab          0x0000000000003894      0xbac lib/libstm32.a(stm32f10x_exti.o)
+                                       0x1488 (size before relaxing)
+ .stab          0x0000000000004440     0x1c14 lib/libstm32.a(stm32f10x_flash.o)
+                                       0x24f0 (size before relaxing)
+ .stab          0x0000000000006054     0x1ddc lib/libstm32.a(stm32f10x_gpio.o)
+                                       0x26b8 (size before relaxing)
+ .stab          0x0000000000007e30      0xa08 lib/libstm32.a(stm32f10x_pwr.o)
+                                       0x12e4 (size before relaxing)
+ .stab          0x0000000000008838     0x1ea8 lib/libstm32.a(stm32f10x_rcc.o)
+                                       0x2784 (size before relaxing)
+ .stab          0x000000000000a6e0      0xbc4 lib/libstm32.a(stm32f10x_rtc.o)
+                                       0x14a0 (size before relaxing)
+ .stab          0x000000000000b2a4     0x1da0 lib/libstm32.a(stm32f10x_spi.o)
+                                       0x267c (size before relaxing)
+ .stab          0x000000000000d044      0x810 lib/libstm32.a(misc.o)
+                                       0x10ec (size before relaxing)
+ .stab          0x000000000000d854      0x9e4 lib/newlib.a(assert.o)
+                                        0xc48 (size before relaxing)
+ .stab          0x000000000000e238      0x3b4 lib/newlib.a(_exit.o)
+                                        0xaf8 (size before relaxing)
+ .stab          0x000000000000e5ec      0x930 lib/newlib.a(_startup.o)
+                                        0xf6c (size before relaxing)
+ .stab          0x000000000000ef1c      0x9b4 lib/newlib.a(_syscalls.o)
+                                       0x165c (size before relaxing)
+ .stab          0x000000000000f8d0     0x1278 newlib_stubs.o
+                                       0x1d10 (size before relaxing)
+
+.stabstr        0x0000000000000000    0x17ea1
+ *(.stabstr)
+ .stabstr       0x0000000000000000    0x17ea1 c_entry.o
+
+.stab.excl
+ *(.stab.excl)
+
+.stab.exclstr
+ *(.stab.exclstr)
+
+.stab.index
+ *(.stab.index)
+
+.stab.indexstr
+ *(.stab.indexstr)
+
+.comment        0x0000000000000000       0x26
+ *(.comment)
+ .comment       0x0000000000000000       0x26 c_entry.o
+                                         0x27 (size before relaxing)
+ .comment       0x0000000000000026       0x27 lib/hardware_libs.a(mfrc522.o)
+ .comment       0x0000000000000026       0x27 binds/binds.a(spi_binds.o)
+ .comment       0x0000000000000026       0x27 lib/libstm32.a(stm32f10x_exti.o)
+ .comment       0x0000000000000026       0x27 lib/libstm32.a(stm32f10x_flash.o)
+ .comment       0x0000000000000026       0x27 lib/libstm32.a(stm32f10x_gpio.o)
+ .comment       0x0000000000000026       0x27 lib/libstm32.a(stm32f10x_pwr.o)
+ .comment       0x0000000000000026       0x27 lib/libstm32.a(stm32f10x_rcc.o)
+ .comment       0x0000000000000026       0x27 lib/libstm32.a(stm32f10x_rtc.o)
+ .comment       0x0000000000000026       0x27 lib/libstm32.a(stm32f10x_spi.o)
+ .comment       0x0000000000000026       0x27 lib/libstm32.a(misc.o)
+ .comment       0x0000000000000026       0x27 lib/newlib.a(assert.o)
+ .comment       0x0000000000000026       0x27 lib/newlib.a(_exit.o)
+ .comment       0x0000000000000026       0x27 lib/newlib.a(_startup.o)
+ .comment       0x0000000000000026       0x27 lib/newlib.a(_syscalls.o)
+ .comment       0x0000000000000026       0x27 newlib_stubs.o
+
+.ARM.attributes
+                0x0000000000000000       0x33
+ .ARM.attributes
+                0x0000000000000000       0x33 c_entry.o
+ .ARM.attributes
+                0x0000000000000033       0x21 entry.o
+ .ARM.attributes
+                0x0000000000000054       0x33 lib/hardware_libs.a(mfrc522.o)
+ .ARM.attributes
+                0x0000000000000087       0x33 binds/binds.a(spi_binds.o)
+ .ARM.attributes
+                0x00000000000000ba       0x33 lib/libstm32.a(stm32f10x_exti.o)
+ .ARM.attributes
+                0x00000000000000ed       0x33 lib/libstm32.a(stm32f10x_flash.o)
+ .ARM.attributes
+                0x0000000000000120       0x33 lib/libstm32.a(stm32f10x_gpio.o)
+ .ARM.attributes
+                0x0000000000000153       0x33 lib/libstm32.a(stm32f10x_pwr.o)
+ .ARM.attributes
+                0x0000000000000186       0x33 lib/libstm32.a(stm32f10x_rcc.o)
+ .ARM.attributes
+                0x00000000000001b9       0x33 lib/libstm32.a(stm32f10x_rtc.o)
+ .ARM.attributes
+                0x00000000000001ec       0x33 lib/libstm32.a(stm32f10x_spi.o)
+ .ARM.attributes
+                0x000000000000021f       0x33 lib/libstm32.a(misc.o)
+ .ARM.attributes
+                0x0000000000000252       0x33 lib/newlib.a(assert.o)
+ .ARM.attributes
+                0x0000000000000285       0x33 lib/newlib.a(_exit.o)
+ .ARM.attributes
+                0x00000000000002b8       0x33 lib/newlib.a(_startup.o)
+ .ARM.attributes
+                0x00000000000002eb       0x33 lib/newlib.a(_syscalls.o)
+ .ARM.attributes
+                0x000000000000031e       0x33 newlib_stubs.o
+ .ARM.attributes
+                0x0000000000000351       0x30 /usr/lib/gcc/arm-none-eabi/6.1.1/../../../../arm-none-eabi/lib/libc.a(lib_a-errno.o)
+ .ARM.attributes
+                0x0000000000000381       0x30 /usr/lib/gcc/arm-none-eabi/6.1.1/../../../../arm-none-eabi/lib/libc.a(lib_a-impure.o)
+
+.debug
+ *(.debug)
+
+.line
+ *(.line)
+
+.debug_srcinfo
+ *(.debug_srcinfo)
+
+.debug_sfnames
+ *(.debug_sfnames)
+
+.debug_aranges
+ *(.debug_aranges)
+
+.debug_pubnames
+ *(.debug_pubnames)
+
+.debug_info
+ *(.debug_info .gnu.linkonce.wi.*)
+
+.debug_abbrev
+ *(.debug_abbrev)
+
+.debug_line
+ *(.debug_line)
+
+.debug_frame    0x0000000000000000       0x20
+ *(.debug_frame)
+ .debug_frame   0x0000000000000000       0x20 /usr/lib/gcc/arm-none-eabi/6.1.1/../../../../arm-none-eabi/lib/libc.a(lib_a-errno.o)
+
+.debug_str
+ *(.debug_str)
+
+.debug_loc
+ *(.debug_loc)
+
+.debug_macinfo
+ *(.debug_macinfo)
+
+.debug_weaknames
+ *(.debug_weaknames)
+
+.debug_funcnames
+ *(.debug_funcnames)
+
+.debug_typenames
+ *(.debug_typenames)
+
+.debug_varnames
+ *(.debug_varnames)
+OUTPUT(firmware.elf elf32-littlearm)
+
+Cross Reference Table
+
+Symbol                                            File
+Delay(unsigned long)                              c_entry.o
+EXTI15_10_IRQHandler                              c_entry.o
+                                                  entry.o
+EXTI4_IRQHandler                                  c_entry.o
+                                                  entry.o
+EXTI_ClearFlag                                    lib/libstm32.a(stm32f10x_exti.o)
+EXTI_ClearITPendingBit                            lib/libstm32.a(stm32f10x_exti.o)
+                                                  c_entry.o
+EXTI_DeInit                                       lib/libstm32.a(stm32f10x_exti.o)
+EXTI_GenerateSWInterrupt                          lib/libstm32.a(stm32f10x_exti.o)
+EXTI_GetFlagStatus                                lib/libstm32.a(stm32f10x_exti.o)
+EXTI_GetITStatus                                  lib/libstm32.a(stm32f10x_exti.o)
+EXTI_Init                                         lib/libstm32.a(stm32f10x_exti.o)
+                                                  c_entry.o
+EXTI_StructInit                                   lib/libstm32.a(stm32f10x_exti.o)
+FLASH_ClearFlag                                   lib/libstm32.a(stm32f10x_flash.o)
+FLASH_EnableWriteProtection                       lib/libstm32.a(stm32f10x_flash.o)
+FLASH_EraseAllBank1Pages                          lib/libstm32.a(stm32f10x_flash.o)
+FLASH_EraseAllPages                               lib/libstm32.a(stm32f10x_flash.o)
+FLASH_EraseOptionBytes                            lib/libstm32.a(stm32f10x_flash.o)
+FLASH_ErasePage                                   lib/libstm32.a(stm32f10x_flash.o)
+FLASH_GetBank1Status                              lib/libstm32.a(stm32f10x_flash.o)
+FLASH_GetFlagStatus                               lib/libstm32.a(stm32f10x_flash.o)
+FLASH_GetPrefetchBufferStatus                     lib/libstm32.a(stm32f10x_flash.o)
+FLASH_GetReadOutProtectionStatus                  lib/libstm32.a(stm32f10x_flash.o)
+FLASH_GetStatus                                   lib/libstm32.a(stm32f10x_flash.o)
+FLASH_GetUserOptionByte                           lib/libstm32.a(stm32f10x_flash.o)
+FLASH_GetWriteProtectionOptionByte                lib/libstm32.a(stm32f10x_flash.o)
+FLASH_HalfCycleAccessCmd                          lib/libstm32.a(stm32f10x_flash.o)
+FLASH_ITConfig                                    lib/libstm32.a(stm32f10x_flash.o)
+FLASH_Lock                                        lib/libstm32.a(stm32f10x_flash.o)
+FLASH_LockBank1                                   lib/libstm32.a(stm32f10x_flash.o)
+FLASH_PrefetchBufferCmd                           lib/libstm32.a(stm32f10x_flash.o)
+                                                  c_entry.o
+FLASH_ProgramHalfWord                             lib/libstm32.a(stm32f10x_flash.o)
+FLASH_ProgramOptionByteData                       lib/libstm32.a(stm32f10x_flash.o)
+FLASH_ProgramWord                                 lib/libstm32.a(stm32f10x_flash.o)
+FLASH_ReadOutProtection                           lib/libstm32.a(stm32f10x_flash.o)
+FLASH_SetLatency                                  lib/libstm32.a(stm32f10x_flash.o)
+                                                  c_entry.o
+FLASH_Unlock                                      lib/libstm32.a(stm32f10x_flash.o)
+FLASH_UnlockBank1                                 lib/libstm32.a(stm32f10x_flash.o)
+FLASH_UserOptionByteConfig                        lib/libstm32.a(stm32f10x_flash.o)
+FLASH_WaitForLastBank1Operation                   lib/libstm32.a(stm32f10x_flash.o)
+FLASH_WaitForLastOperation                        lib/libstm32.a(stm32f10x_flash.o)
+GPIO_AFIODeInit                                   lib/libstm32.a(stm32f10x_gpio.o)
+GPIO_DeInit                                       lib/libstm32.a(stm32f10x_gpio.o)
+GPIO_ETH_MediaInterfaceConfig                     lib/libstm32.a(stm32f10x_gpio.o)
+GPIO_EXTILineConfig                               lib/libstm32.a(stm32f10x_gpio.o)
+                                                  c_entry.o
+GPIO_EventOutputCmd                               lib/libstm32.a(stm32f10x_gpio.o)
+GPIO_EventOutputConfig                            lib/libstm32.a(stm32f10x_gpio.o)
+GPIO_Init                                         lib/libstm32.a(stm32f10x_gpio.o)
+                                                  c_entry.o
+GPIO_InitStructure                                c_entry.o
+GPIO_PinLockConfig                                lib/libstm32.a(stm32f10x_gpio.o)
+GPIO_PinRemapConfig                               lib/libstm32.a(stm32f10x_gpio.o)
+GPIO_ReadInputData                                lib/libstm32.a(stm32f10x_gpio.o)
+GPIO_ReadInputDataBit                             lib/libstm32.a(stm32f10x_gpio.o)
+GPIO_ReadOutputData                               lib/libstm32.a(stm32f10x_gpio.o)
+GPIO_ReadOutputDataBit                            lib/libstm32.a(stm32f10x_gpio.o)
+GPIO_ResetBits                                    lib/libstm32.a(stm32f10x_gpio.o)
+                                                  binds/binds.a(spi_binds.o)
+                                                  c_entry.o
+GPIO_SetBits                                      lib/libstm32.a(stm32f10x_gpio.o)
+                                                  binds/binds.a(spi_binds.o)
+                                                  c_entry.o
+GPIO_StructInit                                   lib/libstm32.a(stm32f10x_gpio.o)
+GPIO_Write                                        lib/libstm32.a(stm32f10x_gpio.o)
+GPIO_WriteBit                                     lib/libstm32.a(stm32f10x_gpio.o)
+HSEStartUpStatus                                  c_entry.o
+I2S_Cmd                                           lib/libstm32.a(stm32f10x_spi.o)
+I2S_Init                                          lib/libstm32.a(stm32f10x_spi.o)
+I2S_StructInit                                    lib/libstm32.a(stm32f10x_spi.o)
+NVIC_Configuration()                              c_entry.o
+NVIC_Init                                         lib/libstm32.a(misc.o)
+                                                  c_entry.o
+NVIC_PriorityGroupConfig                          lib/libstm32.a(misc.o)
+NVIC_SetVectorTable                               lib/libstm32.a(misc.o)
+                                                  c_entry.o
+NVIC_SystemLPConfig                               lib/libstm32.a(misc.o)
+PWR_BackupAccessCmd                               lib/libstm32.a(stm32f10x_pwr.o)
+                                                  c_entry.o
+PWR_ClearFlag                                     lib/libstm32.a(stm32f10x_pwr.o)
+PWR_DeInit                                        lib/libstm32.a(stm32f10x_pwr.o)
+PWR_EnterSTANDBYMode                              lib/libstm32.a(stm32f10x_pwr.o)
+PWR_EnterSTOPMode                                 lib/libstm32.a(stm32f10x_pwr.o)
+PWR_GetFlagStatus                                 lib/libstm32.a(stm32f10x_pwr.o)
+PWR_PVDCmd                                        lib/libstm32.a(stm32f10x_pwr.o)
+PWR_PVDLevelConfig                                lib/libstm32.a(stm32f10x_pwr.o)
+PWR_WakeUpPinCmd                                  lib/libstm32.a(stm32f10x_pwr.o)
+RCC_ADCCLKConfig                                  lib/libstm32.a(stm32f10x_rcc.o)
+RCC_AHBPeriphClockCmd                             lib/libstm32.a(stm32f10x_rcc.o)
+RCC_APB1PeriphClockCmd                            lib/libstm32.a(stm32f10x_rcc.o)
+                                                  c_entry.o
+RCC_APB1PeriphResetCmd                            lib/libstm32.a(stm32f10x_rcc.o)
+                                                  lib/libstm32.a(stm32f10x_spi.o)
+                                                  lib/libstm32.a(stm32f10x_pwr.o)
+RCC_APB2PeriphClockCmd                            lib/libstm32.a(stm32f10x_rcc.o)
+                                                  c_entry.o
+RCC_APB2PeriphResetCmd                            lib/libstm32.a(stm32f10x_rcc.o)
+                                                  lib/libstm32.a(stm32f10x_spi.o)
+                                                  lib/libstm32.a(stm32f10x_gpio.o)
+RCC_AdjustHSICalibrationValue                     lib/libstm32.a(stm32f10x_rcc.o)
+RCC_BackupResetCmd                                lib/libstm32.a(stm32f10x_rcc.o)
+                                                  c_entry.o
+RCC_ClearFlag                                     lib/libstm32.a(stm32f10x_rcc.o)
+RCC_ClearITPendingBit                             lib/libstm32.a(stm32f10x_rcc.o)
+RCC_ClockSecuritySystemCmd                        lib/libstm32.a(stm32f10x_rcc.o)
+RCC_Configuration()                               c_entry.o
+RCC_DeInit                                        lib/libstm32.a(stm32f10x_rcc.o)
+                                                  c_entry.o
+RCC_GetClocksFreq                                 lib/libstm32.a(stm32f10x_rcc.o)
+                                                  lib/libstm32.a(stm32f10x_spi.o)
+RCC_GetFlagStatus                                 lib/libstm32.a(stm32f10x_rcc.o)
+                                                  c_entry.o
+RCC_GetITStatus                                   lib/libstm32.a(stm32f10x_rcc.o)
+RCC_GetSYSCLKSource                               lib/libstm32.a(stm32f10x_rcc.o)
+                                                  c_entry.o
+RCC_HCLKConfig                                    lib/libstm32.a(stm32f10x_rcc.o)
+                                                  c_entry.o
+RCC_HSEConfig                                     lib/libstm32.a(stm32f10x_rcc.o)
+                                                  c_entry.o
+RCC_HSICmd                                        lib/libstm32.a(stm32f10x_rcc.o)
+RCC_ITConfig                                      lib/libstm32.a(stm32f10x_rcc.o)
+RCC_LSEConfig                                     lib/libstm32.a(stm32f10x_rcc.o)
+                                                  c_entry.o
+RCC_LSICmd                                        lib/libstm32.a(stm32f10x_rcc.o)
+                                                  c_entry.o
+RCC_MCOConfig                                     lib/libstm32.a(stm32f10x_rcc.o)
+RCC_PCLK1Config                                   lib/libstm32.a(stm32f10x_rcc.o)
+                                                  c_entry.o
+RCC_PCLK2Config                                   lib/libstm32.a(stm32f10x_rcc.o)
+                                                  c_entry.o
+RCC_PLLCmd                                        lib/libstm32.a(stm32f10x_rcc.o)
+                                                  c_entry.o
+RCC_PLLConfig                                     lib/libstm32.a(stm32f10x_rcc.o)
+                                                  c_entry.o
+RCC_RTCCLKCmd                                     lib/libstm32.a(stm32f10x_rcc.o)
+                                                  c_entry.o
+RCC_RTCCLKConfig                                  lib/libstm32.a(stm32f10x_rcc.o)
+                                                  c_entry.o
+RCC_SYSCLKConfig                                  lib/libstm32.a(stm32f10x_rcc.o)
+                                                  c_entry.o
+RCC_USBCLKConfig                                  lib/libstm32.a(stm32f10x_rcc.o)
+RCC_WaitForHSEStartUp                             lib/libstm32.a(stm32f10x_rcc.o)
+                                                  c_entry.o
+RTC_ClearFlag                                     lib/libstm32.a(stm32f10x_rtc.o)
+RTC_ClearITPendingBit                             lib/libstm32.a(stm32f10x_rtc.o)
+RTC_Configuration()                               c_entry.o
+RTC_EnterConfigMode                               lib/libstm32.a(stm32f10x_rtc.o)
+RTC_ExitConfigMode                                lib/libstm32.a(stm32f10x_rtc.o)
+RTC_GetCounter                                    lib/libstm32.a(stm32f10x_rtc.o)
+                                                  c_entry.o
+RTC_GetDivider                                    lib/libstm32.a(stm32f10x_rtc.o)
+RTC_GetFlagStatus                                 lib/libstm32.a(stm32f10x_rtc.o)
+RTC_GetITStatus                                   lib/libstm32.a(stm32f10x_rtc.o)
+RTC_ITConfig                                      lib/libstm32.a(stm32f10x_rtc.o)
+RTC_SetAlarm                                      lib/libstm32.a(stm32f10x_rtc.o)
+RTC_SetCounter                                    lib/libstm32.a(stm32f10x_rtc.o)
+RTC_SetPrescaler                                  lib/libstm32.a(stm32f10x_rtc.o)
+RTC_WaitForLastTask                               lib/libstm32.a(stm32f10x_rtc.o)
+RTC_WaitForSynchro                                lib/libstm32.a(stm32f10x_rtc.o)
+SPI_BiDirectionalLineConfig                       lib/libstm32.a(stm32f10x_spi.o)
+SPI_CalculateCRC                                  lib/libstm32.a(stm32f10x_spi.o)
+SPI_Cmd                                           lib/libstm32.a(stm32f10x_spi.o)
+                                                  c_entry.o
+SPI_DataSizeConfig                                lib/libstm32.a(stm32f10x_spi.o)
+SPI_GetCRC                                        lib/libstm32.a(stm32f10x_spi.o)
+SPI_GetCRCPolynomial                              lib/libstm32.a(stm32f10x_spi.o)
+SPI_I2S_ClearFlag                                 lib/libstm32.a(stm32f10x_spi.o)
+SPI_I2S_ClearITPendingBit                         lib/libstm32.a(stm32f10x_spi.o)
+SPI_I2S_DMACmd                                    lib/libstm32.a(stm32f10x_spi.o)
+SPI_I2S_DeInit                                    lib/libstm32.a(stm32f10x_spi.o)
+SPI_I2S_GetFlagStatus                             lib/libstm32.a(stm32f10x_spi.o)
+                                                  binds/binds.a(spi_binds.o)
+SPI_I2S_GetITStatus                               lib/libstm32.a(stm32f10x_spi.o)
+SPI_I2S_ITConfig                                  lib/libstm32.a(stm32f10x_spi.o)
+SPI_I2S_ReceiveData                               lib/libstm32.a(stm32f10x_spi.o)
+                                                  binds/binds.a(spi_binds.o)
+SPI_I2S_SendData                                  lib/libstm32.a(stm32f10x_spi.o)
+                                                  binds/binds.a(spi_binds.o)
+SPI_Init                                          lib/libstm32.a(stm32f10x_spi.o)
+                                                  c_entry.o
+SPI_InitStructure                                 c_entry.o
+SPI_NSSInternalSoftwareConfig                     lib/libstm32.a(stm32f10x_spi.o)
+SPI_SSOutputCmd                                   lib/libstm32.a(stm32f10x_spi.o)
+SPI_StructInit                                    lib/libstm32.a(stm32f10x_spi.o)
+SPI_TransmitCRC                                   lib/libstm32.a(stm32f10x_spi.o)
+SysTick_CLKSourceConfig                           lib/libstm32.a(misc.o)
+WRONG_IRQ_EXCEPTION                               c_entry.o
+                                                  entry.o
+__assert_func                                     lib/newlib.a(assert.o)
+__bss_end__                                       lib/newlib.a(_startup.o)
+__bss_start__                                     lib/newlib.a(_startup.o)
+__dso_handle                                      lib/newlib.a(_syscalls.o)
+__env                                             lib/newlib.a(_syscalls.o)
+__errno                                           /usr/lib/gcc/arm-none-eabi/6.1.1/../../../../arm-none-eabi/lib/libc.a(lib_a-errno.o)
+                                                  lib/newlib.a(_syscalls.o)
+__fini_array_end                                  lib/newlib.a(_startup.o)
+__fini_array_start                                lib/newlib.a(_startup.o)
+__init_array_end                                  lib/newlib.a(_startup.o)
+__init_array_start                                lib/newlib.a(_startup.o)
+__initialize_args                                 lib/newlib.a(_syscalls.o)
+                                                  lib/newlib.a(_startup.o)
+__initialize_bss                                  lib/newlib.a(_startup.o)
+__initialize_data                                 lib/newlib.a(_startup.o)
+__initialize_hardware                             c_entry.o
+                                                  lib/newlib.a(_startup.o)
+__initialize_hardware_early                       c_entry.o
+                                                  lib/newlib.a(_startup.o)
+__preinit_array_end                               lib/newlib.a(_startup.o)
+__preinit_array_start                             lib/newlib.a(_startup.o)
+__reset_hardware                                  c_entry.o
+__run_fini_array                                  lib/newlib.a(_startup.o)
+__run_init_array                                  lib/newlib.a(_startup.o)
+_chown                                            lib/newlib.a(_syscalls.o)
+_close                                            newlib_stubs.o
+                                                  lib/newlib.a(_syscalls.o)
+_ebss                                             newlib_stubs.o
+_edata                                            lib/newlib.a(_startup.o)
+_estack                                           entry.o
+_execve                                           newlib_stubs.o
+                                                  lib/newlib.a(_syscalls.o)
+_exit                                             newlib_stubs.o
+                                                  lib/newlib.a(_exit.o)
+                                                  lib/newlib.a(_startup.o)
+_fork                                             newlib_stubs.o
+                                                  lib/newlib.a(_syscalls.o)
+_fstat                                            newlib_stubs.o
+                                                  lib/newlib.a(_syscalls.o)
+_getpid                                           newlib_stubs.o
+                                                  lib/newlib.a(_syscalls.o)
+_gettimeofday                                     lib/newlib.a(_syscalls.o)
+_global_impure_ptr                                /usr/lib/gcc/arm-none-eabi/6.1.1/../../../../arm-none-eabi/lib/libc.a(lib_a-impure.o)
+_impure_ptr                                       /usr/lib/gcc/arm-none-eabi/6.1.1/../../../../arm-none-eabi/lib/libc.a(lib_a-impure.o)
+                                                  /usr/lib/gcc/arm-none-eabi/6.1.1/../../../../arm-none-eabi/lib/libc.a(lib_a-errno.o)
+_isatty                                           newlib_stubs.o
+                                                  lib/newlib.a(_syscalls.o)
+_kill                                             newlib_stubs.o
+                                                  lib/newlib.a(_syscalls.o)
+_link                                             newlib_stubs.o
+                                                  lib/newlib.a(_syscalls.o)
+_lseek                                            newlib_stubs.o
+                                                  lib/newlib.a(_syscalls.o)
+_open                                             lib/newlib.a(_syscalls.o)
+_read                                             newlib_stubs.o
+                                                  lib/newlib.a(_syscalls.o)
+_readlink                                         lib/newlib.a(_syscalls.o)
+_sbrk                                             newlib_stubs.o
+_sdata                                            lib/newlib.a(_startup.o)
+_sidata                                           lib/newlib.a(_startup.o)
+_start                                            lib/newlib.a(_startup.o)
+                                                  entry.o
+_stat                                             newlib_stubs.o
+                                                  lib/newlib.a(_syscalls.o)
+_symlink                                          lib/newlib.a(_syscalls.o)
+_times                                            newlib_stubs.o
+                                                  lib/newlib.a(_syscalls.o)
+_unlink                                           newlib_stubs.o
+                                                  lib/newlib.a(_syscalls.o)
+_wait                                             newlib_stubs.o
+                                                  lib/newlib.a(_syscalls.o)
+_write                                            newlib_stubs.o
+                                                  lib/newlib.a(_syscalls.o)
+abort                                             lib/newlib.a(_exit.o)
+                                                  lib/newlib.a(assert.o)
+access_cache                                      c_entry.o
+access_cache_index                                c_entry.o
+assert_failed                                     lib/newlib.a(assert.o)
+                                                  lib/libstm32.a(misc.o)
+                                                  lib/libstm32.a(stm32f10x_spi.o)
+                                                  lib/libstm32.a(stm32f10x_rtc.o)
+                                                  lib/libstm32.a(stm32f10x_rcc.o)
+                                                  lib/libstm32.a(stm32f10x_pwr.o)
+                                                  lib/libstm32.a(stm32f10x_gpio.o)
+                                                  lib/libstm32.a(stm32f10x_flash.o)
+                                                  lib/libstm32.a(stm32f10x_exti.o)
+assert_failed(unsigned char*, unsigned long)      c_entry.o
+custom_asm                                        entry.o
+environ                                           lib/newlib.a(_syscalls.o)
+errno                                             lib/newlib.a(_syscalls.o)
+                                                  newlib_stubs.o
+interrupt_initialize                              c_entry.o
+kill                                              lib/newlib.a(_syscalls.o)
+main                                              c_entry.o
+                                                  lib/newlib.a(_startup.o)
+                                                  entry.o
+mfrc522_get_card_serial                           lib/hardware_libs.a(mfrc522.o)
+                                                  c_entry.o
+mfrc522_init                                      lib/hardware_libs.a(mfrc522.o)
+mfrc522_read                                      lib/hardware_libs.a(mfrc522.o)
+                                                  c_entry.o
+mfrc522_request                                   lib/hardware_libs.a(mfrc522.o)
+mfrc522_reset                                     lib/hardware_libs.a(mfrc522.o)
+mfrc522_to_card                                   lib/hardware_libs.a(mfrc522.o)
+mfrc522_write                                     lib/hardware_libs.a(mfrc522.o)
+                                                  c_entry.o
+raise                                             lib/newlib.a(_syscalls.o)
+rc522_irq_prepare()                               c_entry.o
+rc522_release                                     binds/binds.a(spi_binds.o)
+                                                  lib/hardware_libs.a(mfrc522.o)
+rc522_select                                      binds/binds.a(spi_binds.o)
+                                                  lib/hardware_libs.a(mfrc522.o)
+reset_asm                                         entry.o
+                                                  c_entry.o
+rfid_irq_tag_handler()                            c_entry.o
+spi_transmit                                      binds/binds.a(spi_binds.o)
+                                                  lib/hardware_libs.a(mfrc522.o)
