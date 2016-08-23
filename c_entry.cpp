@@ -18,10 +18,9 @@
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-SPI_InitTypeDef SPI_InitStructure;
 GPIO_InitTypeDef GPIO_InitStructure;
 TIM_TimeBaseInitTypeDef TIM_TimeBaseInitStructure;
-TIM_OCInitTypeDef TIM_OCInitSructure;
+TIM_OCInitTypeDef TIM_OCInitStructure;
 ErrorStatus HSEStartUpStatus;
 
 /* Private function prototypes -----------------------------------------------*/
@@ -29,7 +28,6 @@ void RCC_Configuration(void);
 void NVIC_Configuration(void);
 void Delay(vu32 nCount);
 extern "C" void custom_asm();
-void rc522_irq_prepare();
 void RTC_Configuration();
 
 extern "C" void reset_asm();
@@ -101,110 +99,19 @@ extern "C" void WRONG_IRQ_EXCEPTION()
 	while (1) {}
 }
 
+
 extern "C" void EXTI4_IRQHandler()
 {
 	while (1) {}
 }
 
-typedef struct {
-	uint8_t tag_id[4];
-	uint8_t flags;
-	uint32_t cached;
-} tag_cache_entry;
-
-tag_cache_entry access_cache[100];
-uint16_t access_cache_index = 0;
-
-void rfid_irq_tag_handler()
-{
-	__disable_irq();
-	uint8_t tag_id[4];
-	uint8_t status = mfrc522_get_card_serial(tag_id);
-	__enable_irq();
-
-	if (status == CARD_FOUND) {
-		static uint8_t led_state = 0;
-		led_state ? GPIO_SetBits(GPIOA, GPIO_Pin_1) : GPIO_ResetBits(GPIOA, GPIO_Pin_1);
-		led_state ^= 1;
-
-		// Check if tag was cached.
-		uint8_t exists = 0;
-		for (uint16_t i = 0; i < access_cache_index; ++i) {
-			if (*((uint32_t *) &(access_cache[i].tag_id[0])) == *((uint32_t *) &(tag_id[0]))) {
-				exists = 1;
-				break;
-			}
-		}
-
-		// If no, request data from network and cache result.
-		if (exists)
-		{
-			uint8_t y = 3;
-		}
-		else if (access_cache_index < sizeof(access_cache)) {
-
-	      		tag_cache_entry cache;
-
-			memcpy(cache.tag_id, tag_id, 4);
-			cache.flags = 0xff;
-			cache.cached = RTC_GetCounter();
-
-			access_cache[access_cache_index++] = cache;
-		}
-
-	}
-
-	// Activate timer.
-	rc522_irq_prepare();
-}
 
 extern "C" void EXTI15_10_IRQHandler()
 {
-	// Get active interrupts from RC522.
-	uint8_t mfrc522_com_irq_reg = mfrc522_read(ComIrqReg);
-
-	// If some PICC answered handle it to retrieve additional data from it.
-	if (mfrc522_com_irq_reg & (1 << RxIEn)) {
-		//static uint8_t led_state = 0;
-
-		// Acknowledge receive irq.
-		mfrc522_write(ComIrqReg, 1 << RxIEn);
-
-		// Attempt to retrieve tag ID and in case of success check node access.
-		rfid_irq_tag_handler();
-
-		rc522_irq_prepare();
-	}
-	// If it's timer IRQ then request RC522 to start looking for CARD again
-	// and back control to the main thread.
-	else if (mfrc522_com_irq_reg & TimerIEn) {
-		// Down timer irq.
-		mfrc522_write(ComIrqReg, TimerIEn);
-
-		// As was checked, after Transceive_CMD the FIFO is emptied, so we need put PICC_REQALL
-		// here again, otherwise PICC won't be able response to RC522.
-		mfrc522_write(FIFOLevelReg, mfrc522_read(FIFOLevelReg) | 0x80); // flush FIFO data
-		mfrc522_write(FIFODataReg, PICC_REQALL);
-
-		// Unfortunately Transceive seems not terminates receive stage automatically in PICC doesn't respond.
-		// so we again need activate command to enter transmitter state to pass PICC_REQALL cmd to PICC
-		// otherwise it won't response due to the ISO 14443 standard.
-		mfrc522_write(CommandReg, Transceive_CMD);
-
-		// When data and command are correct issue the transmit operation.
-		mfrc522_write(BitFramingReg, mfrc522_read(BitFramingReg) | 0x80);
-
-		// Start timer. When it will end it again cause this IRQ handler to search the PICC.
-
-		// Clear STM32 irq bit.
-		EXTI_ClearITPendingBit(EXTI_Line10);
-
-		mfrc522_write(ControlReg, 1 << TStartNow);
-		return;
-	}
-
-	EXTI_ClearITPendingBit(EXTI_Line10);
+	while (1) {}
 }
+
+
 
 extern "C" void interrupt_initialize();
 
@@ -212,74 +119,31 @@ extern "C" void __initialize_hardware()
 {
 	/* Enable GPIOC clock */
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
 
-	/* Configure PA.1 as PWM from TIM2_CH2 */
+	/* Configure PA1 as AF */
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-	TIM_TimeBaseStructInit(&TIM_TimeBaseInitStructure);
-	TIM_TimeBaseInitStructure.TIM_Prescaler = 720;
-	TIM_TimeBaseInitStructure.TIM_Period = 250;
-	TIM_TimeBaseInit(TIM4, &TIM_TimeBaseInitStructure);
+	// Enable TIM clock
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
 
-	// Configure TIM to PWM
+	// Configure TIM2 to PWM
+	TIM_TimeBaseStructInit(&TIM_TimeBaseInitStructure);
+//	TIM_TimeBaseInitStructure.TIM_CounterMode = TIM_CounterMode_Up;
+	TIM_TimeBaseInitStructure.TIM_Prescaler = 720;
+	TIM_TimeBaseInitStructure.TIM_Period = 2500;
+//	TIM_TimeBaseInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
+//	TIM_TimeBaseInitStructure.TIM_RepetitionCounter = 0;
+	TIM_TimeBaseInit(TIM2, &TIM_TimeBaseInitStructure);
+
 	TIM_OCStructInit(&TIM_OCInitStructure);
-	TIM_OCInitStructure.TIM_Pulse = 50;
+	TIM_OCInitStructure.TIM_Pulse = 230;
 	TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
 	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
-	TIM_OC1Init(TIM2, &TIM_OCInitStructure);
-
-	// Configure RC522 SPI CS line 12 and reset 11 line.
-	GPIO_InitStructure.GPIO_Pin = RC522_CS_PIN | RC522_RESET_PIN;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-	GPIO_Init(GPIOB, &GPIO_InitStructure);
-
-	// Set reset line to start MFRC55 chip to work and release it's SPI interface.
-	GPIO_SetBits(RC522_GPIO, RC522_RESET_PIN | RC522_CS_PIN);
-
-	// Configure RC522 IRQ pin.
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
-	GPIO_Init(GPIOB, &GPIO_InitStructure);
-
-	GPIO_ResetBits(RC522_GPIO, RC522_IRQ_PIN);
-
-	uint16_t SPIz_Mode = SPI_Mode_Master;
-
-	/* Configure SPIz pins: SCK, MISO and MOSI ---------------------------------*/
-	GPIO_InitStructure.GPIO_Pin = SPIz_PIN_SCK | SPIz_PIN_MOSI;
-	/* Configure SCK and MOSI pins as Alternate Function Push Pull */
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
-
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-
-	GPIO_Init(SPIz_GPIO, &GPIO_InitStructure);
-
-	GPIO_InitStructure.GPIO_Pin = SPIz_PIN_MISO;
-
-	/* Configure MISO pin as Input Floating  */
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
-	GPIO_Init(SPIz_GPIO, &GPIO_InitStructure);
-
-	SPI_InitStructure.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
-	SPI_InitStructure.SPI_Mode = SPI_Mode_Master;
-	SPI_InitStructure.SPI_DataSize = SPI_DataSize_8b;
-	SPI_InitStructure.SPI_CPOL = SPI_CPOL_Low;
-	SPI_InitStructure.SPI_CPHA = SPI_CPHA_1Edge;
-	SPI_InitStructure.SPI_NSS = SPI_NSS_Soft;
-	SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_4;
-
-	SPI_InitStructure.SPI_FirstBit = SPI_FirstBit_MSB;
-	SPI_InitStructure.SPI_CRCPolynomial = 7;
-	SPI_Init(SPIz, &SPI_InitStructure);
-
-	/* Enable SPIz */
-	SPI_Cmd(SPIz, ENABLE);
+//	TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
+	TIM_OC2Init(TIM2, &TIM_OCInitStructure);
 
 	interrupt_initialize();
 }
@@ -288,18 +152,6 @@ extern "C" void __reset_hardware()
 {
 	reset_asm();
 }
-
-void rc522_irq_prepare()
-{
-	mfrc522_write(BitFramingReg, 0x07); // TxLastBists = BitFramingReg[2..0]	???
-
-	// Clear all interrupts flags.
-	mfrc522_write(ComIrqReg, (uint8_t) ~0x80);
-
-	// Start timer.
-	mfrc522_write(ControlReg, 1 << TStartNow);
-}
-
 extern "C" int main(void)
 {
 	//rmfrc522_init();
@@ -311,7 +163,8 @@ extern "C" int main(void)
 
 	//rc522_irq_prepare();
 
-
+//	TIM_ITConfig(TIM2, TIM_IT_Update, ENABLE);
+	TIM_Cmd(TIM2, ENABLE);
 
 	while (1)
 	{
@@ -420,11 +273,6 @@ void RCC_Configuration(void)
 	//enable AFIO clock
     	RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
 
-	/* Enable GPIO clock for SPIz */
-	RCC_APB2PeriphClockCmd(SPIz_GPIO_CLK | RCC_APB2Periph_AFIO, ENABLE);
-
-	/* Enable SPIz Periph clock */
-	RCC_APB1PeriphClockCmd(SPIz_CLK, ENABLE);
 }
 
 /*******************************************************************************
