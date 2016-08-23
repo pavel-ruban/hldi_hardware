@@ -1,0 +1,6 @@
+display /t ints
+display /t divIen
+display /t comIen
+display /t status
+display /t status2
+

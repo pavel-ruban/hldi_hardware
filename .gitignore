@@ -1,0 +1,14 @@
+*.swo
+*.swp
+*.o
+*.bin
+*.elf
+*.map
+*.Map
+*.a
+*.out
+test
+tags
+tools.txt
+.gdbinit
+*.backup
