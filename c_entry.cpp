@@ -9,10 +9,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include <stdint.h>
 #include <stm32f10x_conf.h>
-#include <spi_binds.h>
-#include <rc522_binds.h>
-#include <mfrc522.h>
-#include <cstring>
+#include <led.hpp>
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -31,40 +28,6 @@ extern "C" void custom_asm();
 void RTC_Configuration();
 
 extern "C" void reset_asm();
-
-using namespace std;
-/*
-class rgb()
-{
-	uint32_t time_units;
-	uint32_t on_interval;
-	uint32_t off_interval;
-	uint32_t color;
-	bool blink;
-
-	rgb(GPIO_TypeDef *led_port, uint16_t led_pin)
-	{
-		// Need to enable clock on APB2 before use
-		GPIO_InitTypeDef led_init;
-		GPIO_InitStructure.GPIO_Pin = led_pin;
-		GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
-		GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-		GPIO_Init(led_port, &led_init);
-		blink = 0;
-	}
-
-	void on()
-	{
-	}
-
-	void off()
-	{
-	}
-
-
-
-}
-*/
 
 extern "C" void __initialize_hardware_early()
 {
@@ -118,33 +81,6 @@ extern "C" void interrupt_initialize();
 extern "C" void __initialize_hardware()
 {
 	/* Enable GPIOC clock */
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
-
-	/* Configure PA1 as AF */
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
-	GPIO_Init(GPIOA, &GPIO_InitStructure);
-
-	// Enable TIM clock
-	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
-
-	// Configure TIM2 to PWM
-	TIM_TimeBaseStructInit(&TIM_TimeBaseInitStructure);
-//	TIM_TimeBaseInitStructure.TIM_CounterMode = TIM_CounterMode_Up;
-	TIM_TimeBaseInitStructure.TIM_Prescaler = 720;
-	TIM_TimeBaseInitStructure.TIM_Period = 2500;
-//	TIM_TimeBaseInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
-//	TIM_TimeBaseInitStructure.TIM_RepetitionCounter = 0;
-	TIM_TimeBaseInit(TIM2, &TIM_TimeBaseInitStructure);
-
-	TIM_OCStructInit(&TIM_OCInitStructure);
-	TIM_OCInitStructure.TIM_Pulse = 230;
-	TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
-	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
-//	TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
-	TIM_OC2Init(TIM2, &TIM_OCInitStructure);
-
 	interrupt_initialize();
 }
 
@@ -163,17 +99,11 @@ extern "C" int main(void)
 
 	//rc522_irq_prepare();
 
-//	TIM_ITConfig(TIM2, TIM_IT_Update, ENABLE);
-	TIM_Cmd(TIM2, ENABLE);
+	led my_led(LED_TYPE_GREEN, GPIOA, GPIO_Pin_1);
 
 	while (1)
 	{
-	//	uint32_t delay = 10000000;
 		uint32_t clock = RTC_GetCounter();
-	//	Delay(delay);
-	//	GPIO_SetBits(GPIOA, GPIO_Pin_1);
-	//	Delay(delay);
-	//	GPIO_ResetBits(GPIOA, GPIO_Pin_1);
 	}
 }
 

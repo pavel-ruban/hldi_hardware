@@ -3,7 +3,7 @@
 COMPILE_OPTS = -mcpu=cortex-m3 -mthumb -DSTM32F10X_MD -DUSE_STDPERIPH_DRIVER -DHSE_VALUE=8000000 #-Wall
 INCLUDE_DIRS = -I include -I system/include/cmsis -I system/include/stm32f1-stdperiph -I system/include -I binds/include
 
-LIBS_INCLUDE_DIRS = -I $(HARDWARE_LIBS_DIR)/rc522
+LIBS_INCLUDE_DIRS = -I $(HARDWARE_LIBS_DIR)/rc522 -I $(HARDWARE_LIBS_DIR)/led 
 INCLUDE_DIRS += $(LIBS_INCLUDE_DIRS)
 
 LIBRARY_DIRS = -L lib
@@ -91,7 +91,7 @@ size:
 	arm-none-eabi-size -A -d $(FIRMWARE_ELF)
 
 debug:
-	$(GDB)  -ex 'set confirm off' -iex 'target remote :4242' -iex 'file $(FIRMWARE_ELF)' 
+	$(GDB)  -ex 'set confirm off' -iex 'target remote :4242' -iex 'file $(FIRMWARE_ELF)'
 	#--with-system-gdbinit=.gdbinit
 
 # newlib.a
@@ -143,10 +143,12 @@ $(BINDS_OUT): $(BINDS_OBJS)
 	$(AR) $(ARFLAGS) $@ $(BINDS_OBJS)
 
 HARDWARE_LIBS_OBJS = 					\
-	$(HARDWARE_LIBS_DIR)/rc522/mfrc522.o
+	$(HARDWARE_LIBS_DIR)/rc522/mfrc522.o            \
+	$(HARDWARE_LIBS_DIR)/led/led.o
 
 $(HARDWARE_LIBS_OUT): $(HARDWARE_LIBS_OBJS)
 	$(AR) $(ARFLAGS) $@ $(HARDWARE_LIBS_OBJS)
+
 
 clean:
 	-find . -type f -name '*.o' -follow -exec rm {} \;
