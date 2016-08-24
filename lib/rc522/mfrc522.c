@@ -21,8 +21,7 @@
  *
  */
 
-#include <mfrc522.h>
-#include <spi_binds.h>
+#include <binds.h>
 
 void mfrc522_init()
 {
@@ -61,8 +60,8 @@ void mfrc522_init()
 void mfrc522_write(uint8_t reg, uint8_t data)
 {
 	rc522_select();
-	spi_transmit((reg << 1) & 0x7E, SKIP_RECEIVE);
-	spi_transmit(data, SKIP_RECEIVE);
+	spi_transmit((reg << 1) & 0x7E, SKIP_RECEIVE, RC522_SPI_CH);
+	spi_transmit(data, SKIP_RECEIVE, RC522_SPI_CH);
 	rc522_release();
 }
 
@@ -70,8 +69,8 @@ uint8_t mfrc522_read(uint8_t reg)
 {
 	uint8_t data;
 	rc522_select();
-	spi_transmit(((reg << 1) & 0x7E) | 0x80, SKIP_RECEIVE);
-	data = spi_transmit(0x00, RECEIVE_BYTE);
+	spi_transmit(((reg << 1) & 0x7E) | 0x80, SKIP_RECEIVE, RC522_SPI_CH);
+	data = spi_transmit(0x00, RECEIVE_BYTE, RC522_SPI_CH);
 	rc522_release();
 	return data;
 }
