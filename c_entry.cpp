@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <stm32f10x_conf.h>
 #include <led.hpp>
+#pragma pack(1)
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -99,7 +100,8 @@ extern "C" int main(void)
 
 	//rc522_irq_prepare();
 
-	led my_led(LED_TYPE_GREEN, GPIOA, GPIO_Pin_1);
+	test_f(0xDEADBE, 0xFA, 0x1, 0x2,0x3,0x4,0x5,0x6);
+	led my_led(LED_TYPE_GREEN, GPIOA, GPIO_Pin_1, 0x7);
 
 	while (1)
 	{
