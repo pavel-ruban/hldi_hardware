@@ -26,11 +26,11 @@ private:
 
 	void _init_output_channel(uint32_t intensity, uint16_t led_pin);
 public:
-	led(uint8_t led_type, GPIO_TypeDef *led_port, uint16_t led_pin, uint8_t intensity);
-//	led(uint8_t led_type, GPIO_TypeDef *led_port, uint16_t led_pin_r, uint16_t led_pin_g, uint16_t led_pin_b, uint32_t color = 0xFFFFFF);
+	led(uint8_t led_type, GPIO_TypeDef *led_port, uint16_t led_pin, uint8_t intensity = 0x2F);
+	led(uint8_t led_type, GPIO_TypeDef *led_port, uint16_t led_pin_r, uint16_t led_pin_g, uint16_t led_pin_b, uint32_t color = 0xFFFFFF);
 	void on();
 	void off();
 	void set_color(uint32_t color);
 };
-void test_f(uint32_t tp32,uint8_t tp8, uint32_t tp32_1, uint32_t tp32_2, uint32_t tp32_3, uint32_t tp32_4, uint32_t tp32_5, uint32_t tp32_6);
+//void test_f(uint32_t tp32,uint8_t tp8, uint32_t tp32_1, uint32_t tp32_2, uint32_t tp32_3, uint32_t tp32_4, uint32_t tp32_5, uint32_t tp32_6);
 #endif

@@ -3,7 +3,7 @@ TARGET_OPTS = -mcpu=cortex-m3 -mthumb
 COMPILE_OPTS = $(TARGET_OPTS) -DSTM32F10X_MD -DUSE_STDPERIPH_DRIVER -DHSE_VALUE=8000000 -Wall
 INCLUDE_DIRS = -I include -I system/include/cmsis -I system/include/stm32f1-stdperiph -I system/include -I binds/include -I /usr/local/include/include -I lib/ethernet -I lib/enc28j60
 
-LIBS_INCLUDE_DIRS = -I $(HARDWARE_LIBS_DIR)/rc522
+LIBS_INCLUDE_DIRS = -I $(HARDWARE_LIBS_DIR)/rc522 -I$(HARDWARE_LIBS_DIR)/led
 INCLUDE_DIRS += $(LIBS_INCLUDE_DIRS)
 
 LIBRARY_DIRS = -L lib -L /usr/local/lib/
@@ -158,7 +158,8 @@ HARDWARE_LIBS_OBJS = 					\
 	$(HARDWARE_LIBS_DIR)/ethernet/dhcp.o		\
 	$(HARDWARE_LIBS_DIR)/ethernet/udp.o		\
 	$(HARDWARE_LIBS_DIR)/ethernet/dns.o		\
-	$(HARDWARE_LIBS_DIR)/enc28j60/enc28j60.o
+	$(HARDWARE_LIBS_DIR)/enc28j60/enc28j60.o 	\
+	$(HARDWARE_LIBS_DIR)/led/led.o
 
 $(HARDWARE_LIBS_OUT): $(HARDWARE_LIBS_OBJS)
 	$(AR) $(ARFLAGS) $@ $(HARDWARE_LIBS_OBJS)
