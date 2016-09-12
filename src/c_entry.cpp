@@ -11,6 +11,7 @@
 #include <stm32f10x_conf.h>
 #include <led.hpp>
 #pragma pack(1)
+bool _turn_on;
 
 extern "C" {
 #include <binds.h>
@@ -34,6 +35,7 @@ ErrorStatus HSEStartUpStatus;
 extern uint8_t mac_addr[6];
 extern uint8_t enc28j60_revid;
 volatile uint32_t ticks;
+int timerValue = 0;
 
 typedef struct {
 	uint8_t tag_id[4];
@@ -232,6 +234,7 @@ void access_denied_signal();
 //extern uint16_t enc28j60_rxrdpt;
 extern "C" void TIM2_IRQHandler()
 {
+    TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
 //    open_node();
 //    if (TIM_GetITStatus(TIM2, TIM_IT_Update) != RESET)
 //    {
@@ -305,6 +308,13 @@ extern "C" void TIM2_IRQHandler()
 //		}
 //	}
 //    }
+}
+
+extern "C" void TIM3_IRQHandler(){
+    if(_turn_on)
+        _turn_on = false;
+    else
+        _turn_on = true;
 }
 
 extern "C" void SysTick_Handler(void)
@@ -499,6 +509,20 @@ void tag_event_queue_processor()
 //	}
 }
 
+void InitializeTimer()
+{
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
+
+    TIM_TimeBaseInitTypeDef timerInitStructure;
+    timerInitStructure.TIM_Prescaler = 40000;
+    timerInitStructure.TIM_CounterMode = TIM_CounterMode_Up;
+    timerInitStructure.TIM_Period = 500;
+    timerInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
+    timerInitStructure.TIM_RepetitionCounter = 0;
+    TIM_TimeBaseInit(TIM3, &timerInitStructure);
+    TIM_Cmd(TIM3, ENABLE);
+}
+
 extern "C" int main(void)
 {
 //	rc522_pcd_select(RC522_PCD_1);
@@ -514,15 +538,30 @@ extern "C" int main(void)
 //	// Check if timer started.
 //	uint8_t status = mfrc522_read(Status1Reg);
 //	uint32_t poll_time, dns_time;
+    interrupt_initialize();
 //
-	__disable_irq();
+	__enable_irq();
+    InitializeTimer();
 
+
+   /* RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
+
+    TIM_TimeBaseInitTypeDef TimerInitStructure;
+    TimerInitStructure.TIM_Prescaler = 40000;
+    TimerInitStructure.TIM_CounterMode = TIM_CounterMode_Up;
+    TimerInitStructure.TIM_Period = 180;
+    TimerInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
+    TimerInitStructure.TIM_RepetitionCounter = 0;
+    TIM_TimeBaseInit(TIM3, &TimerInitStructure);
+    TIM_Cmd(TIM3, ENABLE);
+
+    TIM_ITConfig(TIM3, TIM_IT_Update, ENABLE); */
 //	rc522_irq_prepare();
 //
 //	rc522_pcd_select(RC522_PCD_1);
 //	rc522_irq_prepare();
 
-	led my_led_r(LED_TYPE_RGB, GPIOA,  GPIO_Pin_1, GPIO_Pin_2, GPIO_Pin_3, 0xFF0000);
+	//led my_led_r(LED_TYPE_RGB, GPIOA,  GPIO_Pin_1, GPIO_Pin_2, GPIO_Pin_3, 0xFF0000);
 
 	// Workers.
 	while (1)
@@ -547,11 +586,18 @@ extern "C" int main(void)
 		//	dns_time = ticks;
 		//	//dns_query("com");
 		//}
-		Delay(10000000);
-		my_led_r.set_color(0xFF0000);
-		Delay(10000000);
-		my_led_r.set_color(0x00FF00);
-		Delay(10000000);
+		/*if (_turn_on) {
+            my_led_r.set_color(0xFF0000);
+        }else
+		my_led_r.set_color(0x00FF00); */
+
+        timerValue = TIM_GetCounter(TIM3);
+        if (timerValue == 400)
+            GPIO_WriteBit(GPIOA, GPIO_Pin_1, Bit_SET);
+        else if (timerValue == 500)
+            GPIO_WriteBit(GPIOA, GPIO_Pin_1, Bit_RESET);
+
+	/*	Delay(10000000);
 		my_led_r.set_color(0x0000FF);
 		Delay(10000000);
 		my_led_r.set_color(0xFFAA00);
@@ -560,7 +606,7 @@ extern "C" int main(void)
 		Delay(10000000);
 		my_led_r.set_color(0xFF00AA);
 		Delay(10000000);
-		my_led_r.set_color(0x000000);
+		my_led_r.set_color(0x000000); */
 
 	}
 }
@@ -586,7 +632,7 @@ void interrupt_initialize()
 //	GPIO_EXTILineConfig(GPIO_PortSourceGPIOA, GPIO_PinSource1);
 
 	// IRQ Driven Button.
-	EXTI_InitStructure.EXTI_Line = EXTI_Line0;
+/*	EXTI_InitStructure.EXTI_Line = EXTI_Line0;
 	EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
 	EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
 	EXTI_InitStructure.EXTI_LineCmd = ENABLE;
@@ -632,11 +678,11 @@ void interrupt_initialize()
 	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x07;
 	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x07;
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-	NVIC_Init(&NVIC_InitStructure);
+	NVIC_Init(&NVIC_InitStructure); */
 
 	// TIM2 timer, used as on second watchdog for enc28j60, rc522.
 	// Also do some periodical not priority calls.
-	NVIC_InitStructure.NVIC_IRQChannel = TIM2_IRQn;
+	NVIC_InitStructure.NVIC_IRQChannel = TIM3_IRQn;
 	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x0f;
 	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x0f;
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
@@ -644,11 +690,11 @@ void interrupt_initialize()
 
 	// Systick timer, used for milliseconds granularity
 	// and milliseconds set timeouts.
-	NVIC_InitStructure.NVIC_IRQChannel = SysTick_IRQn;
-	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x00;
-	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x00;
-	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-	NVIC_Init(&NVIC_InitStructure);
+//	NVIC_InitStructure.NVIC_IRQChannel = SysTick_IRQn;
+//	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x00;
+//	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x00;
+//	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+//	NVIC_Init(&NVIC_InitStructure);
 }
 
 extern "C" void initialize_systick()

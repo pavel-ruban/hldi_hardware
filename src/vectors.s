@@ -19,6 +19,8 @@
 .word	EXTI4_IRQHandler
 .org	0xB0
 .word	TIM2_IRQHandler
+.org    0xB4
+.word   TIM3_IRQHandler
 .org	0xDC
 .word	WRONG_IRQ_EXCEPTION
 .org	0xE0
