@@ -10,6 +10,9 @@
 #include <stdint.h>
 #include <stm32f10x_conf.h>
 #include <led.hpp>
+#include "lib/led/led.hpp"
+//#include <include/stm32f10x_conf.h>   ///?????
+
 #pragma pack(1)
 bool _turn_on;
 
@@ -315,6 +318,8 @@ extern "C" void TIM3_IRQHandler(){
         _turn_on = false;
     else
         _turn_on = true;
+
+    TIM_ClearITPendingBit(TIM3, TIM_IT_Update);
 }
 
 extern "C" void SysTick_Handler(void)
@@ -425,6 +430,16 @@ extern "C" void initialize_systick();
 
 extern "C" void __initialize_hardware()
 {
+
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
+
+    // Configure GPIO
+    GPIO_InitTypeDef GPIO_InitStructure;
+
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+    GPIO_Init(GPIOA, &GPIO_InitStructure);
 //	// Avoid peripheal libs additional init code.
 //	#define RCC_APB2Periph_SPIz_Enabled
 //	#define RCC_APB2Periph_SPIy_Enabled
@@ -511,16 +526,18 @@ void tag_event_queue_processor()
 
 void InitializeTimer()
 {
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
-
+    RCC_ClocksTypeDef RCC_Clocks;
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE); //Подвесили таймер 3 на ABP1 шину
+    RCC_GetClocksFreq(&RCC_Clocks);
     TIM_TimeBaseInitTypeDef timerInitStructure;
-    timerInitStructure.TIM_Prescaler = 40000;
+    timerInitStructure.TIM_Prescaler = RCC_Clocks.HCLK_Frequency / 10000;
     timerInitStructure.TIM_CounterMode = TIM_CounterMode_Up;
-    timerInitStructure.TIM_Period = 500;
+    timerInitStructure.TIM_Period = 10000;
     timerInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
     timerInitStructure.TIM_RepetitionCounter = 0;
     TIM_TimeBaseInit(TIM3, &timerInitStructure);
     TIM_Cmd(TIM3, ENABLE);
+    TIM_ITConfig(TIM3, TIM_IT_Update, ENABLE);
 }
 
 extern "C" int main(void)
@@ -542,6 +559,8 @@ extern "C" int main(void)
 //
 	__enable_irq();
     InitializeTimer();
+    led my_led(LED_TYPE_BLUE,GPIOA,GPIO_Pin_1,0xFF);
+    my_led.set_color(0x30000000);
 
 
    /* RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
@@ -592,21 +611,11 @@ extern "C" int main(void)
 		my_led_r.set_color(0x00FF00); */
 
         timerValue = TIM_GetCounter(TIM3);
-        if (timerValue == 400)
-            GPIO_WriteBit(GPIOA, GPIO_Pin_1, Bit_SET);
-        else if (timerValue == 500)
-            GPIO_WriteBit(GPIOA, GPIO_Pin_1, Bit_RESET);
+        if (_turn_on)
+            my_led.off();
+        else
+            my_led.on();
 
-	/*	Delay(10000000);
-		my_led_r.set_color(0x0000FF);
-		Delay(10000000);
-		my_led_r.set_color(0xFFAA00);
-		Delay(10000000);
-		my_led_r.set_color(0x00AAAA);
-		Delay(10000000);
-		my_led_r.set_color(0xFF00AA);
-		Delay(10000000);
-		my_led_r.set_color(0x000000); */
 
 	}
 }
