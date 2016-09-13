@@ -1,8 +1,7 @@
 # setup
 TARGET_OPTS = -mcpu=cortex-m3 -mthumb
 COMPILE_OPTS = $(TARGET_OPTS) -DSTM32F10X_MD -DUSE_STDPERIPH_DRIVER -DHSE_VALUE=8000000 -Wall
-INCLUDE_DIRS = -I include -I system/include/cmsis -I system/include/stm32f1-stdperiph -I system/include -I binds/include -I /usr/local/include/include -I lib/ethernet -I lib/enc28j60
-
+INCLUDE_DIRS =  -I lib -I include -I system/include/cmsis -I system/include/stm32f1-stdperiph -I system/include -I binds/include -I /usr/local/include/include -I lib/ethernet -I lib/enc28j60
 LIBS_INCLUDE_DIRS = -I $(HARDWARE_LIBS_DIR)/rc522 -I$(HARDWARE_LIBS_DIR)/led
 INCLUDE_DIRS += $(LIBS_INCLUDE_DIRS)
 
@@ -86,8 +85,7 @@ flash: $(FIRMWARE_BIN)
 .PHONY: fsize
 
 gdbsrv:
-	st-util
-	#st-util > /dev/pts/5 2>&1 &
+	openvt st-util
 
 fsize:
 	arm-none-eabi-nm --print-size --size-sort --radix=d $(FIRMWARE_ELF)
@@ -95,7 +93,7 @@ fsize:
 size:
 	arm-none-eabi-size -A -d $(FIRMWARE_ELF)
 
-debug:
+debug: gdbsrv
 	$(GDB)  -ex 'set confirm off' -iex 'target remote :4242' -iex 'file $(FIRMWARE_ELF)'
 
 # newlib.a

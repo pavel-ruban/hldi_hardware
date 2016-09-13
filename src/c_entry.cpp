@@ -9,7 +9,9 @@
 /* Includes ------------------------------------------------------------------*/
 #include <stdint.h>
 #include <stm32f10x_conf.h>
-#include <led.hpp>
+#include "include/utils.h"
+#include <led/led.hpp>
+#include <config.h>
 #include "lib/led/led.hpp"
 //#include <include/stm32f10x_conf.h>   ///?????
 
@@ -34,6 +36,7 @@ extern "C" {
 //SPI_InitTypeDef SPI_InitStructure;
 GPIO_InitTypeDef GPIO_InitStructure;
 ErrorStatus HSEStartUpStatus;
+led *leds[LED_QUANTITY] = {NULL};
 
 extern uint8_t mac_addr[6];
 extern uint8_t enc28j60_revid;
@@ -324,9 +327,27 @@ extern "C" void TIM3_IRQHandler(){
 
 extern "C" void SysTick_Handler(void)
 {
-	ticks++;
 
-//	open_node();
+	for (int i = 0; i < LED_QUANTITY; i++) {
+		if (leds[i] != NULL) {
+			if (leds[i]->blink) {
+				if (!leds[i]->get_blink_state() ) {
+                    if (leds[i]->on_time == ticks) {
+                        leds[i]->set_blink_state(1);
+                        leds[i]->on_time = ticks;
+                        leds[i]->off_time = ticks + leds[i]->get_on_interval();
+                    }
+				} else if(leds[i]->get_blink_state()) {
+                    if (leds[i]->off_time == ticks) {
+                        leds[i]->set_blink_state(0);
+                        leds[i]->off_time = ticks;
+                        leds[i]->on_time = ticks + leds[i]->get_off_interval();
+                    }
+                }
+			}
+		}
+	}
+	ticks++;
 }
 
 extern "C" void EXTI2_IRQHandler()
@@ -431,15 +452,23 @@ extern "C" void initialize_systick();
 extern "C" void __initialize_hardware()
 {
 
+
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
 
     // Configure GPIO
-    GPIO_InitTypeDef GPIO_InitStructure;
 
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
+
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
+	GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+
 //	// Avoid peripheal libs additional init code.
 //	#define RCC_APB2Periph_SPIz_Enabled
 //	#define RCC_APB2Periph_SPIy_Enabled
@@ -474,7 +503,7 @@ extern "C" void __initialize_hardware()
 //
 //	interrupt_initialize();
 //	initialize_timer();
-//	initialize_systick();
+	initialize_systick();
 }
 
 extern "C" void __reset_hardware()
@@ -542,6 +571,8 @@ void InitializeTimer()
 
 extern "C" int main(void)
 {
+	uint32_t a = 70,b = 2,c = 1;
+	uint8_t a_f,b_f,c_f, ab_f, ac_f, bc_f;
 //	rc522_pcd_select(RC522_PCD_1);
 //	mfrc522_init();
 //
@@ -559,9 +590,15 @@ extern "C" int main(void)
 //
 	__enable_irq();
     InitializeTimer();
-    led my_led(LED_TYPE_BLUE,GPIOA,GPIO_Pin_1,0xFF);
-    my_led.set_color(0x30000000);
+    //led my_led(LED_TYPE_BLUE,GPIOA,GPIO_Pin_1,0xFF);
+    //led my_led2(LED_TYPE_BLUE,GPIOA,GPIO_Pin_2,0xFF);
+    //led my_led3(LED_TYPE_BLUE,GPIOA,GPIO_Pin_3,0xAF);
+	led rgb_led(LED_TYPE_RGB, GPIOA, GPIO_Pin_1, GPIO_Pin_2, GPIO_Pin_3, LED_COLOR_WHITE);
+	leds[0] =  &rgb_led;
+	leds[0]->on();
+	leds[0]->set_blink(1, 1000, 1000);
 
+    //my_led.set_color(0x30000000);
 
    /* RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
 
@@ -583,6 +620,7 @@ extern "C" int main(void)
 	//led my_led_r(LED_TYPE_RGB, GPIOA,  GPIO_Pin_1, GPIO_Pin_2, GPIO_Pin_3, 0xFF0000);
 
 	// Workers.
+	//rgb_led.set_color(0x450201);
 	while (1)
 	{
 		//// If DHCPD expired or still not assigng request for new net settings.
@@ -610,12 +648,92 @@ extern "C" int main(void)
         }else
 		my_led_r.set_color(0x00FF00); */
 
-        timerValue = TIM_GetCounter(TIM3);
-        if (_turn_on)
-            my_led.off();
-        else
-            my_led.on();
 
+
+//
+//		if (a <= 255 && !a_f && (!ab_f && !ac_f && !bc_f)){
+//
+//			a++;
+//		}
+//		else if (b <= 255 && !b_f && (!ab_f && !ac_f && !bc_f)) {
+//			a_f = 1;
+//			a = 0;
+//
+//			b++;
+//		}
+//		else if (c <= 255 && !c_f && (!ab_f && !ac_f && !bc_f)) {
+//			b_f = 1;
+//			b = 0;
+//
+//			c++;
+//		} else if (!c_f && (!ab_f && !ac_f && !bc_f)) {
+//			c_f = 1;
+//			c = 0;
+//		}
+//		else if (a <= 255 && !ab_f) {
+//			a++;
+//			b++;
+//		}
+//		else if (!ab_f) {
+//			ab_f = 1;
+//			a = b = 0;
+//		}
+//		else if (a <= 255 && !ac_f) {
+//			a++;
+//			c++;
+//		}
+//		else if (!ac_f) {
+//			ac_f = 1;
+//			a = c = 0;
+//		}
+//		else if (b <= 255 && !bc_f) {
+//			c++;
+//			b++;
+//		}
+//		else if (!bc_f) {
+//			bc_f = 1;
+//			c = b = 0;
+//		}
+//		else {
+//			if (a >= 255){
+//				a = b = c = 0;
+//				bc_f = ab_f = ac_f =a_f = b_f = c_f = 0;
+//			}
+//			a++;b++;c++;
+//		}
+//
+//		rgb_led.set_color((a << 16) & 0xFF0000 | ((b << 8)  & 0xFF00) | (c & 0xFF));
+//		Delay(10000);
+//		Delay(100000);
+//
+//		if (!GPIO_ReadInputDataBit(GPIOA,GPIO_Pin_4)){
+//			a++;
+//			if (a >= 255) a = 0;
+//		}
+//
+//		if (!GPIO_ReadInputDataBit(GPIOA,GPIO_Pin_5)){
+//			b++;
+//			if (b >= 255) b = 0;
+//		}
+//
+//		if (!GPIO_ReadInputDataBit(GPIOA,GPIO_Pin_6)){
+//			c++;
+//			if (c >= 255) c = 0;
+//		}
+//
+//		rgb_led.set_color((a << 16) & 0xFF0000 | ((b << 8)  & 0xFF00) | (c & 0xFF));
+//
+//        timerValue = TIM_GetCounter(TIM3);
+//        if (_turn_on) {
+//            //my_led.off();
+//            //rgb_led.off();
+//            //my_led3.off();
+//        }
+//        else {
+//            //my_led.on();
+//			//rgb_led.on();
+//            //my_led3.on();
+//        }
 
 	}
 }
@@ -699,11 +817,11 @@ void interrupt_initialize()
 
 	// Systick timer, used for milliseconds granularity
 	// and milliseconds set timeouts.
-//	NVIC_InitStructure.NVIC_IRQChannel = SysTick_IRQn;
-//	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x00;
-//	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x00;
-//	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-//	NVIC_Init(&NVIC_InitStructure);
+	NVIC_InitStructure.NVIC_IRQChannel = SysTick_IRQn;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x00;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x00;
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+	NVIC_Init(&NVIC_InitStructure);
 }
 
 extern "C" void initialize_systick()
