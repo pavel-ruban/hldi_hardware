@@ -13,6 +13,8 @@
 .word	SysTick_Handler
 .org	0x58
 .word	EXTI0_IRQHandler
+.org	0x5C
+.word	EXTI1_IRQHandler
 .org	0x60
 .word	EXTI2_IRQHandler
 .org	0x68

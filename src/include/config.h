@@ -1,0 +1,27 @@
+//
+// Created by root on 13/09/16.
+//
+
+#ifndef CONFIG_H
+#define CONFIG_H
+#define LED_QUANTITY 1
+
+// Colors.
+#define LED_COLOR_ORANGE 0xD50700
+#define LED_COLOR_PURPLE 0xFF002F
+#define LED_COLOR_TEAL  0x007F47
+#define LED_COLOR_YELLOW = 0xD50F00
+#define LED_COLOR_PINK 0xEB00005
+#define LED_COLOR_RAINBOW 0x46090D
+#define LED_COLOR_WHITE  0x8E1313
+#define LED_COLOR_RED  0xFF0000
+#define LED_COLOR_GREEN  0x00FF00
+#define LED_COLOR_BLUE  0x00FF00
+
+// Statuses.
+#define MACHINE_STATE_IDLE 1
+#define MACHINE_STATE_CALL 2
+#define MACHINE_STATE_OPEN 3
+#define MACHINE_STATE_INIT 4
+
+#endif //CONFIG_H

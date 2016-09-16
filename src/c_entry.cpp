@@ -11,6 +11,7 @@
 #include <stm32f10x_conf.h>
 #include "include/utils.h"
 #include <led/led.hpp>
+#include "include/scheduler.h"
 #include <config.h>
 #include "lib/led/led.hpp"
 //#include <include/stm32f10x_conf.h>   ///?????
@@ -24,6 +25,7 @@ extern "C" {
 }
 
 #include "include/queue.h"
+#include "include/array.h"
 
 #define EVENT_ACCESS_REQ 1
 #define ACCESS_GRANTED 0x1
@@ -42,6 +44,7 @@ extern uint8_t mac_addr[6];
 extern uint8_t enc28j60_revid;
 volatile uint32_t ticks;
 int timerValue = 0;
+uint8_t machine_status;
 
 typedef struct {
 	uint8_t tag_id[4];
@@ -57,6 +60,7 @@ typedef struct {
 
 Queue<tag_cache_entry, 100> tag_cache;
 Queue<tag_event, 100> tag_events;
+Scheduler<20> scheduler;
 
 /* Private function prototypes -----------------------------------------------*/
 void RCC_Configuration(void);
@@ -65,6 +69,8 @@ void Delay(vu32 nCount);
 extern "C" void custom_asm();
 void rc522_irq_prepare();
 void RTC_Configuration();
+void status_call();
+void status_open();
 
 extern "C" void reset_asm();
 
@@ -370,9 +376,21 @@ extern "C" void EXTI2_IRQHandler()
 
 extern "C" void EXTI0_IRQHandler()
 {
+    status_open();
 	EXTI_ClearITPendingBit(EXTI_Line0);
+
+
 //	open_node();
 }
+
+extern "C" void EXTI1_IRQHandler()
+{
+    EXTI_ClearITPendingBit(EXTI_Line1);
+    //status_call();
+//	open_node();
+}
+
+
 
 extern "C" void EXTI15_10_IRQHandler()
 {
@@ -458,15 +476,23 @@ extern "C" void __initialize_hardware()
     // Configure GPIO
 
 
+    //RGB led pins
     GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
 
+    //RGB led testing and cofingurating
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+    //Button pin!
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
+    GPIO_Init(GPIOB, &GPIO_InitStructure);
 
 
 //	// Avoid peripheal libs additional init code.
@@ -569,10 +595,46 @@ void InitializeTimer()
     TIM_ITConfig(TIM3, TIM_IT_Update, ENABLE);
 }
 
+void status_idle(){
+    leds[0]->set_color(LED_COLOR_ORANGE);
+    leds[0]->set_blink(1, 500, 500);
+    machine_status = MACHINE_STATE_IDLE;
+}
+
+void status_call(){
+    leds[0]->set_color(LED_COLOR_TEAL);
+    leds[0]->set_blink(1, 100, 100);
+    machine_status = MACHINE_STATE_CALL;
+}
+
+void status_open() {
+    if (leds[0]) {
+        leds[0]->set_color(LED_COLOR_GREEN);
+        leds[0]->set_blink(0, 0, 0);
+        machine_status = MACHINE_STATE_OPEN;
+    }
+
+}
+
 extern "C" int main(void)
 {
 	uint32_t a = 70,b = 2,c = 1;
-	uint8_t a_f,b_f,c_f, ab_f, ac_f, bc_f;
+	//scheduler = Scheduler<20>();
+    Array<int, 20> arr;
+    Array<int, 20>::iterator my_iter(&arr,0);
+    arr.push(24);
+    arr.push(42);
+    arr.push(111);
+    int test1 = *my_iter;
+    int test2 = arr.pop(1);
+    ++my_iter;
+    int test3 = *my_iter;
+
+    int test4 = arr.pop(1);
+    int test5 = *my_iter;
+    int test6 = arr.pop(0);
+
+
 //	rc522_pcd_select(RC522_PCD_1);
 //	mfrc522_init();
 //
@@ -597,6 +659,7 @@ extern "C" int main(void)
 	leds[0] =  &rgb_led;
 	leds[0]->on();
 	leds[0]->set_blink(1, 1000, 1000);
+    status_idle();
 
     //my_led.set_color(0x30000000);
 
@@ -749,8 +812,10 @@ void interrupt_initialize()
 	// GPIO structure used to initialize Button pins
 	// Connect EXTI Lines to Button Pins
 
-//	// PCD1
-//	GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource10);
+//	//BTN_OPEN
+	GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource0);
+    //BTN_CALL
+    GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource1);
 //	// PCD2
 //	GPIO_EXTILineConfig(GPIO_PortSourceGPIOA, GPIO_PinSource11);
 //	// Ethernet
@@ -758,14 +823,33 @@ void interrupt_initialize()
 //	// Button
 //	GPIO_EXTILineConfig(GPIO_PortSourceGPIOA, GPIO_PinSource1);
 
-	// IRQ Driven Button.
-/*	EXTI_InitStructure.EXTI_Line = EXTI_Line0;
+	// IRQ Driven Button BTN_OPEN
+	EXTI_InitStructure.EXTI_Line = EXTI_Line0;
 	EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
 	EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
 	EXTI_InitStructure.EXTI_LineCmd = ENABLE;
 	EXTI_Init(&EXTI_InitStructure);
 
-	// RC522 1 board (PCD).
+    NVIC_InitStructure.NVIC_IRQChannel = EXTI0_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x03;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x03;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
+
+    // IRQ Driven Button BTN_OPEN
+    EXTI_InitStructure.EXTI_Line = EXTI_Line1;
+    EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
+    EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+    EXTI_Init(&EXTI_InitStructure);
+
+    NVIC_InitStructure.NVIC_IRQChannel = EXTI1_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x04;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x04;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
+
+/*	// RC522 1 board (PCD).
 	EXTI_InitStructure.EXTI_Line = EXTI_Line10;
 	EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
 	EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;

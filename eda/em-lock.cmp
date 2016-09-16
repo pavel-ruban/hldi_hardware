@@ -1,0 +1,499 @@
+Cmp-Mod V01 Created by PcbNew   date = Fri 02 Sep 2016 17:07:27 +07
+
+BeginCmp
+TimeStamp = 57C50185
+Path = /57BFAABE
+Reference = P2;
+ValeurCmp = BTN_OPEN;
+IdModule  = I20:JST_XH_B02B-XH-A_02x2.50mm_Straight;
+EndCmp
+
+BeginCmp
+TimeStamp = 57CFC850
+Path = 
+Reference = HOLE1;
+ValeurCmp = MountingHole_3.2mm_M3;
+IdModule  = I20:MountingHole_3.2mm_M3;
+EndCmp
+
+BeginCmp
+TimeStamp = 57C50139
+Path = /57BF0C43
+Reference = D5;
+ValeurCmp = LED_RCBG;
+IdModule  = I20:LED-RGB-5MM_Common_Cathode;
+EndCmp
+
+BeginCmp
+TimeStamp = 57C50162
+Path = /57BFDF5A
+Reference = P1;
+ValeurCmp = BTN_CALL;
+IdModule  = I20:JST_XH_B02B-XH-A_02x2.50mm_Straight;
+EndCmp
+
+BeginCmp
+TimeStamp = 57C5019C
+Path = /57BEE849
+Reference = P3;
+ValeurCmp = BOOT_SEL_CONN;
+IdModule  = I20:Pin_Header_Straight_2x03;
+EndCmp
+
+BeginCmp
+TimeStamp = 57C501E2
+Path = /57BF77F1
+Reference = P5;
+ValeurCmp = PWR_SELECT;
+IdModule  = I20:Pin_Header_Straight_1x03;
+EndCmp
+
+BeginCmp
+TimeStamp = 57C50205
+Path = /57BF83F1
+Reference = P6;
+ValeurCmp = PWR_SW_CONN;
+IdModule  = I20:JST_XH_B02B-XH-A_02x2.50mm_Straight;
+EndCmp
+
+BeginCmp
+TimeStamp = 57C50218
+Path = /57BECD2F
+Reference = P7;
+ValeurCmp = SWD_CONN;
+IdModule  = I20:Pin_Header_Straight_1x04;
+EndCmp
+
+BeginCmp
+TimeStamp = 57C5026C
+Path = /57BF398B
+Reference = P10;
+ValeurCmp = EXT_LED_CONN;
+IdModule  = I20:JST_XH_B04B-XH-A_04x2.50mm_Straight;
+EndCmp
+
+BeginCmp
+TimeStamp = 57C50379
+Path = /57BEDA73
+Reference = SW1;
+ValeurCmp = RST_BTN;
+IdModule  = I20:SW_SPST_B3U-1000P;
+EndCmp
+
+BeginCmp
+TimeStamp = 57C50388
+Path = /57C00A6E
+Reference = U1;
+ValeurCmp = 74LVC2G14;
+IdModule  = I20:SOT-23-6;
+EndCmp
+
+BeginCmp
+TimeStamp = 57C50484
+Path = /57BDD184
+Reference = U2;
+ValeurCmp = STM32F103C8Tx;
+IdModule  = I20:SparkFun-LQFP-48;
+EndCmp
+
+BeginCmp
+TimeStamp = 57C50494
+Path = /57BEF2CC
+Reference = U3;
+ValeurCmp = LD1117S33CTR;
+IdModule  = I20:SOT-223;
+EndCmp
+
+BeginCmp
+TimeStamp = 57C504CD
+Path = /57BDE4AE
+Reference = Y1;
+ValeurCmp = 8MHz;
+IdModule  = I20:Crystal_HC49-U_Vertical;
+EndCmp
+
+BeginCmp
+TimeStamp = 57D813A2
+Path = /57BF514A
+Reference = D4;
+ValeurCmp = LDO-12V;
+IdModule  = I20:Fuse_SMD1206_Wave;
+EndCmp
+
+BeginCmp
+TimeStamp = 57D813B1
+Path = /57BF8825
+Reference = F1;
+ValeurCmp = F_Small;
+IdModule  = I20:Fuse_SMD1206_Wave;
+EndCmp
+
+BeginCmp
+TimeStamp = 57C55681
+Path = /57BF47C2
+Reference = D1;
+ValeurCmp = M7;
+IdModule  = I20:SMA_Standard;
+EndCmp
+
+BeginCmp
+TimeStamp = 57C55686
+Path = /57BF338B
+Reference = D2;
+ValeurCmp = ZENER-MOSFET-GATE;
+IdModule  = I20:MiniMELF_Standard;
+EndCmp
+
+BeginCmp
+TimeStamp = 57C5568B
+Path = /57BF9AFA
+Reference = D3;
+ValeurCmp = D_Schottky;
+IdModule  = I20:SMA_Standard;
+EndCmp
+
+BeginCmp
+TimeStamp = 57C50230
+Path = /57BFAC84
+Reference = P8;
+ValeurCmp = ESP8266_CONN;
+IdModule  = I20:ESP8266_CONN;
+EndCmp
+
+BeginCmp
+TimeStamp = 57CFC848
+Path = 
+Reference = HOLE2;
+ValeurCmp = MountingHole_3.2mm_M3;
+IdModule  = I20:MountingHole_3.2mm_M3;
+EndCmp
+
+BeginCmp
+TimeStamp = 57CFC85F
+Path = 
+Reference = HOLE3;
+ValeurCmp = MountingHole_3.2mm_M3;
+IdModule  = I20:MountingHole_3.2mm_M3;
+EndCmp
+
+BeginCmp
+TimeStamp = 57CFC866
+Path = 
+Reference = HOLE4;
+ValeurCmp = MountingHole_3.2mm_M3;
+IdModule  = I20:MountingHole_3.2mm_M3;
+EndCmp
+
+BeginCmp
+TimeStamp = 57C50247
+Path = /57BEFE70
+Reference = P9;
+ValeurCmp = USB_B;
+IdModule  = I20:conn_usb_B_micro_smd-2;
+EndCmp
+
+BeginCmp
+TimeStamp = 57C6DE72
+Path = 
+Reference = G1;
+ValeurCmp = LOGO;
+IdModule  = I20:logo_2016;
+EndCmp
+
+BeginCmp
+TimeStamp = 57C5750B
+Path = /57BF46F2
+Reference = CON1;
+ValeurCmp = BARREL_JACK;
+IdModule  = I20:DC-005;
+EndCmp
+
+BeginCmp
+TimeStamp = 57C501D0
+Path = /57BF438E
+Reference = P4;
+ValeurCmp = LOCK_CONN;
+IdModule  = I20:PhoenixContact_MSTBA-G_04x5.08mm_Angled;
+EndCmp
+
+BeginCmp
+TimeStamp = 57C5003C
+Path = /57BDE770
+Reference = C1;
+ValeurCmp = 2pF;
+IdModule  = I20:C_0805_HandSoldering;
+EndCmp
+
+BeginCmp
+TimeStamp = 57C50048
+Path = /57BDE7F3
+Reference = C2;
+ValeurCmp = 2pF;
+IdModule  = I20:C_0805_HandSoldering;
+EndCmp
+
+BeginCmp
+TimeStamp = 57D812CB
+Path = /57BECB35
+Reference = R3;
+ValeurCmp = 10k;
+IdModule  = I20:R_0805;
+EndCmp
+
+BeginCmp
+TimeStamp = 57D812AA
+Path = /57BEE45B
+Reference = R4;
+ValeurCmp = 10k;
+IdModule  = I20:R_0805;
+EndCmp
+
+BeginCmp
+TimeStamp = 57D81289
+Path = /57BF37C0
+Reference = R5;
+ValeurCmp = 10k;
+IdModule  = I20:R_0805;
+EndCmp
+
+BeginCmp
+TimeStamp = 57D81268
+Path = /57BDE5DC
+Reference = R6;
+ValeurCmp = 0R;
+IdModule  = I20:R_0805;
+EndCmp
+
+BeginCmp
+TimeStamp = 57D81247
+Path = /57BF342A
+Reference = R17;
+ValeurCmp = 10R;
+IdModule  = I20:R_0805;
+EndCmp
+
+BeginCmp
+TimeStamp = 57D81226
+Path = /57BF3424
+Reference = R16;
+ValeurCmp = 15R;
+IdModule  = I20:R_0805;
+EndCmp
+
+BeginCmp
+TimeStamp = 57D81205
+Path = /57BF251B
+Reference = R11;
+ValeurCmp = 2k;
+IdModule  = I20:R_0805;
+EndCmp
+
+BeginCmp
+TimeStamp = 57D811E4
+Path = /57BF244F
+Reference = R10;
+ValeurCmp = 2k;
+IdModule  = I20:R_0805;
+EndCmp
+
+BeginCmp
+TimeStamp = 57D811C3
+Path = /57BF21A1
+Reference = R9;
+ValeurCmp = 2k;
+IdModule  = I20:R_0805;
+EndCmp
+
+BeginCmp
+TimeStamp = 57D811A2
+Path = /57BEDE4B
+Reference = R8;
+ValeurCmp = 10k;
+IdModule  = I20:R_0805;
+EndCmp
+
+BeginCmp
+TimeStamp = 57D81181
+Path = /57BFAAB2
+Reference = R2;
+ValeurCmp = 10k;
+IdModule  = I20:R_0805;
+EndCmp
+
+BeginCmp
+TimeStamp = 57D81160
+Path = /57BF9FCA
+Reference = R1;
+ValeurCmp = 10k;
+IdModule  = I20:R_0805;
+EndCmp
+
+BeginCmp
+TimeStamp = 57D8113F
+Path = /57BF2660
+Reference = R7;
+ValeurCmp = 240;
+IdModule  = I20:R_0805;
+EndCmp
+
+BeginCmp
+TimeStamp = 57D8111E
+Path = /57BF1730
+Reference = R12;
+ValeurCmp = 82R;
+IdModule  = I20:R_0805;
+EndCmp
+
+BeginCmp
+TimeStamp = 57D810FD
+Path = /57BF17B4
+Reference = R13;
+ValeurCmp = 15R;
+IdModule  = I20:R_0805;
+EndCmp
+
+BeginCmp
+TimeStamp = 57D810DC
+Path = /57BF1859
+Reference = R14;
+ValeurCmp = 10R;
+IdModule  = I20:R_0805;
+EndCmp
+
+BeginCmp
+TimeStamp = 57D810BB
+Path = /57BF341E
+Reference = R15;
+ValeurCmp = 82R;
+IdModule  = I20:R_0805;
+EndCmp
+
+BeginCmp
+TimeStamp = 57D81070
+Path = /57BF0FDE
+Reference = Q4;
+ValeurCmp = MMBT3906;
+IdModule  = I20:SOT-23;
+EndCmp
+
+BeginCmp
+TimeStamp = 57D81043
+Path = /57BF0F6F
+Reference = Q3;
+ValeurCmp = MMBT3906;
+IdModule  = I20:SOT-23;
+EndCmp
+
+BeginCmp
+TimeStamp = 57D81016
+Path = /57BF0EF1
+Reference = Q2;
+ValeurCmp = MMBT3906;
+IdModule  = I20:SOT-23;
+EndCmp
+
+BeginCmp
+TimeStamp = 57D80FE9
+Path = /57BF2360
+Reference = Q1;
+ValeurCmp = Q_NMOS_DGS;
+IdModule  = I20:SOT-23;
+EndCmp
+
+BeginCmp
+TimeStamp = 57C687DF
+Path = /57BFCAA7
+Reference = C14;
+ValeurCmp = 100nF;
+IdModule  = I20:C_0805_HandSoldering;
+EndCmp
+
+BeginCmp
+TimeStamp = 57C500C0
+Path = /57BEF912
+Reference = C12;
+ValeurCmp = 22uF;
+IdModule  = I20:C_0805_HandSoldering;
+EndCmp
+
+BeginCmp
+TimeStamp = 57C500B4
+Path = /57BEF8C2
+Reference = C11;
+ValeurCmp = 10uF;
+IdModule  = I20:C_0805_HandSoldering;
+EndCmp
+
+BeginCmp
+TimeStamp = 57C500A8
+Path = /57BDE364
+Reference = C10;
+ValeurCmp = 1uF;
+IdModule  = I20:C_0805_HandSoldering;
+EndCmp
+
+BeginCmp
+TimeStamp = 57C5009C
+Path = /57BDDC69
+Reference = C9;
+ValeurCmp = 10uF;
+IdModule  = I20:C_0805_HandSoldering;
+EndCmp
+
+BeginCmp
+TimeStamp = 57C50090
+Path = /57BDDDE6
+Reference = C8;
+ValeurCmp = 100nF;
+IdModule  = I20:C_0805_HandSoldering;
+EndCmp
+
+BeginCmp
+TimeStamp = 57C50084
+Path = /57BDD7A7
+Reference = C7;
+ValeurCmp = 100nF;
+IdModule  = I20:C_0805_HandSoldering;
+EndCmp
+
+BeginCmp
+TimeStamp = 57C50078
+Path = /57BDD77A
+Reference = C6;
+ValeurCmp = 100nF;
+IdModule  = I20:C_0805_HandSoldering;
+EndCmp
+
+BeginCmp
+TimeStamp = 57C50060
+Path = /57BED280
+Reference = C4;
+ValeurCmp = 100nF;
+IdModule  = I20:C_0805_HandSoldering;
+EndCmp
+
+BeginCmp
+TimeStamp = 57C50054
+Path = /57BED543
+Reference = C3;
+ValeurCmp = 100nF;
+IdModule  = I20:C_0805_HandSoldering;
+EndCmp
+
+BeginCmp
+TimeStamp = 57C5006C
+Path = /57BDD5EF
+Reference = C5;
+ValeurCmp = 100nF;
+IdModule  = I20:C_0805_HandSoldering;
+EndCmp
+
+BeginCmp
+TimeStamp = 57C500CC
+Path = /57BFC498
+Reference = C13;
+ValeurCmp = 10uF;
+IdModule  = I20:C_0805_HandSoldering;
+EndCmp
+
+EndListe
