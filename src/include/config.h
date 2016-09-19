@@ -5,6 +5,9 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 #define LED_QUANTITY 1
+#define ITERATOR_COUNT 10
+
+#define NULL 0
 
 // Colors.
 #define LED_COLOR_ORANGE 0xD50700

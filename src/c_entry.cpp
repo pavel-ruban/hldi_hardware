@@ -60,7 +60,8 @@ typedef struct {
 
 Queue<tag_cache_entry, 100> tag_cache;
 Queue<tag_event, 100> tag_events;
-Scheduler<20> scheduler;
+Scheduler sched;
+//Scheduler<20> scheduler;
 
 /* Private function prototypes -----------------------------------------------*/
 void RCC_Configuration(void);
@@ -353,6 +354,7 @@ extern "C" void SysTick_Handler(void)
 			}
 		}
 	}
+    sched.handle();
 	ticks++;
 }
 
@@ -595,13 +597,13 @@ void InitializeTimer()
     TIM_ITConfig(TIM3, TIM_IT_Update, ENABLE);
 }
 
-void status_idle(){
+void status_idle() {
     leds[0]->set_color(LED_COLOR_ORANGE);
     leds[0]->set_blink(1, 500, 500);
     machine_status = MACHINE_STATE_IDLE;
 }
 
-void status_call(){
+void status_call() {
     leds[0]->set_color(LED_COLOR_TEAL);
     leds[0]->set_blink(1, 100, 100);
     machine_status = MACHINE_STATE_CALL;
@@ -616,23 +618,63 @@ void status_open() {
 
 }
 
+void test_global() {
+     int i = 225;
+    ++i;
+}
+
+void test_global2() {
+
+}
+
 extern "C" int main(void)
 {
 	uint32_t a = 70,b = 2,c = 1;
 	//scheduler = Scheduler<20>();
-    Array<int, 20> arr;
-    Array<int, 20>::iterator my_iter(&arr,0);
-    arr.push(24);
-    arr.push(42);
-    arr.push(111);
-    int test1 = *my_iter;
-    int test2 = arr.pop(1);
-    ++my_iter;
-    int test3 = *my_iter;
+    Array<Event, 20> arr;
+    Array<Event, 20>::iterator my_iter(&arr,0);
+    Event test_event;
+    test_event.handler = test_global;
+    test_event.invoke_time = 4000;
 
-    int test4 = arr.pop(1);
-    int test5 = *my_iter;
-    int test6 = arr.pop(0);
+    Event test_event2;
+    test_event2.handler = test_global2;
+    test_event2.invoke_time = 2;
+    arr.push(test_event);
+    arr.push(test_event2);
+    Event test1 = arr.pop(0);
+    Event test2 = arr.pop(1);
+
+    sched.push(test_event);
+    sched.push(test_event2);
+    //sched.handle();
+
+//    int test7 = *arr.begin();
+//    int test8 = *arr.end();
+//    Array<Event,20> arr2;
+//    Event test_event;
+//    test_event.handler = test_global;
+//    test_event.invoke_time = 100500;
+//
+//    Event test_event2;
+//    test_event2.handler = test_global2;
+//    test_event2.invoke_time = 100510;
+//
+//    arr2.push(test_event);
+//    arr2.pop(0).handler;
+
+//    sched.handle();
+//    int test10 = arr.capacity();
+
+//    int test1 = *my_iter;
+//    int test2 = arr.pop(1);
+//    ++my_iter;
+//    int test3 = *my_iter;
+//
+//    int test4 = arr.pop(1);
+//    int test5 = *my_iter;
+//    int test6 = arr.pop(0);
+
 
 
 //	rc522_pcd_select(RC522_PCD_1);
