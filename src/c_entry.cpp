@@ -11,7 +11,7 @@
 #include <stm32f10x_conf.h>
 #include "include/utils.h"
 #include <led/led.hpp>
-#include "include/scheduler.h"
+#include <scheduler/include/scheduler.h>
 #include <config.h>
 #include "lib/led/led.hpp"
 //#include <include/stm32f10x_conf.h>   ///?????
@@ -25,7 +25,7 @@ extern "C" {
 }
 
 #include "include/queue.h"
-#include "include/array.h"
+#include "lib/array/array.h"
 
 #define EVENT_ACCESS_REQ 1
 #define ACCESS_GRANTED 0x1
@@ -598,12 +598,14 @@ void InitializeTimer()
 }
 
 void status_idle() {
+    leds[0]->on();
     leds[0]->set_color(LED_COLOR_ORANGE);
     leds[0]->set_blink(1, 500, 500);
     machine_status = MACHINE_STATE_IDLE;
 }
 
 void status_call() {
+    leds[0]->on();
     leds[0]->set_color(LED_COLOR_TEAL);
     leds[0]->set_blink(1, 100, 100);
     machine_status = MACHINE_STATE_CALL;
@@ -611,6 +613,7 @@ void status_call() {
 
 void status_open() {
     if (leds[0]) {
+        leds[0]->on();
         leds[0]->set_color(LED_COLOR_GREEN);
         leds[0]->set_blink(0, 0, 0);
         machine_status = MACHINE_STATE_OPEN;
@@ -631,22 +634,35 @@ extern "C" int main(void)
 {
 	uint32_t a = 70,b = 2,c = 1;
 	//scheduler = Scheduler<20>();
-    Array<Event, 20> arr;
-    Array<Event, 20>::iterator my_iter(&arr,0);
-    Event test_event;
-    test_event.handler = test_global;
-    test_event.invoke_time = 4000;
+//    Array<Event, 20> arr;
+//    Array<Event, 20>::iterator my_iter(&arr,0);
+//    Event test_event;
+//    test_event.handler = test_global;
+//    test_event.invoke_time = 2;
+//
+//    Event test_event2;
+//    test_event2.handler = status_idle;
+//    test_event2.invoke_time = 1500;
+//
+//    Event test_event3;
+//    test_event3.handler = test_global2;
+//    test_event3.invoke_time = 10;
+//
+//    Event test_event4;
+//    test_event4.handler = test_global2;
+//    test_event4.invoke_time = 25;
+//    arr.push(test_event);
+//    arr.push(test_event2);
+//    arr.push(test_event3);
+//    arr.push(test_event4);
+//    sched.push(test_event2);
+//    sched.push(test_event);
+    leds[0]->set_color(LED_COLOR_TEAL);
+    leds[0]->set_blink(1, 2000, 2000);
+    leds[0]->off();
 
-    Event test_event2;
-    test_event2.handler = test_global2;
-    test_event2.invoke_time = 2;
-    arr.push(test_event);
-    arr.push(test_event2);
-    Event test1 = arr.pop(0);
-    Event test2 = arr.pop(1);
-
-    sched.push(test_event);
-    sched.push(test_event2);
+   /* sched.push(test_event);
+    sched.push(test_event2); */
     //sched.handle();
 
 //    int test7 = *arr.begin();
@@ -699,9 +715,9 @@ extern "C" int main(void)
     //led my_led3(LED_TYPE_BLUE,GPIOA,GPIO_Pin_3,0xAF);
 	led rgb_led(LED_TYPE_RGB, GPIOA, GPIO_Pin_1, GPIO_Pin_2, GPIO_Pin_3, LED_COLOR_WHITE);
 	leds[0] =  &rgb_led;
-	leds[0]->on();
-	leds[0]->set_blink(1, 1000, 1000);
-    status_idle();
+	//leds[0]->on();
+	//leds[0]->set_blink(1, 1000, 1000);
+    //status_idle();
 
     //my_led.set_color(0x30000000);
 

@@ -1,8 +1,8 @@
-#ifndef LED_HPP
-#define LED_HPP
+#pragma once
 
 // This class works with TIM2 and GPIOA pins PA1 PA2 PA3
 #pragma pack(1)
+#include <scheduler/include/scheduler.h>
 
 #define TIM_PRESCALER 700
 #define TIM_PERIOD 100
@@ -12,7 +12,7 @@
 #define LED_TYPE_BLUE 0
 #define LED_TYPE_RGB 3
 
-class Color{
+class Color {
 public:
     uint8_t Red = 0;
     uint8_t Green = 0;
@@ -36,6 +36,8 @@ public:
     }
 };
 
+class Scheduler;
+
 class led
 {
 public:
@@ -57,6 +59,7 @@ private:
 	uint16_t pin_s;
     uint8_t s_led_intensity;
 	void _init_output_channel(uint32_t intensity, uint16_t led_pin);
+	Scheduler schedu;
 public:
 	led(uint8_t led_type, GPIO_TypeDef *led_port, uint16_t led_pin, uint8_t intensity = 0x2F);
 	led(uint8_t led_type, GPIO_TypeDef *led_port, uint16_t led_pin_r, uint16_t led_pin_g, uint16_t led_pin_b, uint32_t color = 0xFFFFFF);
@@ -72,4 +75,3 @@ public:
     void set_blink_state(uint8_t state);
 };
 //void test_f(uint32_t tp32,uint8_t tp8, uint32_t tp32_1, uint32_t tp32_2, uint32_t tp32_3, uint32_t tp32_4, uint32_t tp32_5, uint32_t tp32_6);
-#endif

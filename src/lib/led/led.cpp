@@ -1,9 +1,11 @@
 #include <stdint.h>
 #include <stm32f10x_conf.h>
+
 #include <assert.h>
 //#include "system/include/cmsis/stm32f10x.h"
 #include "led.hpp"
 #include <utils.h>
+
 
 extern GPIO_InitTypeDef GPIO_InitStructure;
 extern uint32_t ticks;
@@ -250,6 +252,11 @@ void led::off()
 				break;
 		}
 	}
+    if (blink) {
+        Event turn_on;
+        turn_on.handler =  (void (led::*)()) &led::on;
+        turn_on.invoke_time = ticks + off_interval;
+    }
 }
 
 void led::set_blink(uint8_t set_state, uint32_t on_gap = 0, uint32_t off_gap = 0) {
@@ -260,7 +267,7 @@ void led::set_blink(uint8_t set_state, uint32_t on_gap = 0, uint32_t off_gap = 0
 		off_interval = off_gap;
 	}
 	blink = set_state;
-    blink_state = 0;
+   // blink_state = 0;
 }
 
 uint32_t led::get_off_interval() {
