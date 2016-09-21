@@ -60,7 +60,7 @@ typedef struct {
 
 Queue<tag_cache_entry, 100> tag_cache;
 Queue<tag_event, 100> tag_events;
-Scheduler sched;
+Scheduler<Event<led>, 100> sched;
 //Scheduler<20> scheduler;
 
 /* Private function prototypes -----------------------------------------------*/
@@ -630,66 +630,28 @@ void test_global2() {
 
 }
 
+class A{
+
+};
+
 extern "C" int main(void)
 {
 	uint32_t a = 70,b = 2,c = 1;
-	//scheduler = Scheduler<20>();
-//    Array<Event, 20> arr;
-//    Array<Event, 20>::iterator my_iter(&arr,0);
-//    Event test_event;
-//    test_event.handler = test_global;
-//    test_event.invoke_time = 2;
-//
-//    Event test_event2;
-//    test_event2.handler = status_idle;
-//    test_event2.invoke_time = 1500;
-//
-//    Event test_event3;
-//    test_event3.handler = test_global2;
-//    test_event3.invoke_time = 10;
-//
-//    Event test_event4;
-//    test_event4.handler = test_global2;
-//    test_event4.invoke_time = 25;
-//    arr.push(test_event);
-//    arr.push(test_event2);
-//    arr.push(test_event3);
-//    arr.push(test_event4);
-//    sched.push(test_event2);
-//    sched.push(test_event);
+
+    led rgb_led(LED_TYPE_RGB, GPIOA, GPIO_Pin_1, GPIO_Pin_2, GPIO_Pin_3, LED_COLOR_WHITE);
+    leds[0] =  &rgb_led;
+
     leds[0]->set_color(LED_COLOR_TEAL);
-    leds[0]->set_blink(1, 2000, 2000);
     leds[0]->off();
+    Event<led> test_event3(1000, leds[0], &led::on);
+    Event<led> test_event1(2000, leds[0], &led::on);
+    Event<led> test_event2(3000, leds[0], &led::on);
 
-   /* sched.push(test_event);
-    sched.push(test_event2); */
-    //sched.handle();
+    sched.push(test_event1);
+    sched.push(test_event2);
 
-//    int test7 = *arr.begin();
-//    int test8 = *arr.end();
-//    Array<Event,20> arr2;
-//    Event test_event;
-//    test_event.handler = test_global;
-//    test_event.invoke_time = 100500;
-//
-//    Event test_event2;
-//    test_event2.handler = test_global2;
-//    test_event2.invoke_time = 100510;
-//
-//    arr2.push(test_event);
-//    arr2.pop(0).handler;
-
-//    sched.handle();
-//    int test10 = arr.capacity();
-
-//    int test1 = *my_iter;
-//    int test2 = arr.pop(1);
-//    ++my_iter;
-//    int test3 = *my_iter;
-//
-//    int test4 = arr.pop(1);
-//    int test5 = *my_iter;
-//    int test6 = arr.pop(0);
+    sched.invalidate(leds[0]);
+    sched.push(test_event3);
 
 
 
@@ -713,8 +675,7 @@ extern "C" int main(void)
     //led my_led(LED_TYPE_BLUE,GPIOA,GPIO_Pin_1,0xFF);
     //led my_led2(LED_TYPE_BLUE,GPIOA,GPIO_Pin_2,0xFF);
     //led my_led3(LED_TYPE_BLUE,GPIOA,GPIO_Pin_3,0xAF);
-	led rgb_led(LED_TYPE_RGB, GPIOA, GPIO_Pin_1, GPIO_Pin_2, GPIO_Pin_3, LED_COLOR_WHITE);
-	leds[0] =  &rgb_led;
+
 	//leds[0]->on();
 	//leds[0]->set_blink(1, 1000, 1000);
     //status_idle();

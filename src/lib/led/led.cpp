@@ -8,7 +8,7 @@
 
 
 extern GPIO_InitTypeDef GPIO_InitStructure;
-extern uint32_t ticks;
+//extern uint32_t ticks;
 
 led::led(uint8_t led_type, GPIO_TypeDef *led_port, uint16_t led_pin, uint8_t led_intensity)
 {
@@ -147,7 +147,7 @@ void led::set_color(Color  _color)
 
 void led::set_color(uint32_t _color)
 {
-	led::color.Uncolored = (_color >> 24) & 0xFF;
+	led::color.Uncolored = (uint8_t) ((_color >> 24) & 0xFF);
 	led::color.Red = (_color >> 16) & 0xFF;
 	led::color.Green = (_color >> 8) & 0xFF;
 	led::color.Blue = (_color >> 0) & 0xFF;
@@ -232,6 +232,7 @@ void led::on()
         }
 	}
 
+   // schedu.push(test_event);
 }
 
 void led::off()
@@ -253,9 +254,9 @@ void led::off()
 		}
 	}
     if (blink) {
-        Event turn_on;
-        turn_on.handler =  (void (led::*)()) &led::on;
-        turn_on.invoke_time = ticks + off_interval;
+      //  Event turn_on;
+      //  turn_on.handler =  (void (led::*)()) &led::on;
+      //  turn_on.invoke_time = ticks + off_interval;
     }
 }
 

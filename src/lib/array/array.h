@@ -19,8 +19,7 @@ class Array
 private:
     T array[qsize];
     T buf;
-
-
+    uint16_t obj_count;
 public:
 
     uint16_t start_index = 0;
@@ -54,6 +53,7 @@ public:
     private:
         Array<T, qsize> *array;
        // uint16_t *end_index;
+
     protected:
 
     public:
@@ -178,6 +178,7 @@ uint8_t Array<T, qsize>::iterator::operator==(iterator it)
 template <typename T, uint16_t qsize>
 Array<T, qsize>::Array()
 {
+    obj_count = 0;
     full = ARRAY_IS_NOT_FULL;
     start_index = end_index = 0;
     for (uint32_t i = 0; i < qsize; i++) {
@@ -236,6 +237,7 @@ uint8_t Array<T, qsize>::push(T item)
         if (array[i].deleted == 1) {
             array[i] = item;
             array[i].deleted = 0;
+            obj_count++;
             if (i >= end_index)
                 end_index++;
             return 1;
@@ -244,7 +246,7 @@ uint8_t Array<T, qsize>::push(T item)
 
     //array[end_index++] = item;
     // Check for full state.
-    if (end_index >= qsize)
+    if (obj_count >= qsize)
     {
         full = ARRAY_FULL;
     }
@@ -265,6 +267,12 @@ T Array<T, qsize>::pop(uint16_t index)
 
         T buf = array[index];
         array[index].deleted = 1;
+        obj_count--;
+        if (obj_count < qsize)
+        {
+            full = ARRAY_IS_NOT_FULL;
+        }
+
         if (end_index == index + 1){  //Если удаление элемента произошло перед конечным элементом
             for (uint16_t i = end_index; i > 0; i--) {
                 if (array[i].deleted == 0){
@@ -283,10 +291,5 @@ T Array<T, qsize>::pop(uint16_t index)
     };
 
 
-    if (start_index >= qsize)
-    {
-        start_index = 0;
-    }
 
-    if (full) full = ARRAY_IS_NOT_FULL;
 }
