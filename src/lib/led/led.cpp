@@ -8,7 +8,7 @@
 
 
 extern GPIO_InitTypeDef GPIO_InitStructure;
-//extern uint32_t ticks;
+extern Scheduler<Event<led>, 100> led_scheduler;
 
 led::led(uint8_t led_type, GPIO_TypeDef *led_port, uint16_t led_pin, uint8_t led_intensity)
 {
@@ -232,7 +232,10 @@ void led::on()
         }
 	}
 
-   // schedu.push(test_event);
+    if (blink) {
+        Event<led> turn_off(led_scheduler.get_current_time() + on_interval, this, &led::off);
+        led_scheduler.push(turn_off);
+    }
 }
 
 void led::off()
@@ -254,9 +257,8 @@ void led::off()
 		}
 	}
     if (blink) {
-      //  Event turn_on;
-      //  turn_on.handler =  (void (led::*)()) &led::on;
-      //  turn_on.invoke_time = ticks + off_interval;
+        Event<led> turn_on(led_scheduler.get_current_time() + off_interval, this, &led::on);
+        led_scheduler.push(turn_on);
     }
 }
 
@@ -268,7 +270,6 @@ void led::set_blink(uint8_t set_state, uint32_t on_gap = 0, uint32_t off_gap = 0
 		off_interval = off_gap;
 	}
 	blink = set_state;
-   // blink_state = 0;
 }
 
 uint32_t led::get_off_interval() {
@@ -277,14 +278,4 @@ uint32_t led::get_off_interval() {
 
 uint32_t led::get_on_interval() {
 	return led::on_interval;
-}
-
-uint8_t led::get_blink_state() {
-	return blink_state;
-}
-
-void led::set_blink_state(uint8_t state){
-    if (state) on();
-    else off();
-	blink_state = state;
 }

@@ -12,6 +12,7 @@
 #define LED_TYPE_BLUE 0
 #define LED_TYPE_RGB 3
 
+
 class Color {
 public:
     uint8_t Red = 0;
@@ -44,7 +45,7 @@ public:
     uint32_t on_time;
     uint32_t  off_time;
     Color color;
-	bool blink = 0;
+	uint8_t blink = 0;
 
 private:
     uint32_t on_interval;
@@ -56,6 +57,7 @@ private:
 	uint16_t pin_b;
 	uint16_t pin_s;
     uint8_t s_led_intensity;
+    //Scheduler<Event<led>, 100> schedu;
 	void _init_output_channel(uint32_t intensity, uint16_t led_pin);
 
 public:

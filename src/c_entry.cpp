@@ -11,6 +11,7 @@
 #include <stm32f10x_conf.h>
 #include "include/utils.h"
 #include <led/led.hpp>
+#include "machine_state/machine_state.h"
 #include <scheduler/include/scheduler.h>
 #include <config.h>
 #include "lib/led/led.hpp"
@@ -39,6 +40,7 @@ extern "C" {
 GPIO_InitTypeDef GPIO_InitStructure;
 ErrorStatus HSEStartUpStatus;
 led *leds[LED_QUANTITY] = {NULL};
+Machine_state machine_state(leds);
 
 extern uint8_t mac_addr[6];
 extern uint8_t enc28j60_revid;
@@ -60,8 +62,8 @@ typedef struct {
 
 Queue<tag_cache_entry, 100> tag_cache;
 Queue<tag_event, 100> tag_events;
-Scheduler<Event<led>, 100> sched;
-//Scheduler<20> scheduler;
+Scheduler<Event<led>, 100> led_scheduler;
+Scheduler<Event<Machine_state>, 100> state_scheduler;
 
 /* Private function prototypes -----------------------------------------------*/
 void RCC_Configuration(void);
@@ -70,8 +72,7 @@ void Delay(vu32 nCount);
 extern "C" void custom_asm();
 void rc522_irq_prepare();
 void RTC_Configuration();
-void status_call();
-void status_open();
+
 
 extern "C" void reset_asm();
 
@@ -334,27 +335,8 @@ extern "C" void TIM3_IRQHandler(){
 
 extern "C" void SysTick_Handler(void)
 {
-
-	for (int i = 0; i < LED_QUANTITY; i++) {
-		if (leds[i] != NULL) {
-			if (leds[i]->blink) {
-				if (!leds[i]->get_blink_state() ) {
-                    if (leds[i]->on_time == ticks) {
-                        leds[i]->set_blink_state(1);
-                        leds[i]->on_time = ticks;
-                        leds[i]->off_time = ticks + leds[i]->get_on_interval();
-                    }
-				} else if(leds[i]->get_blink_state()) {
-                    if (leds[i]->off_time == ticks) {
-                        leds[i]->set_blink_state(0);
-                        leds[i]->off_time = ticks;
-                        leds[i]->on_time = ticks + leds[i]->get_off_interval();
-                    }
-                }
-			}
-		}
-	}
-    sched.handle();
+    led_scheduler.handle();
+    state_scheduler.handle();
 	ticks++;
 }
 
@@ -378,18 +360,19 @@ extern "C" void EXTI2_IRQHandler()
 
 extern "C" void EXTI0_IRQHandler()
 {
-    status_open();
+    if (!(machine_state.get_state() == MACHINE_STATE_LOCK_OPEN)) {
+        machine_state.set_state_lock_open(MACHINE_STATE_LOCK_OPEN_TIME);
+    }
 	EXTI_ClearITPendingBit(EXTI_Line0);
 
-
-//	open_node();
 }
 
 extern "C" void EXTI1_IRQHandler()
 {
+    if (!(machine_state.get_state() == MACHINE_STATE_GUEST_CALL)) {
+        machine_state.set_state_guest_call(MACHINE_STATE_GUEST_CALL_TIME);
+    }
     EXTI_ClearITPendingBit(EXTI_Line1);
-    //status_call();
-//	open_node();
 }
 
 
@@ -474,27 +457,30 @@ extern "C" void __initialize_hardware()
 
 
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
 
     // Configure GPIO
 
 
     //RGB led pins
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3;
+    GPIO_InitStructure.GPIO_Pin = LED_INDICATOR_PIN_RED | LED_INDICATOR_PIN_GREEN | LED_INDICATOR_PIN_BLUE;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD;
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
+    GPIO_Init(LED_INDICATOR_PORT, &GPIO_InitStructure);
 
-    //RGB led testing and cofingurating
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4 | GPIO_Pin_5 | GPIO_Pin_6;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
-	GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-    //Button pin!
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0 | GPIO_Pin_1;
+    //Buttons pins (BTN_OPEN, BTN_CALL)
+    GPIO_InitStructure.GPIO_Pin = BTN_OPEN_PIN | BTN_CALL_PIN;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
-    GPIO_Init(GPIOB, &GPIO_InitStructure);
+    GPIO_Init(BTN_CALL_PORT, &GPIO_InitStructure);
+
+    //Em lock pin
+    GPIO_InitStructure.GPIO_Pin = EM_LOCK_PIN;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+    GPIO_Init(EM_LOCK_PORT, &GPIO_InitStructure);
+    GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE);
 
 
 //	// Avoid peripheal libs additional init code.
@@ -597,29 +583,6 @@ void InitializeTimer()
     TIM_ITConfig(TIM3, TIM_IT_Update, ENABLE);
 }
 
-void status_idle() {
-    leds[0]->on();
-    leds[0]->set_color(LED_COLOR_ORANGE);
-    leds[0]->set_blink(1, 500, 500);
-    machine_status = MACHINE_STATE_IDLE;
-}
-
-void status_call() {
-    leds[0]->on();
-    leds[0]->set_color(LED_COLOR_TEAL);
-    leds[0]->set_blink(1, 100, 100);
-    machine_status = MACHINE_STATE_CALL;
-}
-
-void status_open() {
-    if (leds[0]) {
-        leds[0]->on();
-        leds[0]->set_color(LED_COLOR_GREEN);
-        leds[0]->set_blink(0, 0, 0);
-        machine_status = MACHINE_STATE_OPEN;
-    }
-
-}
 
 void test_global() {
      int i = 225;
@@ -639,35 +602,15 @@ extern "C" int main(void)
 	uint32_t a = 70,b = 2,c = 1;
 
     led rgb_led(LED_TYPE_RGB, GPIOA, GPIO_Pin_1, GPIO_Pin_2, GPIO_Pin_3, LED_COLOR_WHITE);
-    leds[0] =  &rgb_led;
+    leds[LED_STATE_INDICATOR] =  &rgb_led;
 
-    leds[0]->set_color(LED_COLOR_TEAL);
-    leds[0]->off();
-    Event<led> test_event3(1000, leds[0], &led::on);
-    Event<led> test_event1(2000, leds[0], &led::on);
-    Event<led> test_event2(3000, leds[0], &led::on);
-
-    sched.push(test_event1);
-    sched.push(test_event2);
-
-    sched.invalidate(leds[0]);
-    sched.push(test_event3);
+    leds[LED_STATE_INDICATOR]->set_color(LED_COLOR_TEAL);
+    leds[LED_STATE_INDICATOR]->off();
+    leds[LED_STATE_INDICATOR]->set_blink(1,200,200);
+    leds[LED_STATE_INDICATOR]->on();
+    machine_state.set_state_idle();
 
 
-
-//	rc522_pcd_select(RC522_PCD_1);
-//	mfrc522_init();
-//
-//	rc522_pcd_select(RC522_PCD_2);
-//	mfrc522_init();
-//
-//	enc28j60_init(mac_addr);
-//
-//	dhcp_retry_time = RTC_GetCounter() + 1;
-//
-//	// Check if timer started.
-//	uint8_t status = mfrc522_read(Status1Reg);
-//	uint32_t poll_time, dns_time;
     interrupt_initialize();
 //
 	__enable_irq();
@@ -676,8 +619,8 @@ extern "C" int main(void)
     //led my_led2(LED_TYPE_BLUE,GPIOA,GPIO_Pin_2,0xFF);
     //led my_led3(LED_TYPE_BLUE,GPIOA,GPIO_Pin_3,0xAF);
 
-	//leds[0]->on();
-	//leds[0]->set_blink(1, 1000, 1000);
+	//leds[LED_STATE_INDICATOR]->on();
+	//leds[LED_STATE_INDICATOR]->set_blink(1, 1000, 1000);
     //status_idle();
 
     //my_led.set_color(0x30000000);
@@ -855,7 +798,7 @@ void interrupt_initialize()
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 
-    // IRQ Driven Button BTN_OPEN
+    // IRQ Driven Button BTN_CALL
     EXTI_InitStructure.EXTI_Line = EXTI_Line1;
     EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
     EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;

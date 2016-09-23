@@ -212,6 +212,9 @@ void Array<T, qsize>::clear()
 {
     full = ARRAY_IS_NOT_FULL;
     start_index = end_index = 0;
+    for (uint32_t i = 0;i < qsize;i++ ){
+        array[i].deleted = 1;
+    }
 }
 
 template <typename T, uint16_t qsize>

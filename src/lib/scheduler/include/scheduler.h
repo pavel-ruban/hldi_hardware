@@ -31,6 +31,8 @@ public:
     uint8_t push(T event);
     uint8_t handle();
     uint8_t invalidate(void *obj);
+    uint32_t get_current_time();
+    void clear();
 };
 
 template <typename T, uint16_t scheduler_size>
@@ -79,3 +81,12 @@ uint8_t Scheduler<T, scheduler_size>::invalidate(void *ptr) {
     }
 }
 
+template <typename T, uint16_t scheduler_size>
+uint32_t Scheduler<T, scheduler_size>::get_current_time() {
+    return ticks;
+}
+
+template <typename T, uint16_t scheduler_size>
+void Scheduler<T, scheduler_size>::clear() {
+    _events.clear();
+}

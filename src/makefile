@@ -159,7 +159,8 @@ HARDWARE_LIBS_OBJS = 					\
 	$(HARDWARE_LIBS_DIR)/enc28j60/enc28j60.o 	\
 	$(HARDWARE_LIBS_DIR)/led/led.o			\
 	$(HARDWARE_LIBS_DIR)/scheduler/event.o		\
-	$(HARDWARE_LIBS_DIR)/scheduler/scheduler.o	
+	$(HARDWARE_LIBS_DIR)/scheduler/scheduler.o	\
+	$(HARDWARE_LIBS_DIR)/machine_state/machine_state.o	
 
 $(HARDWARE_LIBS_OUT): $(HARDWARE_LIBS_OBJS)
 	$(AR) $(ARFLAGS) $@ $(HARDWARE_LIBS_OBJS)
