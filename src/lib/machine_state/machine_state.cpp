@@ -4,8 +4,6 @@
 #pragma once
 
 #include "machine_state.h"
-
-
 extern Scheduler<Event<led>, 100> led_scheduler;
 extern Scheduler<Event<Machine_state>, 100> state_scheduler;
 
@@ -37,7 +35,7 @@ void Machine_state::set_state(uint8_t state, uint32_t delay) {
     }
 }
 
-uint8_t Machine_state::get_state(){
+uint8_t Machine_state::get_state() {
     return current_state;
 }
 
@@ -61,7 +59,6 @@ void Machine_state::set_state_lock_open(uint32_t delay) {
     state_scheduler.invalidate(this);
     state_scheduler.push(idle_event);
     GPIO_ResetBits(EM_LOCK_PORT,EM_LOCK_PIN);
-
 }
 
 void Machine_state::set_state_guest_call(uint32_t delay) {

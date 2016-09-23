@@ -16,8 +16,6 @@
 #define MACHINE_STATE_LOCK_OPEN 1
 #define MACHINE_STATE_GUEST_CALL 2
 
-
-
 class Machine_state{
 public:
     void set_state(uint8_t state, uint32_t delay);
@@ -31,7 +29,6 @@ public:
 
 private:
     led **leds;
-
     uint32_t delay;
     uint8_t current_state;
 };

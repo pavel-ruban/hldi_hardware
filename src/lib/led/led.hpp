@@ -12,7 +12,6 @@
 #define LED_TYPE_BLUE 0
 #define LED_TYPE_RGB 3
 
-
 class Color {
 public:
     uint8_t Red = 0;

@@ -83,8 +83,6 @@ led::led(uint8_t led_type, GPIO_TypeDef *led_port, uint16_t led_pin_r, uint16_t 
 
 	/* Enable GPIOA clock */
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
-
-
 	// Configure GPIO
 	//GPIO_InitTypeDef GPIO_InitStructure;
 
@@ -98,7 +96,6 @@ led::led(uint8_t led_type, GPIO_TypeDef *led_port, uint16_t led_pin_r, uint16_t 
 	TIM_TimeBaseInitStructure.TIM_Prescaler = TIM_PRESCALER;
 	TIM_TimeBaseInitStructure.TIM_Period = TIM_PERIOD;
 	TIM_TimeBaseInit(TIM2, &TIM_TimeBaseInitStructure);
-
 
 	led::_init_output_channel( led::color.Red, led_pin_r);
 	led::_init_output_channel( led::color.Green, led_pin_g);
@@ -138,8 +135,6 @@ void led::set_color(Color  _color)
 			case LED_TYPE_BLUE:
 				TIM_SetCompare2(TIM2,color.Uncolored * TIM_PERIOD / 0xFF);
 				break;
-
-
 		}
 	}
 
@@ -167,15 +162,12 @@ void led::set_color(uint32_t _color)
 			case LED_TYPE_BLUE:
 				TIM_SetCompare2(TIM2,color.Uncolored * TIM_PERIOD / 0xFF);
 				break;
-
-
 		}
 	}
-
 }
 
 
-void led::set_intensity(uint8_t intensity){
+void led::set_intensity(uint8_t intensity) {
 	led::color.Uncolored = intensity;
 	TIM_SetCompare2(TIM2,intensity * TIM_PERIOD / 0xFF);
 }
