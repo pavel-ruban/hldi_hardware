@@ -23,6 +23,8 @@
 .word	TIM2_IRQHandler
 .org    0xB4
 .word   TIM3_IRQHandler
+.org    0xD4
+.word   USART1_IRQHandler
 .org	0xDC
 .word	WRONG_IRQ_EXCEPTION
 .org	0xE0

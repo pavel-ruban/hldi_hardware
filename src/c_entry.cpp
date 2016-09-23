@@ -15,6 +15,7 @@
 #include <scheduler/include/scheduler.h>
 #include <config.h>
 #include "lib/led/led.hpp"
+#include "uart/uart.h"
 
 extern "C" {
 #include <binds.h>
@@ -56,6 +57,7 @@ Queue<tag_cache_entry, 100> tag_cache;
 Queue<tag_event, 100> tag_events;
 Scheduler<Event<led>, 100> led_scheduler;
 Scheduler<Event<Machine_state>, 100> state_scheduler;
+Uart uart(UART1,9600);
 
 /* Private function prototypes -----------------------------------------------*/
 void RCC_Configuration(void);
@@ -128,6 +130,22 @@ extern "C" void SysTick_Handler(void)
 extern "C" void EXTI2_IRQHandler()
 {
 
+}
+
+extern "C" void USART1_IRQHandler()
+{
+    //Receive Data register not empty interrupt
+    if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET)
+    {
+        USART_ClearITPendingBit(USART1, USART_IT_RXNE);
+        uart.last_byte = USART_ReceiveData (USART1);
+        leds[0]->set_color(USART_ReceiveData (USART1));
+    }
+    //Transmission complete interrupt
+    if(USART_GetITStatus(USART1, USART_IT_TC) != RESET)
+    {
+        USART_ClearITPendingBit(USART1, USART_IT_TC);
+    }
 }
 
 extern "C" void EXTI0_IRQHandler()
@@ -207,18 +225,45 @@ void InitializeTimer()
     TIM_ITConfig(TIM3, TIM_IT_Update, ENABLE);
 }
 
+
+
 extern "C" int main(void)
 {
     led rgb_led(LED_TYPE_RGB, GPIOA, GPIO_Pin_1, GPIO_Pin_2, GPIO_Pin_3, LED_COLOR_WHITE);
     leds[LED_STATE_INDICATOR] =  &rgb_led;
     leds[LED_STATE_INDICATOR]->on();
-    machine_state.set_state_idle();
+    //machine_state.set_state_idle();
     interrupt_initialize();
 	__enable_irq();
     InitializeTimer();
-	while (1)
+    uint8_t last_byte = 0;
+    uint32_t ccolor = 0;
+    uint8_t i = 0;
+    while (1)
 	{
 
+        if (uart.last_byte != last_byte){
+            i++;
+            switch (i){
+                case 1:
+                    ccolor = ccolor | uart.last_byte << 16;
+                    break;
+                case 2:
+                    ccolor = ccolor | uart.last_byte << 8;
+                    break;
+                case 3:
+                    ccolor = ccolor | uart.last_byte << 0;
+                    break;
+            }
+            if (i == 4) {
+                i = 0;
+                ccolor = 0;
+            }
+            last_byte = uart.last_byte;
+        }
+        leds[0]->set_color(ccolor);
+        uart.send("Hello!\n\r");
+        Delay(200000); //небольшая задержка
 	}
 }
 
@@ -278,6 +323,13 @@ void interrupt_initialize()
 	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x00;
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);
+
+    NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn; //канал
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x05; //приоритет
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x05;//приоритет субгруппы
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE; //включаем канал
+    NVIC_Init(&NVIC_InitStructure); //инициализируем
+    USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
 }
 
 extern "C" void initialize_systick()
