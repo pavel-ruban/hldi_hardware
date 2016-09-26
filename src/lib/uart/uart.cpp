@@ -89,6 +89,13 @@ void Uart::init_uart_3(uint32_t speed) {
 }
 
 Uart::Uart(uint8_t uart_number, uint32_t speed) {
+    for (uint16_t i = 0; i < RECV_STRING_MAX_SIZE; ++i) {
+        last_string[i] = 0;
+    }
+    last_string_empty = 1;
+    last_char = 0;
+    last_string_ready = 0;
+    last_string_parsed = 0;
     switch (uart_number){
         case UART1:
             init_uart_1(speed);
@@ -112,8 +119,8 @@ Uart::~Uart() {
 void Uart::send_byte(uint8_t data) {
     switch (current_uart_number){
         case UART1:
-            while(!(USART1->SR & USART_SR_TC));
-            USART1->DR=data;
+            while(USART_GetFlagStatus(USART1,USART_FLAG_TXE) == RESET);
+            USART_SendData(USART1,data);
             break;
         case UART2:
             while(!(USART1->SR & USART_SR_TC));

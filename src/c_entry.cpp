@@ -57,7 +57,7 @@ Queue<tag_cache_entry, 100> tag_cache;
 Queue<tag_event, 100> tag_events;
 Scheduler<Event<led>, 100> led_scheduler;
 Scheduler<Event<Machine_state>, 100> state_scheduler;
-Uart uart(UART1,9600);
+Uart uart(UART1,115200);
 
 /* Private function prototypes -----------------------------------------------*/
 void RCC_Configuration(void);
@@ -137,9 +137,36 @@ extern "C" void USART1_IRQHandler()
     //Receive Data register not empty interrupt
     if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET)
     {
+        if (uart.last_string_ready){
+            for (uint16_t i = 0; i < RECV_STRING_MAX_SIZE; ++i) {
+                uart.last_string[i] = 0;
+            }
+            uart.last_string_empty = 1;
+            uart.last_string_ready = 0;
+            uart.last_char = 0;
+        }
         USART_ClearITPendingBit(USART1, USART_IT_RXNE);
         uart.last_byte = USART_ReceiveData (USART1);
-        leds[0]->set_color(USART_ReceiveData (USART1));
+        uart.last_string_empty = 0;
+        if (uart.last_byte != 0) {
+            uart.last_string[uart.last_char] = uart.last_byte;
+        }
+        if (uart.last_byte == '\n') {
+            uart.last_string_ready = 1;
+            uart.last_string_parsed = 0;
+        } else if (uart.last_byte != 0) {
+            uart.last_char++;
+        }
+        if (uart.last_string_ready && !uart.last_string_parsed){
+//            for (uint16_t i = 0; i < RECV_STRING_MAX_SIZE; ++i) {
+//                if (uart.last_string[i] == '+') {
+//                    int a = 0;
+//                    break;
+//                }
+//            }
+            uart.last_string_parsed = 1;
+            int b = 10;
+        }
     }
     //Transmission complete interrupt
     if(USART_GetITStatus(USART1, USART_IT_TC) != RESET)
@@ -239,30 +266,48 @@ extern "C" int main(void)
     uint8_t last_byte = 0;
     uint32_t ccolor = 0;
     uint8_t i = 0;
+
+    uart.send("AT+CWMODE=1\r\n");
+    Delay(200000); //небольшая задержка
+    uart.send("AT+CWJAP=\"i20.pub\",\"i20biz2015\"\r\n");
+    Delay(30000000); //небольшая задержка
+    uart.send("AT+CIPSTART=\"TCP\",\"172.217.22.46\",80\r\n");
+    Delay(3000000);
+    uart.send("AT+CIPSEND=15\r\n");
+    Delay(300000);
+    uart.send("GET / HTTP/1.1\r\n");
+
+
+
     while (1)
 	{
 
-        if (uart.last_byte != last_byte){
-            i++;
-            switch (i){
-                case 1:
-                    ccolor = ccolor | uart.last_byte << 16;
-                    break;
-                case 2:
-                    ccolor = ccolor | uart.last_byte << 8;
-                    break;
-                case 3:
-                    ccolor = ccolor | uart.last_byte << 0;
-                    break;
-            }
-            if (i == 4) {
-                i = 0;
-                ccolor = 0;
-            }
-            last_byte = uart.last_byte;
-        }
-        leds[0]->set_color(ccolor);
-        uart.send("Hello!\n\r");
+//        if (uart.last_byte != last_byte){
+//            i++;
+//            switch (i){
+//                case 1:
+//                    ccolor = ccolor | uart.last_byte << 16;
+//                    break;
+//                case 2:
+//                    ccolor = ccolor | uart.last_byte << 8;
+//                    break;
+//                case 3:
+//                    ccolor = ccolor | uart.last_byte << 0;
+//                    break;
+//            }
+//            if (i == 4) {
+//                i = 0;
+//                ccolor = 0;
+//            }
+//            last_byte = uart.last_byte;
+//        }
+//        leds[0]->set_color(ccolor);
+        Delay(20000000);
+        //uart.send("AT+CWLAP\r\n");
+
+
+        //uart.send("GGSJTJHJJ\r\n");
+        Delay(200000); //небольшая задержка
         Delay(200000); //небольшая задержка
 	}
 }
