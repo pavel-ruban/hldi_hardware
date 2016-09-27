@@ -161,7 +161,8 @@ HARDWARE_LIBS_OBJS = 					\
 	$(HARDWARE_LIBS_DIR)/scheduler/event.o			\
 	$(HARDWARE_LIBS_DIR)/scheduler/scheduler.o		\
 	$(HARDWARE_LIBS_DIR)/machine_state/machine_state.o	\
-	$(HARDWARE_LIBS_DIR)/uart/uart.o
+	$(HARDWARE_LIBS_DIR)/uart/uart.o		\
+	$(HARDWARE_LIBS_DIR)/esp8266/esp8266.o
 
 $(HARDWARE_LIBS_OUT): $(HARDWARE_LIBS_OBJS)
 	$(AR) $(ARFLAGS) $@ $(HARDWARE_LIBS_OBJS)

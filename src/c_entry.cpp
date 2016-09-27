@@ -16,6 +16,8 @@
 #include <config.h>
 #include "lib/led/led.hpp"
 #include "uart/uart.h"
+#include "esp8266/esp8266.h"
+#include <stdio.h>
 
 extern "C" {
 #include <binds.h>
@@ -34,6 +36,7 @@ GPIO_InitTypeDef GPIO_InitStructure;
 ErrorStatus HSEStartUpStatus;
 led *leds[LED_QUANTITY] = {NULL};
 Machine_state machine_state(leds);
+
 
 extern uint8_t mac_addr[6];
 extern uint8_t enc28j60_revid;
@@ -58,6 +61,7 @@ Queue<tag_event, 100> tag_events;
 Scheduler<Event<led>, 100> led_scheduler;
 Scheduler<Event<Machine_state>, 100> state_scheduler;
 Uart uart(UART1,115200);
+Esp8266 wifi(&uart);
 
 /* Private function prototypes -----------------------------------------------*/
 void RCC_Configuration(void);
@@ -70,6 +74,22 @@ void RTC_Configuration();
 
 extern "C" void reset_asm();
 
+
+
+char* strstr(char *haystack, const char *needle) {
+    if (haystack == NULL || needle == NULL) {
+        return NULL;
+    }
+    for ( ; *haystack; haystack++) {
+        const char *h, *n;
+        for (h = haystack, n = needle; *h && *n && (*h == *n); ++h, ++n) {
+        }
+        if (*n == '\0') {
+            return haystack;
+        }
+    }
+    return NULL;
+}
 
 extern "C" void __initialize_hardware_early()
 {
@@ -132,6 +152,13 @@ extern "C" void EXTI2_IRQHandler()
 
 }
 
+void Responce_Handler() {
+    if (!uart.last_string_ready)
+        return;
+
+
+}
+
 extern "C" void USART1_IRQHandler()
 {
     //Receive Data register not empty interrupt
@@ -158,14 +185,11 @@ extern "C" void USART1_IRQHandler()
             uart.last_char++;
         }
         if (uart.last_string_ready && !uart.last_string_parsed){
-//            for (uint16_t i = 0; i < RECV_STRING_MAX_SIZE; ++i) {
-//                if (uart.last_string[i] == '+') {
-//                    int a = 0;
-//                    break;
-//                }
-//            }
+                if (strstr(uart.last_string,"CW")) {
+                    int b = 10;
+                }
             uart.last_string_parsed = 1;
-            int b = 10;
+
         }
     }
     //Transmission complete interrupt
@@ -174,6 +198,8 @@ extern "C" void USART1_IRQHandler()
         USART_ClearITPendingBit(USART1, USART_IT_TC);
     }
 }
+
+
 
 extern "C" void EXTI0_IRQHandler()
 {
@@ -266,16 +292,17 @@ extern "C" int main(void)
     uint8_t last_byte = 0;
     uint32_t ccolor = 0;
     uint8_t i = 0;
+    printf("sfsfs");
 
     uart.send("AT+CWMODE=1\r\n");
     Delay(200000); //небольшая задержка
     uart.send("AT+CWJAP=\"i20.pub\",\"i20biz2015\"\r\n");
     Delay(30000000); //небольшая задержка
     uart.send("AT+CIPSTART=\"TCP\",\"172.217.22.46\",80\r\n");
-    Delay(3000000);
-    uart.send("AT+CIPSEND=15\r\n");
-    Delay(300000);
-    uart.send("GET / HTTP/1.1\r\n");
+//    Delay(3000000);
+//    uart.send("AT+CIPSEND=15\r\n");
+//    Delay(300000);
+//    uart.send("GET / HTTP/1.1\r\n");
 
 
 
@@ -304,11 +331,6 @@ extern "C" int main(void)
 //        leds[0]->set_color(ccolor);
         Delay(20000000);
         //uart.send("AT+CWLAP\r\n");
-
-
-        //uart.send("GGSJTJHJJ\r\n");
-        Delay(200000); //небольшая задержка
-        Delay(200000); //небольшая задержка
 	}
 }
 
