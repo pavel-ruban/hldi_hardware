@@ -1,7 +1,9 @@
 #pragma once
+#pragma pack(1)
 #include <stdint.h>
 #include "uart/uart.h"
 #include "config.h"
+#include "binds.h"
 #define STRING_IS_NOT_READY 1
 #define STRING_READY 1
 
@@ -38,6 +40,7 @@ public:
     uint32_t ip_address;
     uint8_t handle_responce();
     uint8_t recieve_string();
+    void send_request(char* request);
 
     void connect_to_wifi(char* ssid, char* password);
 };

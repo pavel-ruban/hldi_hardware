@@ -60,7 +60,7 @@ Queue<tag_cache_entry, 100> tag_cache;
 Queue<tag_event, 100> tag_events;
 Scheduler<Event<led>, 100> led_scheduler;
 Scheduler<Event<Machine_state>, 100> state_scheduler;
-Uart uart(UART1,115200);
+Uart uart(UART1, 115200);
 Esp8266 wifi(&uart);
 
 /* Private function prototypes -----------------------------------------------*/
@@ -155,51 +155,39 @@ extern "C" void EXTI2_IRQHandler()
 void Responce_Handler() {
     if (!uart.last_string_ready)
         return;
-
-
 }
 
 extern "C" void USART1_IRQHandler()
 {
-    //Receive Data register not empty interrupt
-    if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET)
-    {
-        if (uart.last_string_ready){
+    // Receive Data register not empty interrupt.
+    if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET) {
+        uart.last_byte = USART_ReceiveData(USART1);
+        GPIO_SetBits(EM_LOCK_PORT, EM_LOCK_PIN);
+
+        if (!uart.last_string_ready) {
+            uart.last_string[uart.last_char] = uart.last_byte;
+            uart.last_char++;
+        } else {
             for (uint16_t i = 0; i < RECV_STRING_MAX_SIZE; ++i) {
                 uart.last_string[i] = 0;
             }
-            uart.last_string_empty = 1;
             uart.last_string_ready = 0;
-            uart.last_char = 0;
+            uart.last_string[0] = uart.last_byte;
+            uart.last_char = 1;
         }
-        USART_ClearITPendingBit(USART1, USART_IT_RXNE);
-        uart.last_byte = USART_ReceiveData (USART1);
-        uart.last_string_empty = 0;
-        if (uart.last_byte != 0) {
-            uart.last_string[uart.last_char] = uart.last_byte;
-        }
+
         if (uart.last_byte == '\n') {
             uart.last_string_ready = 1;
-            uart.last_string_parsed = 0;
-        } else if (uart.last_byte != 0) {
-            uart.last_char++;
-        }
-        if (uart.last_string_ready && !uart.last_string_parsed){
-                if (strstr(uart.last_string,"CW")) {
-                    int b = 10;
-                }
-            uart.last_string_parsed = 1;
-
+            wifi.handle_responce();
         }
     }
-    //Transmission complete interrupt
+    // Transmission complete interrupt.
+    GPIO_ResetBits(EM_LOCK_PORT, EM_LOCK_PIN);
     if(USART_GetITStatus(USART1, USART_IT_TC) != RESET)
     {
         USART_ClearITPendingBit(USART1, USART_IT_TC);
     }
 }
-
-
 
 extern "C" void EXTI0_IRQHandler()
 {
@@ -217,8 +205,6 @@ extern "C" void EXTI1_IRQHandler()
     }
     EXTI_ClearITPendingBit(EXTI_Line1);
 }
-
-
 
 extern "C" void EXTI15_10_IRQHandler()
 {
@@ -289,48 +275,19 @@ extern "C" int main(void)
     interrupt_initialize();
 	__enable_irq();
     InitializeTimer();
-    uint8_t last_byte = 0;
-    uint32_t ccolor = 0;
-    uint8_t i = 0;
-    printf("sfsfs");
-
-    uart.send("AT+CWMODE=1\r\n");
-    Delay(200000); //небольшая задержка
-    uart.send("AT+CWJAP=\"i20.pub\",\"i20biz2015\"\r\n");
-    Delay(30000000); //небольшая задержка
-    uart.send("AT+CIPSTART=\"TCP\",\"172.217.22.46\",80\r\n");
-//    Delay(3000000);
-//    uart.send("AT+CIPSEND=15\r\n");
-//    Delay(300000);
-//    uart.send("GET / HTTP/1.1\r\n");
-
-
+    GPIO_ResetBits(EM_LOCK_PORT, EM_LOCK_PIN);
+    wifi.connect_to_wifi("sfsf", "sfsf");
 
     while (1)
 	{
 
-//        if (uart.last_byte != last_byte){
-//            i++;
-//            switch (i){
-//                case 1:
-//                    ccolor = ccolor | uart.last_byte << 16;
-//                    break;
-//                case 2:
-//                    ccolor = ccolor | uart.last_byte << 8;
-//                    break;
-//                case 3:
-//                    ccolor = ccolor | uart.last_byte << 0;
-//                    break;
-//            }
-//            if (i == 4) {
-//                i = 0;
-//                ccolor = 0;
-//            }
-//            last_byte = uart.last_byte;
-//        }
-//        leds[0]->set_color(ccolor);
-        Delay(20000000);
-        //uart.send("AT+CWLAP\r\n");
+        if (wifi.is_connected_to_wifi && !wifi.is_connected_to_server) {
+            wifi.connect_to_ip("ssdsd", "sdsds");
+        }
+        if (wifi.is_connected_to_server) {
+
+        }
+        Delay(200000);
 	}
 }
 
@@ -343,13 +300,12 @@ void interrupt_initialize()
 
 	// GPIO structure used to initialize Button pins
 	// Connect EXTI Lines to Button Pins
-
-//	//BTN_OPEN
+	// BTN_OPEN.
 	GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource0);
-    //BTN_CALL
+    // BTN_CALL.
     GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource1);
 
-	// IRQ Driven Button BTN_OPEN
+	// IRQ Driven Button BTN_OPEN.
 	EXTI_InitStructure.EXTI_Line = EXTI_Line0;
 	EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
 	EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
@@ -362,7 +318,7 @@ void interrupt_initialize()
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 
-    // IRQ Driven Button BTN_CALL
+    // IRQ Driven Button BTN_CALL.
     EXTI_InitStructure.EXTI_Line = EXTI_Line1;
     EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
     EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
@@ -397,6 +353,8 @@ void interrupt_initialize()
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE; //включаем канал
     NVIC_Init(&NVIC_InitStructure); //инициализируем
     USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
+
+
 }
 
 extern "C" void initialize_systick()

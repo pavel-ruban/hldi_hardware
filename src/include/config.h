@@ -1,9 +1,9 @@
 //
 // Created by root on 13/09/16.
 //
+#pragma once
+#pragma pack(1)
 
-#ifndef CONFIG_H
-#define CONFIG_H
 #define LED_QUANTITY 1
 #define ITERATOR_COUNT 10
 
@@ -27,4 +27,4 @@
 
 
 
-#endif //CONFIG_H
+

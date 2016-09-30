@@ -146,22 +146,22 @@ BINDS_OBJS = 				\
 $(BINDS_OUT): $(BINDS_OBJS)
 	$(AR) $(ARFLAGS) $@ $(BINDS_OBJS)
 
-HARDWARE_LIBS_OBJS = 					\
-	$(HARDWARE_LIBS_DIR)/rc522/mfrc522.o		\
-	$(HARDWARE_LIBS_DIR)/ethernet/arp.o		\
-	$(HARDWARE_LIBS_DIR)/ethernet/ethernet.o	\
-	$(HARDWARE_LIBS_DIR)/ethernet/icmp.o		\
-	$(HARDWARE_LIBS_DIR)/ethernet/ip.o		\
-	$(HARDWARE_LIBS_DIR)/ethernet/tcp.o		\
-	$(HARDWARE_LIBS_DIR)/ethernet/dhcp.o		\
-	$(HARDWARE_LIBS_DIR)/ethernet/udp.o		\
-	$(HARDWARE_LIBS_DIR)/ethernet/dns.o		\
-	$(HARDWARE_LIBS_DIR)/enc28j60/enc28j60.o 	\
-	$(HARDWARE_LIBS_DIR)/led/led.o			\
+HARDWARE_LIBS_OBJS = 						\
+	$(HARDWARE_LIBS_DIR)/rc522/mfrc522.o			\
+	$(HARDWARE_LIBS_DIR)/ethernet/arp.o			\
+	$(HARDWARE_LIBS_DIR)/ethernet/ethernet.o		\
+	$(HARDWARE_LIBS_DIR)/ethernet/icmp.o			\
+	$(HARDWARE_LIBS_DIR)/ethernet/ip.o			\
+	$(HARDWARE_LIBS_DIR)/ethernet/tcp.o			\
+	$(HARDWARE_LIBS_DIR)/ethernet/dhcp.o			\
+	$(HARDWARE_LIBS_DIR)/ethernet/udp.o			\
+	$(HARDWARE_LIBS_DIR)/ethernet/dns.o			\
+	$(HARDWARE_LIBS_DIR)/enc28j60/enc28j60.o	 	\
+	$(HARDWARE_LIBS_DIR)/led/led.o				\
 	$(HARDWARE_LIBS_DIR)/scheduler/event.o			\
 	$(HARDWARE_LIBS_DIR)/scheduler/scheduler.o		\
 	$(HARDWARE_LIBS_DIR)/machine_state/machine_state.o	\
-	$(HARDWARE_LIBS_DIR)/uart/uart.o		\
+	$(HARDWARE_LIBS_DIR)/uart/uart.o			\
 	$(HARDWARE_LIBS_DIR)/esp8266/esp8266.o
 
 $(HARDWARE_LIBS_OUT): $(HARDWARE_LIBS_OBJS)

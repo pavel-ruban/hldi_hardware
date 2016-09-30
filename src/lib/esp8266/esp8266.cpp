@@ -1,11 +1,11 @@
 #include "esp8266.h"
 
-Esp8266::Esp8266(Uart *uart){
+Esp8266::Esp8266(Uart *uart) {
     _uart = uart;
     is_connected_to_wifi = 0;
 }
 
-Esp8266::~Esp8266(){
+Esp8266::~Esp8266() {
 
 }
 
@@ -24,16 +24,22 @@ char* Esp8266::strstr(char *haystack, const char *needle) {
     return NULL;
 }
 
+void Esp8266::send_request(char* request) {
+    _uart->send(request);
+}
+
 uint8_t Esp8266::connect_to_ip(char* ip, char* port) {
     if (current_state == STATE_READY) {
-        _uart->send("AT+CIPSTART=\"TCP\",\"172.217.22.46\",80\r\n");
+        _uart->send("AT+CIPSTART=\"TCP\", \"172.217.22.46\", 80\r\n");
         current_state = STATE_WAITING_IP_CONNECT;
     } else return current_state;
 }
 
 uint8_t Esp8266::recieve_string() {
     if (_uart->last_string_ready) {
-       // last_string = _uart->last_string;
+        for (uint16_t i = 0; i < strlen(_uart->last_string); i++) {
+            last_string[i] = _uart->last_string[i];
+    }
         return STRING_READY;
     } else return STRING_IS_NOT_READY;
 }
@@ -45,7 +51,7 @@ uint8_t Esp8266::refresh_status() {
 }
 
 void Esp8266::send_request_to_connect() {
-    _uart->send("AT+CWJAP=\"i20.pub\",\"i20biz2015\"\r\n");
+    _uart->send("AT+CWJAP=\"i20.pub\", \"i20biz2015\"\r\n");
     current_state = STATE_WAITING_WIFI_CONNECT;
 }
 
@@ -77,9 +83,16 @@ uint8_t Esp8266::handle_responce() {
             return INTERNAL_RESPONCE;
         }
     }
+    if (strstr(last_string, "STATUS:5")) {
+        is_connected_to_wifi = 1;
+        return INTERNAL_RESPONCE;
+    }
+    if (strstr(last_string, "STATUS:4")) {
+        is_connected_to_wifi = 0;
+        return INTERNAL_RESPONCE;
+    }
     return EXTERNAL_RESPONCE;
 }
-
 
 void Esp8266::connect_to_wifi(char* ssid, char* password) {
     this->ssid = ssid;
