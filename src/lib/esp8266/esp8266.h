@@ -4,6 +4,9 @@
 #include "uart/uart.h"
 #include "config.h"
 #include "binds.h"
+
+#define BUFFER_SIZE 100
+
 #define STRING_IS_NOT_READY 1
 #define STRING_READY 1
 
@@ -23,8 +26,13 @@
 class Esp8266{
 private:
     char last_string[RECV_STRING_MAX_SIZE];
+    char buffer_string[BUFFER_SIZE];
     void send_request_to_connect();
+    char buf[10] = {0};
 public:
+    char* int_to_string(uint32_t i);
+    void clear_buffer();
+    char* strcat(char *dest, const char *src);
     uint8_t refresh_status();
     uint8_t connect_to_ip(char* ip, char* port);
     char * ssid;
