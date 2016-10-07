@@ -3,7 +3,7 @@
 //
 #pragma once
 
-#include <cstdint>
+#include <stdint.h>
 #include <stm32f10x_conf.h>
 #define RECV_STRING_MAX_SIZE 200
 
@@ -25,7 +25,5 @@ public:
     uint8_t last_string_ready;
     uint8_t last_string_parsed;
 private:
-    void init_uart_1(uint32_t speed);
-    void init_uart_2(uint32_t speed);
-    void init_uart_3(uint32_t speed);
+    void init_uart(uint32_t speed, uint8_t uart = UART1);
 };

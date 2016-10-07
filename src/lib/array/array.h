@@ -3,7 +3,7 @@
 //
 #pragma once
 #include <scheduler/include/event.h>
-#include <cstdint>
+#include <stdint.h>
 #include <stm32f10x_conf.h>
 #include "config.h"
 #pragma pack(1)

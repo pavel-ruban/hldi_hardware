@@ -4,7 +4,7 @@
 #pragma once
 
 #include <utils.h>
-#include <cstdint>
+#include <stdint.h>
 //#include <stm32f10x_conf.h>
 #include "config.h"
 #include <scheduler/include/scheduler.h>

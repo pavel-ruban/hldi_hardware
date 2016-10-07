@@ -5,10 +5,18 @@
  * Date               : 12/06/2016
  * Description        : Main program body
  ******************************************************************************/
+
 #pragma pack(1)
+
 /* Includes ------------------------------------------------------------------*/
+
 #include <stdint.h>
-#include <stm32f10x_conf.h>
+#include <stdlib.h>
+
+extern "C" {
+	#include <stm32f10x_conf.h>
+}
+
 #include "include/utils.h"
 #include <led/led.hpp>
 #include "machine_state/machine_state.h"
@@ -20,8 +28,8 @@
 #include <stdio.h>
 
 extern "C" {
-#include <binds.h>
-#include <string.h>
+	#include <binds.h>
+	#include <string.h>
 }
 
 #include "include/queue.h"
@@ -71,10 +79,7 @@ extern "C" void custom_asm();
 void rc522_irq_prepare();
 void RTC_Configuration();
 
-
 extern "C" void reset_asm();
-
-
 
 char* strstr(char *haystack, const char *needle) {
     if (haystack == NULL || needle == NULL) {
@@ -264,10 +269,30 @@ void InitializeTimer()
     TIM_ITConfig(TIM3, TIM_IT_Update, ENABLE);
 }
 
-
-
-extern "C" int main(void)
+int *xx;
+extern "C" int
+main(void)
 {
+//    std::string ss("gxfdsfs");
+    int x = 0;
+    Uart uart2(UART2, 115200);
+
+    xx = (int *) malloc(334);
+    while (1) {
+        char s1[] = "Hello green cube";
+        char s2[] = "Lets go further";
+        int z = strlen(s1);
+        int z2 = strlen(s2);
+
+        char s4[100];
+
+        sprintf(s4, "Hello my greeting is %s Usually I say it %d times!!!\n\n", s1, 5);
+
+        uart2.send(s4);
+        ++x;
+        int y = 1;
+    }
+
     led rgb_led(LED_TYPE_RGB, GPIOA, GPIO_Pin_1, GPIO_Pin_2, GPIO_Pin_3, LED_COLOR_WHITE);
     leds[LED_STATE_INDICATOR] =  &rgb_led;
     leds[LED_STATE_INDICATOR]->on();
@@ -353,8 +378,6 @@ void interrupt_initialize()
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE; //включаем канал
     NVIC_Init(&NVIC_InitStructure); //инициализируем
     USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
-
-
 }
 
 extern "C" void initialize_systick()
@@ -470,7 +493,7 @@ void Delay(vu32 nCount)
  * Output         : None
  * Return         : None
  *******************************************************************************/
-void assert_failed(u8* file, u32 line)
+void assert_failed(uint8_t *file, uint32_t line)
 {
 	/* User can add his own implementation to report the file name and line number,
 ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
