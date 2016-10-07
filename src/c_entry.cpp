@@ -301,18 +301,23 @@ main(void)
 	__enable_irq();
     InitializeTimer();
     GPIO_ResetBits(EM_LOCK_PORT, EM_LOCK_PIN);
-    wifi.connect_to_wifi("sfsf", "sfsf");
-
+    wifi.connect_to_wifi("i20.pub", "i20biz2015");
+    //int_to_string(4235353);
+    int i1 = 10;
     while (1)
 	{
 
         if (wifi.is_connected_to_wifi && !wifi.is_connected_to_server) {
-            wifi.connect_to_ip("ssdsd", "sdsds");
-        }
-        if (wifi.is_connected_to_server) {
+            wifi.connect_to_ip("192.168.1.141", "2525");
+           // Delay(10000);
 
         }
-        Delay(200000);
+        if (wifi.is_connected_to_server) {
+            i1 = strlen("BIBA\n");
+
+            wifi.send_request("BIBA\n");
+        }
+        Delay(700000);
 	}
 }
 

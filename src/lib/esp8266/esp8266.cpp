@@ -24,13 +24,62 @@ char* Esp8266::strstr(char *haystack, const char *needle) {
     return NULL;
 }
 
+char* Esp8266::strcat(char *dest, const char *src) {
+    size_t i,j;
+    for (i = 0; dest[i] != '\0'; i++)
+        ;
+    for (j = 0; src[j] != '\0'; j++)
+        dest[i+j] = src[j];
+    dest[i+j] = '\0';
+    return dest;
+}
+
+char* Esp8266::int_to_string(uint32_t i) {
+    uint8_t loop = 0;
+    uint32_t buf_i = i;
+    if (i / 10 == 0) {
+        buf[0] = i + 48;
+        buf[1] = 0;
+        return buf;
+    }
+    for (loop = 0; buf_i >= 10; loop++) {
+        buf_i = buf_i / 10;
+    }
+    buf[loop + 1] = 0;
+    for (loop; loop > 0; loop--) {
+        buf[loop] = i % 10 + 48;
+        i = i / 10;
+    }
+    buf[0] = i + 48;
+    return buf;
+}
+
+void Esp8266::clear_buffer() {
+    for (uint16_t i = 0; i < BUFFER_SIZE; i++) {
+        buffer_string[i] = 0;
+    }
+}
+
 void Esp8266::send_request(char* request) {
+    clear_buffer();
+    strcat(buffer_string, "AT+CIPSEND=");
+    strcat(buffer_string, int_to_string(strlen(request) - 1));
+    strcat(buffer_string, "\r\n");
+    _uart->send(buffer_string);
+    Delay(1000);
     _uart->send(request);
+
 }
 
 uint8_t Esp8266::connect_to_ip(char* ip, char* port) {
     if (current_state == STATE_READY) {
-        _uart->send("AT+CIPSTART=\"TCP\", \"172.217.22.46\", 80\r\n");
+        clear_buffer();
+        strcat(buffer_string, "AT+CIPSTART=\"TCP\",\"");
+        strcat(buffer_string, ip);
+        strcat(buffer_string, "\",");
+        strcat(buffer_string, port);
+        strcat(buffer_string, "\r\n");
+        _uart->send(buffer_string);
         current_state = STATE_WAITING_IP_CONNECT;
     } else return current_state;
 }
@@ -51,7 +100,12 @@ uint8_t Esp8266::refresh_status() {
 }
 
 void Esp8266::send_request_to_connect() {
-    _uart->send("AT+CWJAP=\"i20.pub\", \"i20biz2015\"\r\n");
+    strcat(buffer_string, "AT+CWJAP=\"");
+    strcat(buffer_string, ssid);
+    strcat(buffer_string, "\",\"");
+    strcat(buffer_string, password);
+    strcat(buffer_string, "\"\r\n");
+    _uart->send(buffer_string);
     current_state = STATE_WAITING_WIFI_CONNECT;
 }
 
