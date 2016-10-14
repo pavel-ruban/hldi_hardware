@@ -4,7 +4,8 @@
 
 #include "uart.h"
 
-void Uart::init_uart(uint32_t speed, uint8_t uart) {
+void Uart::init_uart(uint32_t speed, uint8_t uart)
+{
     GPIO_InitTypeDef Tx_init;
 
     uint32_t uart_rcc_apb2 = 0;
@@ -14,7 +15,8 @@ void Uart::init_uart(uint32_t speed, uint8_t uart) {
     USART_TypeDef *usartx = 0;
     GPIO_TypeDef *uart_pins_port = 0;
 
-    switch (uart) {
+    switch (uart)
+    {
         case UART1:
             uart_rcc_apb2 = RCC_APB2Periph_USART1;
             uart_rcc_apb2_gpio = RCC_APB2Periph_GPIOA;
@@ -54,18 +56,18 @@ void Uart::init_uart(uint32_t speed, uint8_t uart) {
     GPIO_Init(uart_pins_port, &Tx_init);
 
     GPIO_InitTypeDef Rx_init;
-    Rx_init.GPIO_Pin   = uart_pin_rx;
-    Rx_init.GPIO_Mode  = GPIO_Mode_IN_FLOATING;
+    Rx_init.GPIO_Pin = uart_pin_rx;
+    Rx_init.GPIO_Mode = GPIO_Mode_IN_FLOATING;
     GPIO_Init(uart_pins_port, &Rx_init);
 
     USART_InitTypeDef uart_struct;
 
-    uart_struct.USART_BaudRate            = speed;
-    uart_struct.USART_WordLength          = USART_WordLength_8b;
-    uart_struct.USART_StopBits            = USART_StopBits_1;
-    uart_struct.USART_Parity              = USART_Parity_No ;
+    uart_struct.USART_BaudRate = speed;
+    uart_struct.USART_WordLength = USART_WordLength_8b;
+    uart_struct.USART_StopBits = USART_StopBits_1;
+    uart_struct.USART_Parity = USART_Parity_No ;
     uart_struct.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
-    uart_struct.USART_Mode                = USART_Mode_Rx | USART_Mode_Tx;
+    uart_struct.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
 
     //Инициализируем UART
     USART_Init(usartx, &uart_struct);
@@ -74,7 +76,8 @@ void Uart::init_uart(uint32_t speed, uint8_t uart) {
     USART_Cmd(usartx, ENABLE);
 }
 
-Uart::Uart(uint8_t uart_number, uint32_t speed) {
+Uart::Uart(uint8_t uart_number, uint32_t speed)
+{
     for (uint16_t i = 0; i < RECV_STRING_MAX_SIZE; ++i) {
         last_string[i] = 0;
     }
@@ -90,24 +93,27 @@ Uart::Uart(uint8_t uart_number, uint32_t speed) {
 
 Uart::~Uart() {}
 
-void Uart::send_byte(uint8_t data) {
-    switch (current_uart_number){
+void Uart::send_byte(uint8_t data)
+{
+    switch (current_uart_number)
+    {
         case UART1:
-            while(USART_GetFlagStatus(USART1,USART_FLAG_TXE) == RESET);
-            USART_SendData(USART1,data);
+            while(USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET);
+            USART_SendData(USART1, data);
             break;
         case UART2:
             while(!(USART1->SR & USART_SR_TC));
-            USART2->DR=data;
+            USART2->DR = data;
             break;
         case UART3:
             while(!(USART1->SR & USART_SR_TC));
-            USART3->DR=data;
+            USART3->DR = data;
             break;
     }
 }
 
-void Uart::send(char *string) {
+void Uart::send(char *string)
+{
     for (uint16_t i = 0; string[i] != '\0'; i++) {
         this->send_byte(string[i]);
     }

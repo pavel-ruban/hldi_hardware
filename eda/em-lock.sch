@@ -1558,4 +1558,10 @@ Text Label 7550 7900 0    60   ~ 0
 UART_EXT_TX
 Text Label 7550 8000 0    60   ~ 0
 UART_EXT_RX
+Wire Wire Line
+	13950 7700 15800 7700
+Wire Wire Line
+	15800 7700 15800 7900
+Text Label 14300 7700 0    60   ~ 0
+ESP_RESET
 $EndSCHEMATC

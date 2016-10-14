@@ -165,7 +165,7 @@ void Responce_Handler() {
 extern "C" void USART1_IRQHandler()
 {
     // Receive Data register not empty interrupt.
-    if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET) {
+    if (USART_GetITStatus(USART1, USART_IT_RXNE) != RESET) {
         uart.last_byte = USART_ReceiveData(USART1);
         GPIO_SetBits(EM_LOCK_PORT, EM_LOCK_PIN);
 
@@ -183,12 +183,13 @@ extern "C" void USART1_IRQHandler()
 
         if (uart.last_byte == '\n') {
             uart.last_string_ready = 1;
-            wifi.handle_responce();
+            wifi.handle_response();
         }
     }
     // Transmission complete interrupt.
     GPIO_ResetBits(EM_LOCK_PORT, EM_LOCK_PIN);
-    if(USART_GetITStatus(USART1, USART_IT_TC) != RESET)
+
+    if (USART_GetITStatus(USART1, USART_IT_TC) != RESET)
     {
         USART_ClearITPendingBit(USART1, USART_IT_TC);
     }
@@ -245,6 +246,15 @@ extern "C" void __initialize_hardware()
     GPIO_Init(EM_LOCK_PORT, &GPIO_InitStructure);
     GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE);
 
+    GPIO_InitStructure.GPIO_Pin = ESP8266_RESET_PIN;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+    GPIO_Init(ESP8266_RESET_PORT, &GPIO_InitStructure);
+   // GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE);
+
+    GPIO_ResetBits(ESP8266_RESET_PORT,ESP8266_RESET_PIN);
+    GPIO_SetBits(ESP8266_RESET_PORT,ESP8266_RESET_PIN);
+
 	initialize_systick();
 }
 
@@ -274,24 +284,25 @@ extern "C" int
 main(void)
 {
 //    std::string ss("gxfdsfs");
-    int x = 0;
-    Uart uart2(UART2, 115200);
+//    int x = 0;
+//    Uart uart2(UART2, 115200);
+//
+//    xx = (int *) malloc(334);
+//    while (1) {
+//        char s1[] = "Hello green cube";
+//        char s2[] = "Lets go further";
+//        int z = strlen(s1);
+//        int z2 = strlen(s2);
+//
+//        char s4[100];
+//
+//        sprintf(s4, "Hello my greeting is %s Usually I say it %d times!!!\n\n", s1, 5);
+//
+//        uart2.send(s4);
+//        ++x;
+//        int y = 1;
+//    }
 
-    xx = (int *) malloc(334);
-    while (1) {
-        char s1[] = "Hello green cube";
-        char s2[] = "Lets go further";
-        int z = strlen(s1);
-        int z2 = strlen(s2);
-
-        char s4[100];
-
-        sprintf(s4, "Hello my greeting is %s Usually I say it %d times!!!\n\n", s1, 5);
-
-        uart2.send(s4);
-        ++x;
-        int y = 1;
-    }
 
     led rgb_led(LED_TYPE_RGB, GPIOA, GPIO_Pin_1, GPIO_Pin_2, GPIO_Pin_3, LED_COLOR_WHITE);
     leds[LED_STATE_INDICATOR] =  &rgb_led;
@@ -301,6 +312,7 @@ main(void)
 	__enable_irq();
     InitializeTimer();
     GPIO_ResetBits(EM_LOCK_PORT, EM_LOCK_PIN);
+    Delay(7000000);
     wifi.connect_to_wifi("i20.pub", "i20biz2015");
     //int_to_string(4235353);
     int i1 = 10;
@@ -308,7 +320,7 @@ main(void)
 	{
 
         if (wifi.is_connected_to_wifi && !wifi.is_connected_to_server) {
-            wifi.connect_to_ip("192.168.1.141", "2525");
+            wifi.connect_to_ip("192.168.1.141", "332");
            // Delay(10000);
 
         }
