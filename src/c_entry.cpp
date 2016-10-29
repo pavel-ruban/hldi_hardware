@@ -6,22 +6,34 @@
  * Description        : Main program body
  ******************************************************************************/
 
-/* Includes ------------------------------------------------------------------*/
-#include <stdint.h>
-#include <stm32f10x_conf.h>
-#include <led.hpp>
 #pragma pack(1)
 
+/* Includes ------------------------------------------------------------------*/
+
+#include <stdint.h>
+#include <stdlib.h>
+
 extern "C" {
-#include <binds.h>
-#include <string.h>
+	#include <stm32f10x_conf.h>
+}
+
+#include "include/utils.h"
+#include <led/led.hpp>
+#include "machine_state/machine_state.h"
+#include <scheduler/include/scheduler.h>
+#include <config.h>
+#include "lib/led/led.hpp"
+#include "uart/uart.h"
+#include "esp8266/esp8266.h"
+#include <stdio.h>
+
+extern "C" {
+	#include <binds.h>
+	#include <string.h>
 }
 
 #include "include/queue.h"
-
-#define EVENT_ACCESS_REQ 1
-#define ACCESS_GRANTED 0x1
-#define ACCESS_DENIED 0x0
+#include "lib/array/array.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -30,10 +42,15 @@ extern "C" {
 //SPI_InitTypeDef SPI_InitStructure;
 GPIO_InitTypeDef GPIO_InitStructure;
 ErrorStatus HSEStartUpStatus;
+led *leds[LED_QUANTITY] = {NULL};
+Machine_state machine_state(leds);
+
 
 extern uint8_t mac_addr[6];
 extern uint8_t enc28j60_revid;
 volatile uint32_t ticks;
+int timerValue = 0;
+uint8_t machine_status;
 
 typedef struct {
 	uint8_t tag_id[4];
@@ -49,6 +66,10 @@ typedef struct {
 
 Queue<tag_cache_entry, 100> tag_cache;
 Queue<tag_event, 100> tag_events;
+Scheduler<Event<led>, 100> led_scheduler;
+Scheduler<Event<Machine_state>, 100> state_scheduler;
+Uart uart(UART1, 115200);
+Esp8266 wifi(&uart);
 
 /* Private function prototypes -----------------------------------------------*/
 void RCC_Configuration(void);
@@ -60,6 +81,20 @@ void RTC_Configuration();
 
 extern "C" void reset_asm();
 
+char* strstr(char *haystack, const char *needle) {
+    if (haystack == NULL || needle == NULL) {
+        return NULL;
+    }
+    for ( ; *haystack; haystack++) {
+        const char *h, *n;
+        for (h = haystack, n = needle; *h && *n && (*h == *n); ++h, ++n) {
+        }
+        if (*n == '\0') {
+            return haystack;
+        }
+    }
+    return NULL;
+}
 
 extern "C" void __initialize_hardware_early()
 {
@@ -99,357 +134,118 @@ extern "C" void EXTI4_IRQHandler()
 	while (1) {}
 }
 
-/**
- * @todo we have to have tag, node id, and pcd id here.
- */
-uint8_t somi_access_check(uint8_t tag_id[], uint8_t node_id[], uint8_t pcd_id)
-{
-	// @todo use here network request.
-	return 0xff;
-}
 
-void access_denied_signal();
-
-//void open_node()
-//{
-//	// @todo implement here hardware EMI lock control.
-//	static uint8_t x = 0;
-//	x ^= 1;
-//
-//	if (x) GPIO_SetBits(GPIOA, GPIO_Pin_1);
-//	else access_denied_signal();
-//}
-//
-//void access_denied_signal()
-//{
-//	// @todo implement here hardware EMI lock control.
-//	GPIO_ResetBits(GPIOA, GPIO_Pin_1);
-//}
-//
-//void somi_event_handler(uint8_t event, uint8_t flags)
-//{
-//	switch (event)
-//	{
-//		case EVENT_ACCESS_REQ:
-//			if (flags & ACCESS_GRANTED) {
-//				open_node();
-//			}
-//			else {
-//				access_denied_signal();
-//			}
-//			break;
-//	}
-//}
-//
-///**
-// * SPI handler is triggered under IRQ, when IRQ inkoved it changes CS pointer for appropriate RC522 PCD.
-// * We use it to deternime what PCD triggered PICC signal.
-// */
-//uint8_t get_pcd_id()
-//{
-//	return rc522_select == rc522_2_select ? RC522_PCD_2 : RC522_PCD_1;
-//}
-//
-//void rfid_irq_tag_handler()
-//{
-//	__disable_irq();
-//	uint8_t tag_id[16];
-//	uint8_t status = mfrc522_get_card_serial(tag_id);
-//	__enable_irq();
-//
-//	if (status == CARD_FOUND) {
-//		static uint8_t led_state = 0;
-//		led_state ? GPIO_SetBits(GPIOA, GPIO_Pin_1) : GPIO_ResetBits(GPIOA, GPIO_Pin_1);
-//		led_state ^= 1;
-//
-//		// Check if tag was cached.
-//		uint8_t flags;
-//
-//		tag_cache_entry *cache = nullptr;
-//
-//		for (auto it = tag_cache.begin(); it != tag_cache.end(); ++it) {
-//			if (*((uint32_t *) &(it->tag_id[0])) == *((uint32_t *) &(tag_id[0]))) {
-//				cache = &(*it);
-//				break;
-//			}
-//		}
-//
-//		// We have to do the next things:
-//		// a) Get access for the tag.
-//		// Access can be retreived from network or via cache.
-//		// b) Track event about access request.
-//		// Events can be tracked directly by network request or via RabitMQ queue.
-//
-//		// If no, request data from network and cache result.
-//		if (cache)
-//		{
-//			// If queue has space then use cache and store event to the cache.
-//			if (!tag_events.full) {
-//				tag_event event;
-//				memcpy(event.tag_id, tag_id, 4);
-//				event.event_time = RTC_GetCounter();
-//				event.node = get_pcd_id();
-//
-//				// Add event to the queue.
-//				tag_events.push_back(event);
-//
-//				// Get access flags from cache.
-//				flags = cache->flags;
-//			}
-//			// Otherwise initiate direct network request.
-//			else {
-//				flags = somi_access_check(tag_id, mac_addr, get_pcd_id());
-//			}
-//		}
-//		// If cache hasn't tag request data from network and store it to the cache.
-//		else {
-//			flags = somi_access_check(tag_id, mac_addr, get_pcd_id());
-//			if (!tag_cache.full) {
-//				tag_cache_entry cache_entry;
-//
-//				memcpy(cache_entry.tag_id, tag_id, 4);
-//				cache_entry.flags = flags;
-//				cache_entry.cached = RTC_GetCounter();
-//
-//				tag_cache.push_back(cache_entry);
-//			}
-//		}
-//
-//		// Trigger event handler.
-//		somi_event_handler(EVENT_ACCESS_REQ, flags);
-//	}
-//
-//	// Activate timer.
-//	rc522_irq_prepare();
-//}
-//
-//void spi_hardware_failure_signal()
-//{
-//	// @todo fire pink color for 1-1.5 seconds.
-//}
-//
-//
-//extern uint16_t enc28j60_rxrdpt;
 extern "C" void TIM2_IRQHandler()
 {
-//    open_node();
-//    if (TIM_GetITStatus(TIM2, TIM_IT_Update) != RESET)
-//    {
-//        TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
-//
-//	uint8_t pcd = RC522_PCD_1;
-//
-//	do {
-//		// Chose rfid device.
-//		rc522_pcd_select(pcd);
-//		uint8_t status = mfrc522_read(Status1Reg);
-//
-//		__disable_irq();
-//		// If timer is not running and interrupt timer flag is not active reinit device.
-//		if (!(status & TRunning))
-//		{
-//			uint8_t need_reinit = 0;
-//			switch (pcd) {
-//				case RC522_PCD_1:
-//					if (EXTI_GetITStatus(EXTI_Line10) == RESET) need_reinit = 1;
-//					break;
-//
-//				case RC522_PCD_2:
-//					if (EXTI_GetITStatus(EXTI_Line11) == RESET) need_reinit = 1;
-//					break;
-//			}
-//
-//			if (need_reinit)
-//			{
-//				spi_hardware_failure_signal();
-//
-//				mfrc522_init();
-//				__enable_irq();
-//				rc522_irq_prepare();
-//			}
-//		}
-//		__enable_irq();
-//	} while (pcd++ < RC522_PCD_2);
-//
-//    	// Check enc28j60 chip and restart if needed.
-//	if (!enc28j60_revid || (enc28j60_revid != enc28j60_rcr(EREVID)) ||
-//		(GPIO_ReadInputDataBit(ETH_GPIO, ETH_IRQ_PIN) == RESET && (EXTI_GetITStatus(EXTI_Line2) == RESET)))
-//	{
-//		enc28j60_init(mac_addr);
-//	}
-//
-//	uint16_t phstat1 = enc28j60_read_phy(PHSTAT1);
-//	// Если ethernet провод вытаскивали, обновить DHCP.
-//	// Пока отключено, т.к. по непонятным причинам LLSTAT падает иногда
-//	// хотя коннект сохраняется, что вызывает провалы в доступности интерфейса на 3-10 секунд,
-//	// пока интерфейс не поднимится по DHCP заного, однако если согласно LLSTAT линк выключен
-//	// но мы не гасим интерфейс он продолжает нормально работать.
-//	if(!(phstat1 & PHSTAT1_LLSTAT))
-//	{
-//		static uint16_t link_dhcp_time;
-//		// Avoid frequently link checks.
-//		if (ticks - link_dhcp_time > 5000)
-//		{
-//			link_dhcp_time = ticks;
-//			// Обновим адрес через 5 секунд
-//			//  (после того, как линк появится)
-//			dhcp_status = DHCP_INIT;
-//			dhcp_retry_time = RTC_GetCounter() + 2;
-//
-//			// Линка нет - опускаем интерфейс
-//			ip_addr = 0;
-//			ip_mask = 0;
-//			ip_gateway = 0;
-//
-//			enc28j60_init(mac_addr);
-//		}
-//	}
-//    }
+    TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
+}
+
+extern "C" void TIM3_IRQHandler()
+{
+    TIM_ClearITPendingBit(TIM3, TIM_IT_Update);
 }
 
 extern "C" void SysTick_Handler(void)
 {
+    led_scheduler.handle();
+    state_scheduler.handle();
 	ticks++;
-
-//	open_node();
 }
 
 extern "C" void EXTI2_IRQHandler()
 {
-//	EXTI_ClearITPendingBit(EXTI_Line2);
-//
-//	enc28j60_bfc(EIE, EIE_INTIE);
-//
-//	// Process all pendind network packets.
-//	uint16_t len;
-//	eth_frame_t *frame = (eth_frame_t *) net_buf;
-//
-//	while((len = eth_recv_packet(net_buf, sizeof(net_buf))))
-//	{
-//		eth_filter(frame, len);
-//	}
-//
-//	enc28j60_bfs(EIE, EIE_INTIE);
+
+}
+
+void Responce_Handler() {
+    if (!uart.last_string_ready)
+        return;
+}
+
+extern "C" void USART1_IRQHandler()
+{
+    // Receive Data register not empty interrupt.
+    if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET) {
+        uart.last_byte = USART_ReceiveData(USART1);
+        GPIO_SetBits(EM_LOCK_PORT, EM_LOCK_PIN);
+
+        if (!uart.last_string_ready) {
+            uart.last_string[uart.last_char] = uart.last_byte;
+            uart.last_char++;
+        } else {
+            for (uint16_t i = 0; i < RECV_STRING_MAX_SIZE; ++i) {
+                uart.last_string[i] = 0;
+            }
+            uart.last_string_ready = 0;
+            uart.last_string[0] = uart.last_byte;
+            uart.last_char = 1;
+        }
+
+        if (uart.last_byte == '\n') {
+            uart.last_string_ready = 1;
+            wifi.handle_responce();
+        }
+    }
+    // Transmission complete interrupt.
+    GPIO_ResetBits(EM_LOCK_PORT, EM_LOCK_PIN);
+    if(USART_GetITStatus(USART1, USART_IT_TC) != RESET)
+    {
+        USART_ClearITPendingBit(USART1, USART_IT_TC);
+    }
 }
 
 extern "C" void EXTI0_IRQHandler()
 {
+    if (!(machine_state.get_state() == MACHINE_STATE_LOCK_OPEN)) {
+        machine_state.set_state_lock_open(MACHINE_STATE_LOCK_OPEN_TIME);
+    }
 	EXTI_ClearITPendingBit(EXTI_Line0);
-//	open_node();
+
+}
+
+extern "C" void EXTI1_IRQHandler()
+{
+    if (!(machine_state.get_state() == MACHINE_STATE_GUEST_CALL)) {
+        machine_state.set_state_guest_call(MACHINE_STATE_GUEST_CALL_TIME);
+    }
+    EXTI_ClearITPendingBit(EXTI_Line1);
 }
 
 extern "C" void EXTI15_10_IRQHandler()
 {
-//	if (EXTI_GetITStatus(EXTI_Line10) == SET)
-//	{
-//		rc522_pcd_select(RC522_PCD_1);
-//	}
-//	else if (EXTI_GetITStatus(EXTI_Line11) == SET)
-//	{
-//		rc522_pcd_select(RC522_PCD_2);
-//	}
-//
-//	// Get active interrupts from RC522.
-//	uint8_t mfrc522_com_irq_reg = mfrc522_read(ComIrqReg);
-//
-//	// If some PICC answered handle it to retrieve additional data from it.
-//	if (mfrc522_com_irq_reg & (1 << RxIEn)) {
-//		//static uint8_t led_state = 0;
-//
-//		// Acknowledge receive irq.
-//		mfrc522_write(ComIrqReg, 1 << RxIEn);
-//
-//		// Attempt to retrieve tag ID and in case of success check node access.
-//		rfid_irq_tag_handler();
-//
-//		rc522_irq_prepare();
-//	}
-//	// If it's timer IRQ then request RC522 to start looking for CARD again
-//	// and back control to the main thread.
-//	else if (mfrc522_com_irq_reg & TimerIEn) {
-//		// Down timer irq.
-//		mfrc522_write(ComIrqReg, TimerIEn);
-//
-//		// As was checked, after Transceive_CMD the FIFO is emptied, so we need put PICC_REQALL
-//		// here again, otherwise PICC won't be able response to RC522.
-//		mfrc522_write(FIFOLevelReg, mfrc522_read(FIFOLevelReg) | 0x80); // flush FIFO data
-//		mfrc522_write(FIFODataReg, PICC_REQALL);
-//
-//		// Unfortunately Transceive seems not terminates receive stage automatically in PICC doesn't respond.
-//		// so we again need activate command to enter transmitter state to pass PICC_REQALL cmd to PICC
-//		// otherwise it won't response due to the ISO 14443 standard.
-//		mfrc522_write(CommandReg, Transceive_CMD);
-//
-//		// When data and command are correct issue the transmit operation.
-//		mfrc522_write(BitFramingReg, mfrc522_read(BitFramingReg) | 0x80);
-//
-//		// Start timer. When it will end it again cause this IRQ handler to search the PICC.
-//
-//		// Clear STM32 irq bit.
-//		if (rc522_select == rc522_1_select)
-//		{
-//			EXTI_ClearITPendingBit(EXTI_Line10);
-//		}
-//		else if (rc522_select == rc522_2_select)
-//		{
-//			EXTI_ClearITPendingBit(EXTI_Line11);
-//		}
-//
-//		mfrc522_write(ControlReg, 1 << TStartNow);
-//		return;
-//	}
-//
-//	if (rc522_select == rc522_1_select)
-//	{
-//		EXTI_ClearITPendingBit(EXTI_Line10);
-//	}
-//	else if (rc522_select == rc522_2_select)
-//	{
-//		EXTI_ClearITPendingBit(EXTI_Line11);
-//	}
+
 }
 
 extern "C" void interrupt_initialize();
-extern "C" void initialize_timer();
 extern "C" void initialize_systick();
 
 extern "C" void __initialize_hardware()
 {
-//	// Avoid peripheal libs additional init code.
-//	#define RCC_APB2Periph_SPIz_Enabled
-//	#define RCC_APB2Periph_SPIy_Enabled
-//	#define RCC_APB2Periph_ETH_Enabled
-//	#define RCC_APB2Periph_RC522_Enabled
-//	#define RCC_APB2Periph_RC522_2_Enabled
-//
-//	/* Enable GPIOC clock */
-//	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
-//	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
-//
-//	/* Configure PC.4 as Output push-pull */
-//	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_1;
-//	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
-//	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-//	GPIO_Init(GPIOA, &GPIO_InitStructure);
-//
-//	/* Configure PC.4 as Output push-pull */
-//	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
-//	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-//	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
-//	GPIO_Init(GPIOA, &GPIO_InitStructure);
-//
-//	// initialize peripheal hardware pins.
-//	rc522_set_pins();
-//	rc522_2_set_pins();
-//	enc28j60_set_pins();
-//
-//	// Initilize SPIz hardware settings (pins and spi registers).
-//	set_spi_registers();
-//	set_spi2_registers();
-//
-//	interrupt_initialize();
-//	initialize_timer();
-//	initialize_systick();
+    // Bind GPIOA, GPIOB to APB2 bus.
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
+
+    // Configure GPIO.
+    // RGB led pins.
+    GPIO_InitStructure.GPIO_Pin = LED_INDICATOR_PIN_RED | LED_INDICATOR_PIN_GREEN | LED_INDICATOR_PIN_BLUE;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD;
+    GPIO_Init(LED_INDICATOR_PORT, &GPIO_InitStructure);
+
+    // Buttons pins (BTN_OPEN, BTN_CALL).
+    GPIO_InitStructure.GPIO_Pin = BTN_OPEN_PIN | BTN_CALL_PIN;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
+    GPIO_Init(BTN_CALL_PORT, &GPIO_InitStructure);
+
+    // Em lock pin.
+    GPIO_InitStructure.GPIO_Pin = EM_LOCK_PIN;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+    GPIO_Init(EM_LOCK_PORT, &GPIO_InitStructure);
+    GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE);
+
+	initialize_systick();
 }
 
 extern "C" void __reset_hardware()
@@ -457,186 +253,117 @@ extern "C" void __reset_hardware()
 	reset_asm();
 }
 
-void rc522_irq_prepare()
+void InitializeTimer()
 {
-//	mfrc522_write(BitFramingReg, 0x07); // TxLastBists = BitFramingReg[2..0]	???
-//
-//	// Clear all interrupts flags.
-//	mfrc522_write(ComIrqReg, (uint8_t) ~0x80);
-//	uint8_t status = mfrc522_read(Status1Reg);
-//
-//	// Start timer.
-//	mfrc522_write(ControlReg, 1 << TStartNow);
+    RCC_ClocksTypeDef RCC_Clocks;
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE); //Подвесили таймер 3 на ABP1 шину
+    RCC_GetClocksFreq(&RCC_Clocks);
+    TIM_TimeBaseInitTypeDef timerInitStructure;
+    timerInitStructure.TIM_Prescaler = RCC_Clocks.HCLK_Frequency / 10000;
+    timerInitStructure.TIM_CounterMode = TIM_CounterMode_Up;
+    timerInitStructure.TIM_Period = 10000;
+    timerInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
+    timerInitStructure.TIM_RepetitionCounter = 0;
+    TIM_TimeBaseInit(TIM3, &timerInitStructure);
+    TIM_Cmd(TIM3, ENABLE);
+    TIM_ITConfig(TIM3, TIM_IT_Update, ENABLE);
 }
 
-void somi_server_request(uint8_t *tag_id, uint32_t timestamp, uint32_t node)
+int *xx;
+extern "C" int
+main(void)
 {
-	// @todo send data to rabbitmq server.
-}
+//    std::string ss("gxfdsfs");
+    int x = 0;
+    Uart uart2(UART2, 115200);
 
-void initialize_timer()
-{
-//    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
-//
-//    TIM_TimeBaseInitTypeDef TimerInitStructure;
-//    TimerInitStructure.TIM_Prescaler = 40000;
-//    TimerInitStructure.TIM_CounterMode = TIM_CounterMode_Up;
-//    TimerInitStructure.TIM_Period = 1800;
-//    TimerInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
-//    TimerInitStructure.TIM_RepetitionCounter = 0;
-//    TIM_TimeBaseInit(TIM2, &TimerInitStructure);
-//    TIM_Cmd(TIM2, ENABLE);
-//
-//    TIM_ITConfig(TIM2, TIM_IT_Update, ENABLE);
-}
+    xx = (int *) malloc(334);
+    while (1) {
+        char s1[] = "Hello green cube";
+        char s2[] = "Lets go further";
+        int z = strlen(s1);
+        int z2 = strlen(s2);
 
-void tag_event_queue_processor()
-{
-//	for (auto it = tag_events.begin(); it != tag_events.end(); ++it)
-//	{
-//		somi_server_request(it->tag_id, it->event_time, it->node);
-//		tag_events.pop_front();
-//	}
-}
+        char s4[100];
 
-extern "C" int main(void)
-{
-//	rc522_pcd_select(RC522_PCD_1);
-//	mfrc522_init();
-//
-//	rc522_pcd_select(RC522_PCD_2);
-//	mfrc522_init();
-//
-//	enc28j60_init(mac_addr);
-//
-//	dhcp_retry_time = RTC_GetCounter() + 1;
-//
-//	// Check if timer started.
-//	uint8_t status = mfrc522_read(Status1Reg);
-//	uint32_t poll_time, dns_time;
-//
-	__disable_irq();
+        sprintf(s4, "Hello my greeting is %s Usually I say it %d times!!!\n\n", s1, 5);
 
-//	rc522_irq_prepare();
-//
-//	rc522_pcd_select(RC522_PCD_1);
-//	rc522_irq_prepare();
+        uart2.send(s4);
+        ++x;
+        int y = 1;
+    }
 
-	led my_led_r(LED_TYPE_RGB, GPIOA,  GPIO_Pin_1, GPIO_Pin_2, GPIO_Pin_3, 0xFF0000);
-
-	// Workers.
-	while (1)
+    led rgb_led(LED_TYPE_RGB, GPIOA, GPIO_Pin_1, GPIO_Pin_2, GPIO_Pin_3, LED_COLOR_WHITE);
+    leds[LED_STATE_INDICATOR] =  &rgb_led;
+    leds[LED_STATE_INDICATOR]->on();
+    //machine_state.set_state_idle();
+    interrupt_initialize();
+	__enable_irq();
+    InitializeTimer();
+    GPIO_ResetBits(EM_LOCK_PORT, EM_LOCK_PIN);
+    wifi.connect_to_wifi("i20.pub", "i20biz2015");
+    //int_to_string(4235353);
+    int i1 = 10;
+    while (1)
 	{
-		//// If DHCPD expired or still not assigng request for new net settings.
-		//while (dhcp_status != DHCP_ASSIGNED) {
-		//	dhcp_poll();
-		//}
 
-		//// If cached tag did request, the even is stored to queue, send it to server
-		//// in main thread.
-		//tag_event_queue_processor();
+        if (wifi.is_connected_to_wifi && !wifi.is_connected_to_server) {
+            wifi.connect_to_ip("192.168.1.141", "2525");
+           // Delay(10000);
 
-		//if (ticks - poll_time > 600)
-		//{
-		//	poll_time = ticks;
-		//	tcp_poll();
-		//}
+        }
+        if (wifi.is_connected_to_server) {
+            i1 = strlen("BIBA\n");
 
-		//if (ticks - dns_time > 600)
-		//{
-		//	dns_time = ticks;
-		//	//dns_query("com");
-		//}
-		Delay(10000000);
-		my_led_r.set_color(0xFF0000);
-		Delay(10000000);
-		my_led_r.set_color(0x00FF00);
-		Delay(10000000);
-		my_led_r.set_color(0x0000FF);
-		Delay(10000000);
-		my_led_r.set_color(0xFFAA00);
-		Delay(10000000);
-		my_led_r.set_color(0x00AAAA);
-		Delay(10000000);
-		my_led_r.set_color(0xFF00AA);
-		Delay(10000000);
-		my_led_r.set_color(0x000000);
-
+            wifi.send_request("BIBA\n");
+        }
+        Delay(700000);
 	}
 }
 
 void interrupt_initialize()
 {
 	__disable_irq();
-
 	EXTI_InitTypeDef EXTI_InitStructure;
 	// NVIC structure to set up NVIC controller
 	NVIC_InitTypeDef NVIC_InitStructure;
 
 	// GPIO structure used to initialize Button pins
 	// Connect EXTI Lines to Button Pins
+	// BTN_OPEN.
+	GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource0);
+    // BTN_CALL.
+    GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource1);
 
-//	// PCD1
-//	GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource10);
-//	// PCD2
-//	GPIO_EXTILineConfig(GPIO_PortSourceGPIOA, GPIO_PinSource11);
-//	// Ethernet
-//	GPIO_EXTILineConfig(GPIO_PortSourceGPIOA, GPIO_PinSource2);
-//	// Button
-//	GPIO_EXTILineConfig(GPIO_PortSourceGPIOA, GPIO_PinSource1);
-
-	// IRQ Driven Button.
+	// IRQ Driven Button BTN_OPEN.
 	EXTI_InitStructure.EXTI_Line = EXTI_Line0;
 	EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
 	EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
 	EXTI_InitStructure.EXTI_LineCmd = ENABLE;
 	EXTI_Init(&EXTI_InitStructure);
 
-	// RC522 1 board (PCD).
-	EXTI_InitStructure.EXTI_Line = EXTI_Line10;
-	EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
-	EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
-	EXTI_InitStructure.EXTI_LineCmd = ENABLE;
-	EXTI_Init(&EXTI_InitStructure);
+    NVIC_InitStructure.NVIC_IRQChannel = EXTI0_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x03;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x03;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
 
-	// RC522 2 board (PCD).
-	EXTI_InitStructure.EXTI_Line = EXTI_Line11;
-	EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
-	EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
-	EXTI_InitStructure.EXTI_LineCmd = ENABLE;
-	EXTI_Init(&EXTI_InitStructure);
+    // IRQ Driven Button BTN_CALL.
+    EXTI_InitStructure.EXTI_Line = EXTI_Line1;
+    EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
+    EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+    EXTI_Init(&EXTI_InitStructure);
 
-	// ENC28J60
-	EXTI_InitStructure.EXTI_Line = EXTI_Line2;
-	EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
-	EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
-	EXTI_InitStructure.EXTI_LineCmd = ENABLE;
-	EXTI_Init(&EXTI_InitStructure);
-
-	// RC522 Timer And PICC Receive Interrupt.
-	NVIC_InitStructure.NVIC_IRQChannel = EXTI15_10_IRQn;
-	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x08;
-	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x08;
-	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-	NVIC_Init(&NVIC_InitStructure);
-
-	// IRQ Driven Button, used as human interface for opening EMI lock.
-	NVIC_InitStructure.NVIC_IRQChannel = EXTI0_IRQn;
-	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x03;
-	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x03;
-	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-	NVIC_Init(&NVIC_InitStructure);
-
-	// ENC28J60 Interrupt for receinving packets.
-	NVIC_InitStructure.NVIC_IRQChannel = EXTI2_IRQn;
-	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x07;
-	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x07;
-	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-	NVIC_Init(&NVIC_InitStructure);
+    NVIC_InitStructure.NVIC_IRQChannel = EXTI1_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x04;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x04;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
 
 	// TIM2 timer, used as on second watchdog for enc28j60, rc522.
 	// Also do some periodical not priority calls.
-	NVIC_InitStructure.NVIC_IRQChannel = TIM2_IRQn;
+	NVIC_InitStructure.NVIC_IRQChannel = TIM3_IRQn;
 	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x0f;
 	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x0f;
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
@@ -649,6 +376,13 @@ void interrupt_initialize()
 	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x00;
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);
+
+    NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn; //канал
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x05; //приоритет
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x05;//приоритет субгруппы
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE; //включаем канал
+    NVIC_Init(&NVIC_InitStructure); //инициализируем
+    USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
 }
 
 extern "C" void initialize_systick()
@@ -764,7 +498,7 @@ void Delay(vu32 nCount)
  * Output         : None
  * Return         : None
  *******************************************************************************/
-void assert_failed(u8* file, u32 line)
+void assert_failed(uint8_t *file, uint32_t line)
 {
 	/* User can add his own implementation to report the file name and line number,
 ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */

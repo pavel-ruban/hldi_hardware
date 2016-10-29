@@ -36,3 +36,9 @@ int strncmp(const char *str1, const char *str2, size_t len)
     } while (s1 == s2 && i < len);
     return (s1 < s2) ? -1 : (s1 > s2);
 }
+
+//void strcpy(char* str1, char* str2) {
+//    for (uint16_t i = 0; i < strlen(str2); i++) {
+//        str1[i] = str2[i];
+//    }
+//}
