@@ -273,8 +273,3 @@ int * __errno()
 {
 	return &errno;
 }
-
-int __aeabi_atexit()
-{
-	return 0;
-}
