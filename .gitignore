@@ -12,3 +12,5 @@ tags
 tools.txt
 .gdbinit
 *.backup
+.idea
+CMakeLists.txt

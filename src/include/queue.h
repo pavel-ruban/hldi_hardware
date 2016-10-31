@@ -8,7 +8,7 @@
  ****************************************************************
  * Author: Pavel Ruban | 19.06.2016 http://pavelruban.org	*
  ****************************************************************/
-
+#pragma once
 #define QUEUE_FULL 1
 #define QUEUE_IS_NOT_FULL 0
 
