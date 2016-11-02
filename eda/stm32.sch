@@ -962,4 +962,20 @@ $EndComp
 Connection ~ 12050 4450
 Connection ~ 11950 4450
 Connection ~ 12350 4450
+Text HLabel 9350 3800 0    60   Input ~ 0
+PB13_SPI2_SCK
+Text HLabel 9350 3900 0    60   Input ~ 0
+PB14_SPI2_MISO
+Text HLabel 9350 4000 0    60   Input ~ 0
+PB15_SPI2_MOSI
+Text HLabel 9350 3300 0    60   Input ~ 0
+PB8_RC522A_IRQ
+Text HLabel 9350 3400 0    60   Input ~ 0
+PB9_RC522B_IRQ
+Text HLabel 9350 3200 0    60   Input ~ 0
+PB7_RC522_RST
+Text HLabel 9350 3000 0    60   Input ~ 0
+PB5_RC522A_CS
+Text HLabel 9350 3100 0    60   Input ~ 0
+PB6_RC522B_CS
 $EndSCHEMATC
