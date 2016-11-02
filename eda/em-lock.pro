@@ -1,4 +1,4 @@
-update=Mon 31 Oct 2016 11:16:12 +07
+update=Wed 02 Nov 2016 15:50:43 +07
 version=1
 last_client=kicad
 [cvpcb]
@@ -139,3 +139,14 @@ LibName107=ab2_uC
 LibName108=ab2_xtal
 LibName109=SparkFun
 LibName110=I20-library/I20
+[schematic_editor]
+version=1
+PageLayoutDescrFile=
+PlotDirectoryName=
+SubpartIdSeparator=0
+SubpartFirstId=65
+NetFmtName=Pcbnew
+SpiceForceRefPrefix=0
+SpiceUseNetNumbers=0
+LabSize=60
+ERC_TestSimilarLabels=1

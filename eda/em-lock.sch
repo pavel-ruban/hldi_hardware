@@ -439,51 +439,43 @@ S 8100 800  2100 1400
 U 5818E6EE
 F0 "stm32f103c8" 60
 F1 "stm32.sch" 60
-F2 "PD0/RCC_OSC_IN" I L 8100 1050 60 
-F3 "PD1/RCC_OSC_OUT" I L 8100 1150 60 
-F4 "NRST" I L 8100 1250 60 
-F5 "PB2/BOOT1" I L 8100 1350 60 
-F6 "BOOT0" I L 8100 1450 60 
-F7 "VBAT" I L 8100 1550 60 
-F8 "PIN_RED" I L 8100 1650 60 
-F9 "PIN_GREEN" I L 8100 1750 60 
-F10 "PIN_BLUE" I L 8100 1850 60 
-F11 "ESP_RESET" I L 8100 1950 60 
-F12 "UART_INT_TX" I L 8100 2050 60 
-F13 "UART_INT_RX" I L 8100 2150 60 
-F14 "BTN_OPEN" I R 10200 850 60 
-F15 "BTN_CALL" I R 10200 950 60 
-F16 "LOCK_OPEN" I R 10200 1050 60 
-F17 "UART_EXT_TX" I R 10200 1150 60 
-F18 "UART_EXT_RX" I R 10200 1250 60 
-F19 "SWDIO" I R 10200 1350 60 
-F20 "SWCLK" I R 10200 1450 60 
-F21 "PB13_SPI2_SCK" I R 10200 1550 60 
-F22 "PB14_SPI2_MISO" I R 10200 1650 60 
-F23 "PB15_SPI2_MOSI" I R 10200 1850 60 
-F24 "PB8_RC522A_IRQ" I R 10200 1750 60 
-F25 "PB9_RC522B_IRQ" I R 10200 1950 60 
-F26 "PB7_RC522_RST" I R 10200 2050 60 
-F27 "PB5_RC522A_CS" I L 8100 850 60 
-F28 "PB6_RC522B_CS" I L 8100 950 60 
+F2 "PIN_RED" O L 8100 1650 60 
+F3 "PIN_GREEN" O L 8100 1750 60 
+F4 "PIN_BLUE" O L 8100 1850 60 
+F5 "ESP_RESET" O L 8100 1950 60 
+F6 "UART_INT_TX" O L 8100 2050 60 
+F7 "UART_INT_RX" I L 8100 2150 60 
+F8 "BTN_OPEN" I R 10200 850 60 
+F9 "BTN_CALL" I R 10200 950 60 
+F10 "LOCK_OPEN" O R 10200 1050 60 
+F11 "UART_EXT_TX" O R 10200 1150 60 
+F12 "UART_EXT_RX" I R 10200 1250 60 
+F13 "PB13_SPI2_SCK" O R 10200 1550 60 
+F14 "PB14_SPI2_MISO" I R 10200 1650 60 
+F15 "PB15_SPI2_MOSI" O R 10200 1850 60 
+F16 "PB8_RC522A_IRQ" I R 10200 1750 60 
+F17 "PB9_RC522B_IRQ" I R 10200 1950 60 
+F18 "PB7_RC522_RST" O R 10200 2050 60 
+F19 "PB5_RC522A_CS" O L 8100 850 60 
+F20 "PB6_RC522B_CS" O L 8100 950 60 
 $EndSheet
-Text HLabel 3100 3750 2    60   Input ~ 0
+Text GLabel 3100 3750 2    60   Input ~ 0
 PIN_RED
-Text HLabel 3100 3300 2    60   Input ~ 0
+Text GLabel 3100 3300 2    60   Input ~ 0
 PIN_GREEN
-Text HLabel 3100 2850 2    60   Input ~ 0
+Text GLabel 3100 2850 2    60   Input ~ 0
 PIN_BLUE
-Text HLabel 9450 5900 2    60   Input ~ 0
+Text GLabel 9450 5900 2    60   Input ~ 0
 ESP_RESET
-Text HLabel 8450 5800 0    60   Input ~ 0
+Text GLabel 8450 5800 0    60   Input ~ 0
 UART_INT_TX
-Text HLabel 10000 3800 2    60   Input ~ 0
+Text GLabel 10000 3800 2    60   Input ~ 0
 LOCK_OPEN
-Text HLabel 8550 2950 0    60   Input ~ 0
+Text GLabel 8550 2950 0    60   Input ~ 0
 UART_EXT_TX
-Text HLabel 8550 3050 0    60   Input ~ 0
+Text GLabel 8550 3050 0    60   Input ~ 0
 UART_EXT_RX
-Text HLabel 6000 3700 2    60   Input ~ 0
+Text GLabel 6000 3700 2    60   Input ~ 0
 BTN_CALL
 Text Notes 3600 650  2    60   ~ 0
 RGB LED connector/placement
@@ -596,17 +588,17 @@ F 3 "" H 1950 5800 50  0000 C CNN
 	1    1950 5800
 	-1   0    0    1   
 $EndComp
-Text HLabel 2250 6700 2    60   Input ~ 0
+Text GLabel 2250 6700 2    60   Input ~ 0
 PB5_RC522A_CS
-Text HLabel 2250 6600 2    60   Input ~ 0
+Text GLabel 2250 6600 2    60   Input ~ 0
 PB13_SPI2_SCK
-Text HLabel 2250 6400 2    60   Input ~ 0
+Text GLabel 2250 6400 2    60   Input ~ 0
 PB14_SPI2_MISO
-Text HLabel 2250 6500 2    60   Input ~ 0
+Text GLabel 2250 6500 2    60   Input ~ 0
 PB15_SPI2_MOSI
-Text HLabel 2250 6300 2    60   Input ~ 0
+Text GLabel 2250 6300 2    60   Input ~ 0
 PB8_RC522A_IRQ
-Text HLabel 2250 6100 2    60   Input ~ 0
+Text GLabel 2250 6100 2    60   Input ~ 0
 PB7_RC522_RST
 $Comp
 L R R7
@@ -861,7 +853,7 @@ F 3 "" H 5400 1250 50  0000 C CNN
 	1    5400 1250
 	1    0    0    -1  
 $EndComp
-Text HLabel 6000 1500 2    60   Input ~ 0
+Text GLabel 6000 1500 2    60   Input ~ 0
 BTN_OPEN
 $Comp
 L VDD #PWR020
@@ -896,15 +888,15 @@ F 3 "" H 5200 5750 50  0000 C CNN
 	1    5200 5750
 	-1   0    0    1   
 $EndComp
-Text HLabel 5500 6550 2    60   Input ~ 0
+Text GLabel 5500 6550 2    60   Input ~ 0
 PB13_SPI2_SCK
-Text HLabel 5500 6350 2    60   Input ~ 0
+Text GLabel 5500 6350 2    60   Input ~ 0
 PB14_SPI2_MISO
-Text HLabel 5500 6450 2    60   Input ~ 0
+Text GLabel 5500 6450 2    60   Input ~ 0
 PB15_SPI2_MOSI
-Text HLabel 5500 6250 2    60   Input ~ 0
+Text GLabel 5500 6250 2    60   Input ~ 0
 PB9_RC522B_IRQ
-Text HLabel 5500 6050 2    60   Input ~ 0
+Text GLabel 5500 6050 2    60   Input ~ 0
 PB7_RC522_RST
 $Comp
 L R R20
@@ -1315,7 +1307,7 @@ F 3 "" H 9450 6000 50  0000 C CNN
 	1    9450 6000
 	0    1    1    0   
 $EndComp
-Text HLabel 5500 6650 2    60   Input ~ 0
+Text GLabel 5500 6650 2    60   Input ~ 0
 PB6_RC522B_CS
 Text GLabel 9000 3500 2    60   Input ~ 0
 LOCK_GND
@@ -1336,6 +1328,46 @@ Wire Wire Line
 	9000 6000 9100 6000
 Wire Wire Line
 	9400 6000 9450 6000
-Text HLabel 9450 6100 2    60   Input ~ 0
+Text GLabel 9450 6100 2    60   Input ~ 0
 UART_INT_RX
+Text GLabel 8100 850  0    60   Input ~ 0
+PB5_RC522A_CS
+Text GLabel 10200 1550 2    60   Input ~ 0
+PB13_SPI2_SCK
+Text GLabel 10200 1650 2    60   Input ~ 0
+PB14_SPI2_MISO
+Text GLabel 10200 1850 2    60   Input ~ 0
+PB15_SPI2_MOSI
+Text GLabel 10200 1750 2    60   Input ~ 0
+PB8_RC522A_IRQ
+Text GLabel 10200 2050 2    60   Input ~ 0
+PB7_RC522_RST
+Text GLabel 10200 1150 2    60   Input ~ 0
+UART_EXT_TX
+Text GLabel 10200 1250 2    60   Input ~ 0
+UART_EXT_RX
+Text GLabel 10200 1050 2    60   Input ~ 0
+LOCK_OPEN
+Text GLabel 8100 1950 0    60   Input ~ 0
+ESP_RESET
+Text GLabel 8100 2150 0    60   Input ~ 0
+UART_INT_RX
+Text GLabel 8100 2050 0    60   Input ~ 0
+UART_INT_TX
+Text GLabel 10200 1950 2    60   Input ~ 0
+PB9_RC522B_IRQ
+Text GLabel 8100 950  0    60   Input ~ 0
+PB6_RC522B_CS
+Text GLabel 10200 850  2    60   Input ~ 0
+BTN_OPEN
+Text GLabel 10200 950  2    60   Input ~ 0
+BTN_CALL
+Text GLabel 8100 1850 0    60   Input ~ 0
+PIN_BLUE
+Text GLabel 8100 1750 0    60   Input ~ 0
+PIN_GREEN
+Text GLabel 8100 1650 0    60   Input ~ 0
+PIN_RED
+NoConn ~ 8500 6000
+NoConn ~ 8500 5900
 $EndSCHEMATC
