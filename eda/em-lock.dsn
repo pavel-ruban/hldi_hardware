@@ -21,20 +21,18 @@
       )
     )
     (boundary
-      (path pcb 0  35560 -143510  123190 -143510  123190 -74930  35560 -74930
-            35560 -143510  35560 -143510)
+      (path pcb 0  40640 -142240  39757.9 -142163  38902.5 -141934  38100 -141559
+            37374.6 -141052  36748.5 -140425  36240.6 -139700  35866.4 -138897
+            35637.2 -138042  35560 -137160  35560 -91440  35637.2 -90557.9
+            35866.4 -89702.5  36240.6 -88900  36748.5 -88174.6  37374.6 -87548.5
+            38100 -87040.6  38902.5 -86666.4  39757.9 -86437.2  40640 -86360
+            86360 -86360  87242.1 -86437.2  88097.5 -86666.4  88900 -87040.6
+            89625.4 -87548.5  90251.5 -88174.6  90759.4 -88900  91133.6 -89702.5
+            91362.8 -90557.9  91440 -91440  91440 -137160  91362.8 -138042
+            91133.6 -138897  90759.4 -139700  90251.5 -140425  89625.4 -141052
+            88900 -141559  88097.5 -141934  87242.1 -142163  86360 -142240
+            40640 -142240  40640 -142240)
     )
-    (plane GNDD (polygon B.Cu 0  91440 -142240  35560 -142240  35560 -86360  91440 -86360))
-    (plane VCC (polygon F.Cu 0  91440 -142240  35560 -142240  35560 -86360  91440 -86360))
-    (plane VCC (polygon F.Cu 0  123190 -129540  93980 -129540  93980 -118110  123190 -118110))
-    (plane GNDD (polygon B.Cu 0  123190 -129540  93980 -129540  93980 -118110  123190 -118110))
-    (plane GNDD (polygon B.Cu 0  123190 -143510  93980 -143510  93980 -132080  123190 -132080))
-    (plane VCC (polygon F.Cu 0  123190 -143510  93980 -143510  93980 -132080  123190 -132080))
-    (plane VCC (polygon F.Cu 0  109220 -87630  111760 -90170  111760 -101600  109220 -104140
-            109220 -115570  93980 -115570  93980 -74930  109220 -74930))
-    (plane GNDD (polygon B.Cu 0  109220 -87630  111760 -90170  111760 -101600  109220 -104140
-            109220 -115570  93980 -115570  93980 -74930  109220 -74930))
-    (plane GNDD (polygon B.Cu 0  116840 -148590  113030 -148590  113030 -144780  116840 -144780))
     (via "Via[0-1]_900:400_um")
     (rule
       (width 200)
@@ -44,21 +42,18 @@
     )
   )
   (placement
-    (component "LED-RGB-5MM_Common_Cathode"
-      (place D6 107950 -135890 front 0 (PN LED_RCBG))
+    (component I20:RC522_Full
+      (place P2 72390 -138430 front 270 (PN RC522A))
+    )
+    (component I20:MountingHole_1.9mm
+      (place H9 95250 -149860 front 0 (PN MountingHole_1.9mm))
+      (place H8 27940 -78740 front 0 (PN MountingHole_1.9mm))
     )
     (component I20:MountingHole_3.1mm
-      (place H5 99060 -138430 front 0 (PN MountingHole_3.1mm))
-      (place H6 99060 -124460 front 0 (PN MountingHole_3.1mm))
-      (place H7 99067.4 -95488.6 front 180 (PN MountingHole_3.1mm))
       (place H1 40640 -91440 front 0 (PN MountingHole_3.1mm))
       (place H4 40640 -137160 front 0 (PN MountingHole_3.1mm))
       (place H3 86360 -137160 front 0 (PN MountingHole_3.1mm))
       (place H2 86360 -91440 front 0 (PN MountingHole_3.1mm))
-    )
-    (component I20:MountingHole_1.9mm
-      (place H8 27940 -78740 front 0 (PN MountingHole_1.9mm))
-      (place H9 95250 -149860 front 0 (PN MountingHole_1.9mm))
     )
     (component I20:C_0805
       (place C1 47752 -139192 back 270 (PN 100nF))
@@ -108,20 +103,14 @@
       (place Q4 50800 -92964 back 180 (PN Q_NMOS_DGS))
     )
     (component I20:R_0805
-      (place R1 97797.4 -103109 front 90 (PN 82R))
-      (place R2 97797.4 -87868.6 front 90 (PN 82R))
-      (place R3 100337 -103109 front 90 (PN 15R))
       (place R4 72390 -134620 back 270 (PN 4.7k))
       (place R5 64516 -134620 back 270 (PN 4.7k))
-      (place R6 100337 -87868.6 front 90 (PN 15R))
       (place R7 61976 -134620 back 90 (PN 4.7k))
       (place R8 56896 -134620 back 90 (PN 4.7k))
-      (place R9 102877 -103109 front 90 (PN 10R))
-      (place R10 102877 -87868.6 front 90 (PN 10R))
       (place R11 54610 -109220 front 0 (PN 2k))
       (place R12 54610 -105410 front 0 (PN 2k))
       (place R13 54610 -101600 front 0 (PN 2k))
-      (place R14 45720 -123190 front -0 (PN 10k))
+      (place R14 45720 -123190 front 0 (PN 10k))
       (place R15 74930 -114300 back 0 (PN 10k))
       (place R16 50800 -123190 front 180 (PN 0))
       (place R17 69850 -116840 back 180 (PN 0))
@@ -174,51 +163,28 @@
     (component "I20:PhoenixContact_MSTBA-G_04x5.08mm_Angled"
       (place P7 66040 -88900 front 180 (PN LOCK_CONN))
     )
-    (component "I20:jst-s4b-ph-kl-angled"
-      (place P8 101877 -106919 front 0 (PN LEDB_CONN))
-      (place P11 101877 -84058.6 front 180 (PN LEDA_CONN))
-      (place P13 105410 -95885 front 90 (PN IN_LED_CONN))
-      (place P14 115570 -123650 back 90 (PN LEDB_CONN))
-      (place P15 115570 -137620 back 90 (PN LEDB_CONN))
-    )
-    (component "I20:LED-RGB-5MM_Common_Cathode"
-      (place D1 107950 -121920 front 0 (PN LED_RCBG))
-    )
-    (component I20:RC522_Full
-      (place P2 72390 -138430 front 270 (PN RC522A))
-    )
   )
   (library
-    (image "LED-RGB-5MM_Common_Cathode"
-      (outline (path signal 50  3200 -1905  3043.38 -2893.85  2588.85 -3785.91  1880.91 -4493.85
-            988.854 -4948.38  0 -5105  -988.854 -4948.38  -1880.91 -4493.85
-            -2588.85 -3785.91  -3043.38 -2893.85  -3200 -1905  -3043.38 -916.146
-            -2588.85 -24.087  -1880.91 683.854  -988.854 1138.38  0 1295
-            988.854 1138.38  1880.91 683.854  2588.85 -24.087  3043.38 -916.146))
-      (outline (path signal 150  -1100 595  -1550 595))
-      (outline (path signal 150  2950 -1905  2805.62 -2816.6  2386.6 -3638.97  1733.97 -4291.6
-            911.6 -4710.62  0 -4855  -911.6 -4710.62  -1733.97 -4291.6  -2386.6 -3638.97
-            -2805.62 -2816.6  -2950 -1905  -2805.62 -993.4  -2386.6 -171.034
-            -1733.97 481.6  -911.6 900.617  0 1045  911.6 900.617  1733.97 481.6
-            2386.6 -171.034  2805.62 -993.4))
-      (outline (path signal 150  1100 595  1550 595))
-      (pin Oval[A]Pad_1905x876_um 1 0 0)
-      (pin Rect[A]Pad_1905x800_um 2 0 -1270)
-      (pin Oval[A]Pad_1905x800_um 3 0 -2540)
-      (pin Oval[A]Pad_1905x800_um 4 0 -3810)
-    )
-    (image I20:MountingHole_3.1mm
-      (outline (path signal 150  4000 0  3804.23 -1236.07  3236.07 -2351.14  2351.14 -3236.07
-            1236.07 -3804.23  0 -4000  -1236.07 -3804.23  -2351.14 -3236.07
-            -3236.07 -2351.14  -3804.23 -1236.07  -4000 0  -3804.23 1236.07
-            -3236.07 2351.14  -2351.14 3236.07  -1236.07 3804.23  0 4000
-            1236.07 3804.23  2351.14 3236.07  3236.07 2351.14  3804.23 1236.07))
-      (outline (path signal 50  4000 0  3804.23 -1236.07  3236.07 -2351.14  2351.14 -3236.07
-            1236.07 -3804.23  0 -4000  -1236.07 -3804.23  -2351.14 -3236.07
-            -3236.07 -2351.14  -3804.23 -1236.07  -4000 0  -3804.23 1236.07
-            -3236.07 2351.14  -2351.14 3236.07  -1236.07 3804.23  0 4000
-            1236.07 3804.23  2351.14 3236.07  3236.07 2351.14  3804.23 1236.07))
-      (pin Round[A]Pad_3300_um 1 0 0)
+    (image I20:RC522_Full
+      (outline (path signal 50  -1750 1750  -1750 -19550))
+      (outline (path signal 50  1750 1750  1750 -19550))
+      (outline (path signal 50  -1750 1750  1750 1750))
+      (outline (path signal 50  -1750 -19550  1750 -19550))
+      (outline (path signal 150  1270 -1270  1270 -19050))
+      (outline (path signal 150  1270 -19050  -1270 -19050))
+      (outline (path signal 150  -1270 -19050  -1270 -1270))
+      (outline (path signal 150  1550 1550  1550 0))
+      (outline (path signal 150  1270 -1270  -1270 -1270))
+      (outline (path signal 150  -1550 0  -1550 1550))
+      (outline (path signal 150  -1550 1550  1550 1550))
+      (pin Rect[A]Pad_2032x1727.2_um 1 0 0)
+      (pin Oval[A]Pad_2032x1727.2_um 2 0 -2540)
+      (pin Oval[A]Pad_2032x1727.2_um 3 0 -5080)
+      (pin Oval[A]Pad_2032x1727.2_um 4 0 -7620)
+      (pin Oval[A]Pad_2032x1727.2_um 5 0 -10160)
+      (pin Oval[A]Pad_2032x1727.2_um 6 0 -12700)
+      (pin Oval[A]Pad_2032x1727.2_um 7 0 -15240)
+      (pin Oval[A]Pad_2032x1727.2_um 8 0 -17780)
     )
     (image I20:MountingHole_1.9mm
       (outline (path signal 150  2200 0  2092.32 -679.837  1779.84 -1293.13  1293.13 -1779.84
@@ -233,6 +199,19 @@
             679.837 2092.32  1293.13 1779.84  1779.84 1293.13  2092.32 679.837))
       (keepout "" (circle F.Cu 1900))
       (keepout "" (circle B.Cu 1900))
+    )
+    (image I20:MountingHole_3.1mm
+      (outline (path signal 150  4000 0  3804.23 -1236.07  3236.07 -2351.14  2351.14 -3236.07
+            1236.07 -3804.23  0 -4000  -1236.07 -3804.23  -2351.14 -3236.07
+            -3236.07 -2351.14  -3804.23 -1236.07  -4000 0  -3804.23 1236.07
+            -3236.07 2351.14  -2351.14 3236.07  -1236.07 3804.23  0 4000
+            1236.07 3804.23  2351.14 3236.07  3236.07 2351.14  3804.23 1236.07))
+      (outline (path signal 50  4000 0  3804.23 -1236.07  3236.07 -2351.14  2351.14 -3236.07
+            1236.07 -3804.23  0 -4000  -1236.07 -3804.23  -2351.14 -3236.07
+            -3236.07 -2351.14  -3804.23 -1236.07  -4000 0  -3804.23 1236.07
+            -3236.07 2351.14  -2351.14 3236.07  -1236.07 3804.23  0 4000
+            1236.07 3804.23  2351.14 3236.07  3236.07 2351.14  3804.23 1236.07))
+      (pin Round[A]Pad_3300_um 1 0 0)
     )
     (image I20:C_0805
       (outline (path signal 50  -1800 1000  1800 1000))
@@ -882,75 +861,6 @@
       (pin Oval[A]Pad_2100x3600_um 3 10160 0)
       (pin Oval[A]Pad_2100x3600_um 4 15240 0)
     )
-    (image "I20:jst-s4b-ph-kl-angled"
-      (outline (path signal 381  -3299.46 -4099.56  -3299.46 -6299.2))
-      (outline (path signal 381  -3299.46 -6299.2  -3599.18 -6299.2))
-      (outline (path signal 381  -3599.18 -6299.2  -3599.18 -4099.56))
-      (outline (path signal 381  2499.36 -1998.98  -2499.36 -1998.98))
-      (outline (path signal 381  -5001.26 -6299.2  5001.26 -6299.2))
-      (outline (path signal 381  -5001.26 -398.78  5001.26 -398.78))
-      (outline (path signal 381  2499.36 -1998.98  2499.36 -6299.2))
-      (outline (path signal 381  -2501.9 -1998.98  -2501.9 -6299.2))
-      (outline (path signal 381  3296.92 -4099.56  3296.92 -2499.36))
-      (outline (path signal 381  4297.68 -4099.56  3296.92 -4099.56))
-      (outline (path signal 381  4297.68 -2499.36  4297.68 -4099.56))
-      (outline (path signal 381  3296.92 -2499.36  4297.68 -2499.36))
-      (outline (path signal 381  -4302.76 -2499.36  -3302 -2499.36))
-      (outline (path signal 381  -3302 -2499.36  -3302 -4099.56))
-      (outline (path signal 381  -3302 -4099.56  -4302.76 -4099.56))
-      (outline (path signal 381  -4302.76 -4099.56  -4302.76 -2499.36))
-      (outline (path signal 381  4798.06 1399.54  4798.06 -398.78))
-      (outline (path signal 381  -4798.06 1399.54  -4798.06 -398.78))
-      (outline (path signal 381  4998.72 -6299.2  4998.72 1399.54))
-      (outline (path signal 381  4998.72 1399.54  4599.94 1399.54))
-      (outline (path signal 381  4599.94 1399.54  4599.94 -398.78))
-      (outline (path signal 381  -4599.94 -398.78  -4599.94 1399.54))
-      (outline (path signal 381  -4599.94 1399.54  -4998.72 1399.54))
-      (outline (path signal 381  -4998.72 1399.54  -4998.72 -6299.2))
-      (pin Rect[A]Pad_1198.88x1699.26_um 1 -2999.74 0)
-      (pin Oval[A]Pad_1198.88x1699.26_um 2 -1000.76 0)
-      (pin Oval[A]Pad_1198.88x1699.26_um 3 1000.76 0)
-      (pin Oval[A]Pad_1198.88x1699.26_um 4 2999.74 0)
-    )
-    (image "I20:LED-RGB-5MM_Common_Cathode"
-      (outline (path signal 50  3200 -1905  3043.38 -2893.85  2588.85 -3785.91  1880.91 -4493.85
-            988.854 -4948.38  0 -5105  -988.854 -4948.38  -1880.91 -4493.85
-            -2588.85 -3785.91  -3043.38 -2893.85  -3200 -1905  -3043.38 -916.146
-            -2588.85 -24.087  -1880.91 683.854  -988.854 1138.38  0 1295
-            988.854 1138.38  1880.91 683.854  2588.85 -24.087  3043.38 -916.146))
-      (outline (path signal 150  -1100 595  -1550 595))
-      (outline (path signal 150  2950 -1905  2805.62 -2816.6  2386.6 -3638.97  1733.97 -4291.6
-            911.6 -4710.62  0 -4855  -911.6 -4710.62  -1733.97 -4291.6  -2386.6 -3638.97
-            -2805.62 -2816.6  -2950 -1905  -2805.62 -993.4  -2386.6 -171.034
-            -1733.97 481.6  -911.6 900.617  0 1045  911.6 900.617  1733.97 481.6
-            2386.6 -171.034  2805.62 -993.4))
-      (outline (path signal 150  1100 595  1550 595))
-      (pin Oval[A]Pad_1605x876_um 1 0 0)
-      (pin Rect[A]Pad_1905x876_um 2 0 -1270)
-      (pin Oval[A]Pad_1905x876_um 3 0 -2540)
-      (pin Oval[A]Pad_1905x876_um 4 0 -3810)
-    )
-    (image I20:RC522_Full
-      (outline (path signal 50  -1750 1750  -1750 -19550))
-      (outline (path signal 50  1750 1750  1750 -19550))
-      (outline (path signal 50  -1750 1750  1750 1750))
-      (outline (path signal 50  -1750 -19550  1750 -19550))
-      (outline (path signal 150  1270 -1270  1270 -19050))
-      (outline (path signal 150  1270 -19050  -1270 -19050))
-      (outline (path signal 150  -1270 -19050  -1270 -1270))
-      (outline (path signal 150  1550 1550  1550 0))
-      (outline (path signal 150  1270 -1270  -1270 -1270))
-      (outline (path signal 150  -1550 0  -1550 1550))
-      (outline (path signal 150  -1550 1550  1550 1550))
-      (pin Rect[A]Pad_2032x1727.2_um 1 0 0)
-      (pin Oval[A]Pad_2032x1727.2_um 2 0 -2540)
-      (pin Oval[A]Pad_2032x1727.2_um 3 0 -5080)
-      (pin Oval[A]Pad_2032x1727.2_um 4 0 -7620)
-      (pin Oval[A]Pad_2032x1727.2_um 5 0 -10160)
-      (pin Oval[A]Pad_2032x1727.2_um 6 0 -12700)
-      (pin Oval[A]Pad_2032x1727.2_um 7 0 -15240)
-      (pin Oval[A]Pad_2032x1727.2_um 8 0 -17780)
-    )
     (padstack Round[A]Pad_1501.14_um
       (shape (circle F.Cu 1501.14))
       (shape (circle B.Cu 1501.14))
@@ -976,11 +886,6 @@
       (shape (circle B.Cu 3300))
       (attach off)
     )
-    (padstack Oval[A]Pad_1198.88x1699.26_um
-      (shape (path F.Cu 1198.88  0 -250.19  0 250.19))
-      (shape (path B.Cu 1198.88  0 -250.19  0 250.19))
-      (attach off)
-    )
     (padstack Oval[A]Pad_2032x1727.2_um
       (shape (path F.Cu 1727.2  -152.4 0  152.4 0))
       (shape (path B.Cu 1727.2  -152.4 0  152.4 0))
@@ -994,21 +899,6 @@
     (padstack Oval[A]Pad_2100x3600_um
       (shape (path F.Cu 2100  0 -750  0 750))
       (shape (path B.Cu 2100  0 -750  0 750))
-      (attach off)
-    )
-    (padstack Oval[A]Pad_1905x800_um
-      (shape (path F.Cu 800  -552.5 0  552.5 0))
-      (shape (path B.Cu 800  -552.5 0  552.5 0))
-      (attach off)
-    )
-    (padstack Oval[A]Pad_1605x876_um
-      (shape (path F.Cu 876  -364.5 0  364.5 0))
-      (shape (path B.Cu 876  -364.5 0  364.5 0))
-      (attach off)
-    )
-    (padstack Oval[A]Pad_1905x876_um
-      (shape (path F.Cu 876  -514.5 0  514.5 0))
-      (shape (path B.Cu 876  -514.5 0  514.5 0))
       (attach off)
     )
     (padstack Rect[T]Pad_2029.46x1651_um
@@ -1077,11 +967,6 @@
       (shape (rect F.Cu -530 -325 530 325))
       (attach off)
     )
-    (padstack Rect[A]Pad_1198.88x1699.26_um
-      (shape (rect F.Cu -599.44 -849.63 599.44 849.63))
-      (shape (rect B.Cu -599.44 -849.63 599.44 849.63))
-      (attach off)
-    )
     (padstack Rect[T]Pad_1300.48x1699.26_um
       (shape (rect F.Cu -650.24 -849.63 650.24 849.63))
       (attach off)
@@ -1096,16 +981,6 @@
       (shape (rect B.Cu -875 -875 875 875))
       (attach off)
     )
-    (padstack Rect[A]Pad_1905x800_um
-      (shape (rect F.Cu -952.5 -400 952.5 400))
-      (shape (rect B.Cu -952.5 -400 952.5 400))
-      (attach off)
-    )
-    (padstack Rect[A]Pad_1905x876_um
-      (shape (rect F.Cu -952.5 -438 952.5 438))
-      (shape (rect B.Cu -952.5 -438 952.5 438))
-      (attach off)
-    )
     (padstack "Via[0-1]_900:400_um"
       (shape (circle F.Cu 900))
       (shape (circle B.Cu 900))
@@ -1114,9 +989,9 @@
   )
   (network
     (net VCC
-      (pins C1-1 C2-1 C3-1 C6-1 C7-2 C8-2 C10-1 C12-1 C13-2 C16-1 C17-1 C18-1 C19-2
-        C20-2 P3-8 P12-1 Q1-2 Q2-2 Q3-2 R4-1 R5-1 R8-1 R14-1 R15-1 R18-1 R19-1 R21-1
-        R22-1 R25-2 U1-5 U2-2 U3-1 U3-9 U3-24 U3-36 U3-48 P6-2 C21-1 C22-1 P2-8)
+      (pins P2-8 C1-1 C2-1 C3-1 C6-1 C7-2 C8-2 C10-1 C12-1 C13-2 C16-1 C17-1 C18-1
+        C19-2 C20-2 P3-8 P12-1 Q1-2 Q2-2 Q3-2 R4-1 R5-1 R8-1 R14-1 R15-1 R18-1 R19-1
+        R21-1 R22-1 R25-2 U1-5 U2-2 U3-1 U3-9 U3-24 U3-36 U3-48 P6-2 C21-1 C22-1)
     )
     (net EM_LOCK
       (pins D2-1 P7-3)
@@ -1139,8 +1014,8 @@
         C21-2 C22-2)
     )
     (net GNDD
-      (pins C1-2 C2-2 C3-2 C4-1 C5-1 C6-2 C7-1 C8-1 P3-6 P4-2 P5-2 R7-1 R20-1 P6-7
-        P2-6)
+      (pins P2-6 C1-2 C2-2 C3-2 C4-1 C5-1 C6-2 C7-1 C8-1 P3-6 P4-2 P5-2 R7-1 R20-1
+        P6-7)
     )
     (net "Net-(C4-Pad2)"
       (pins C4-2 R16-1 U1-1)
@@ -1165,15 +1040,6 @@
     )
     (net /stm32f103c8/12V_EXT
       (pins F1-2 CON1-1)
-    )
-    (net "Net-(D1-Pad1)"
-      (pins P14-1 D1-1)
-    )
-    (net "Net-(D1-Pad3)"
-      (pins P14-3 D1-3)
-    )
-    (net "Net-(D1-Pad4)"
-      (pins P14-2 D1-4)
     )
     (net LOCK_GND
       (pins Q4-1 D2-2 P7-4)
@@ -1215,22 +1081,22 @@
       (pins R28-1 U3-6)
     )
     (net PB5_RC522A_CS
-      (pins R4-2 U3-41 P2-1)
+      (pins P2-1 R4-2 U3-41)
     )
     (net PB13_SPI2_SCK
-      (pins P3-2 U3-26 P2-2)
+      (pins P2-2 P3-2 U3-26)
     )
     (net PB15_SPI2_MOSI
-      (pins P3-3 U3-28 P2-3)
+      (pins P2-3 P3-3 U3-28)
     )
     (net PB14_SPI2_MISO
-      (pins P3-4 R5-2 R19-2 U3-27 P2-4)
+      (pins P2-4 P3-4 R5-2 R19-2 U3-27)
     )
     (net PB8_RC522A_IRQ
-      (pins R7-2 U3-45 P2-5)
+      (pins P2-5 R7-2 U3-45)
     )
     (net PB7_RC522_RST
-      (pins P3-7 R8-2 R21-2 U3-43 P2-7)
+      (pins P2-7 P3-7 R8-2 R21-2 U3-43)
     )
     (net PB6_RC522B_CS
       (pins P3-1 R18-2 U3-42)
@@ -1277,21 +1143,6 @@
     (net "Net-(D5-Pad1)"
       (pins P9-2 D5-1)
     )
-    (net "Net-(D1-Pad2)"
-      (pins P14-4 D1-2)
-    )
-    (net "Net-(D6-Pad1)"
-      (pins D6-1 P15-1)
-    )
-    (net "Net-(D6-Pad2)"
-      (pins D6-2 P15-4)
-    )
-    (net "Net-(D6-Pad3)"
-      (pins D6-3 P15-3)
-    )
-    (net "Net-(D6-Pad4)"
-      (pins D6-4 P15-2)
-    )
     (net OUT_BLUE
       (pins Q1-3 P1-1)
     )
@@ -1301,54 +1152,17 @@
     (net OUT_RED
       (pins Q3-3 P1-3)
     )
-    (net "Net-(P8-Pad1)"
-      (pins R1-1 P8-1)
-    )
-    (net "Net-(P8-Pad2)"
-      (pins R3-1 P8-2)
-    )
-    (net "Net-(P8-Pad3)"
-      (pins R9-1 P8-3)
-    )
-    (net "Net-(P11-Pad4)"
-      (pins P8-4 P11-4 P13-4)
-    )
-    (net "Net-(P11-Pad1)"
-      (pins R2-1 P11-1)
-    )
-    (net "Net-(P11-Pad2)"
-      (pins R6-1 P11-2)
-    )
-    (net "Net-(P11-Pad3)"
-      (pins R10-1 P11-3)
-    )
-    (net "Net-(P13-Pad1)"
-      (pins R1-2 R2-2 P13-1)
-    )
-    (net "Net-(P13-Pad2)"
-      (pins R3-2 R6-2 P13-2)
-    )
-    (net "Net-(P13-Pad3)"
-      (pins R9-2 R10-2 P13-3)
-    )
     (class kicad_default "" /stm32f103c8/12V_EXT /stm32f103c8/BOOT0 /stm32f103c8/LDO_IN
       /stm32f103c8/NRST /stm32f103c8/PB2/BOOT1 /stm32f103c8/PD0/RCC_OSC_IN
       /stm32f103c8/PD1/RCC_OSC_OUT /stm32f103c8/SWCLK /stm32f103c8/SWDIO BTN_CALL
       BTN_OPEN ESP_RESET GND GNDD LOCK_OPEN "Net-(C14-Pad2)" "Net-(C15-Pad1)"
-      "Net-(C4-Pad2)" "Net-(C5-Pad2)" "Net-(D1-Pad1)" "Net-(D1-Pad2)" "Net-(D1-Pad3)"
-      "Net-(D1-Pad4)" "Net-(D3-Pad1)" "Net-(D5-Pad1)" "Net-(D5-Pad2)" "Net-(D6-Pad1)"
-      "Net-(D6-Pad2)" "Net-(D6-Pad3)" "Net-(D6-Pad4)" "Net-(P10-Pad1)" "Net-(P10-Pad3)"
-      "Net-(P10-Pad4)" "Net-(P10-Pad5)" "Net-(P11-Pad1)" "Net-(P11-Pad2)"
-      "Net-(P11-Pad3)" "Net-(P11-Pad4)" "Net-(P13-Pad1)" "Net-(P13-Pad2)"
-      "Net-(P13-Pad3)" "Net-(P3-Pad10)" "Net-(P3-Pad9)" "Net-(P4-Pad1)" "Net-(P5-Pad1)"
-      "Net-(P6-Pad3)" "Net-(P6-Pad5)" "Net-(P6-Pad6)" "Net-(P8-Pad1)" "Net-(P8-Pad2)"
-      "Net-(P8-Pad3)" "Net-(Q1-Pad1)" "Net-(Q2-Pad1)" "Net-(Q3-Pad1)" "Net-(U3-Pad10)"
-      "Net-(U3-Pad14)" "Net-(U3-Pad15)" "Net-(U3-Pad16)" "Net-(U3-Pad17)"
-      "Net-(U3-Pad2)" "Net-(U3-Pad25)" "Net-(U3-Pad3)" "Net-(U3-Pad32)" "Net-(U3-Pad33)"
-      "Net-(U3-Pad38)" "Net-(U3-Pad4)" "Net-(U3-Pad40)" OUT_BLUE OUT_GREEN
-      OUT_RED PB13_SPI2_SCK PB14_SPI2_MISO PB15_SPI2_MOSI PB5_RC522A_CS PB6_RC522B_CS
-      PB7_RC522_RST PB8_RC522A_IRQ PB9_RC522B_IRQ PIN_BLUE PIN_GREEN PIN_RED
-      UART_EXT_RX UART_EXT_TX UART_INT_RX UART_INT_TX
+      "Net-(C4-Pad2)" "Net-(C5-Pad2)" "Net-(D3-Pad1)" "Net-(D5-Pad1)" "Net-(D5-Pad2)"
+      "Net-(P10-Pad1)" "Net-(P10-Pad3)" "Net-(P10-Pad4)" "Net-(P10-Pad5)"
+      "Net-(P4-Pad1)" "Net-(P5-Pad1)" "Net-(P6-Pad6)" "Net-(Q1-Pad1)" "Net-(Q2-Pad1)"
+      "Net-(Q3-Pad1)" OUT_BLUE OUT_GREEN OUT_RED PB13_SPI2_SCK PB14_SPI2_MISO
+      PB15_SPI2_MOSI PB5_RC522A_CS PB6_RC522B_CS PB7_RC522_RST PB8_RC522A_IRQ
+      PB9_RC522B_IRQ PIN_BLUE PIN_GREEN PIN_RED UART_EXT_RX UART_EXT_TX UART_INT_RX
+      UART_INT_TX
       (circuit
         (use_via Via[0-1]_900:400_um)
       )
