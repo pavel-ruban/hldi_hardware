@@ -3,7 +3,6 @@
 #include <stdint.h>
 #include "uart/uart.h"
 #include "config.h"
-#include "binds.h"
 
 #define BUFFER_SIZE 100
 

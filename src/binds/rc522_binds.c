@@ -1,5 +1,5 @@
 #include <stm32f10x_conf.h>
-#include <binds.h>
+#include "rc522_binds.h"
 
 extern GPIO_InitTypeDef GPIO_InitStructure;
 

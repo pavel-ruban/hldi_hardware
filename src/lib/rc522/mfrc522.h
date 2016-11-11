@@ -24,12 +24,15 @@
 #define MFRC522_H
 
 #include <stdint.h>
-#include <mfrc522_cmd.h>
-#include <mfrc522_reg.h>
+#include "mfrc522_reg.h"
+#include "mfrc522_cmd.h"
+#include "rc522_binds.h"
+#include "spi_binds.h"
+
 
 #define CARD_FOUND		1
 #define CARD_NOT_FOUND		2
-#define ERROR			3
+#define CARD_ERROR			3
 
 #define MAX_LEN			16
 

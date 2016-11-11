@@ -15,6 +15,8 @@
 
 extern "C" {
 	#include <stm32f10x_conf.h>
+    #include <binds.h>
+    #include <string.h>
 }
 
 #include "include/utils.h"
@@ -27,10 +29,6 @@ extern "C" {
 #include "esp8266/esp8266.h"
 #include <stdio.h>
 
-extern "C" {
-	#include <binds.h>
-	#include <string.h>
-}
 
 #include "include/queue.h"
 #include "lib/array/array.h"
@@ -39,7 +37,7 @@ extern "C" {
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-//SPI_InitTypeDef SPI_InitStructure;
+SPI_InitTypeDef SPI_InitStructure;
 GPIO_InitTypeDef GPIO_InitStructure;
 ErrorStatus HSEStartUpStatus;
 led *leds[LED_QUANTITY] = {NULL};
@@ -131,7 +129,7 @@ extern "C" void WRONG_IRQ_EXCEPTION()
 
 extern "C" void EXTI4_IRQHandler()
 {
-	while (1) {}
+    EXTI_ClearITPendingBit(EXTI_Line4);
 }
 
 
@@ -156,6 +154,7 @@ extern "C" void EXTI2_IRQHandler()
 {
 
 }
+
 
 void Responce_Handler() {
     if (!uart.last_string_ready)
@@ -212,10 +211,19 @@ extern "C" void EXTI1_IRQHandler()
     EXTI_ClearITPendingBit(EXTI_Line1);
 }
 
+
 extern "C" void EXTI15_10_IRQHandler()
 {
-
+    for (;;)
+    {}
 }
+
+extern "C" void EXTI9_5_IRQHandler()
+{
+    for (;;)
+    {}
+}
+
 
 extern "C" void interrupt_initialize();
 extern "C" void initialize_systick();
@@ -238,6 +246,11 @@ extern "C" void __initialize_hardware()
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
     GPIO_Init(BTN_CALL_PORT, &GPIO_InitStructure);
+
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
+    GPIO_Init(GPIOB, &GPIO_InitStructure);
 
     // Em lock pin.
     GPIO_InitStructure.GPIO_Pin = EM_LOCK_PIN;
@@ -312,23 +325,31 @@ main(void)
 	__enable_irq();
     InitializeTimer();
     GPIO_ResetBits(EM_LOCK_PORT, EM_LOCK_PIN);
-    Delay(7000000);
-    wifi.connect_to_wifi("i20.pub", "i20biz2015");
+    //SPI_InitTypeDef * biba;
+    //uint8_t pcd = RC522_PCD_1;
+    //rc522_pcd_select(pcd);
+    //mfrc522_init();
+
+    rc522_pcd_select(1);
+    mfrc522_init();
+//    rc522_irq_prepare();
+  //  Delay(7000000);
+  //  wifi.connect_to_wifi("i20.pub", "i20biz2015");
     //int_to_string(4235353);
     int i1 = 10;
     while (1)
 	{
 
-        if (wifi.is_connected_to_wifi && !wifi.is_connected_to_server) {
-            wifi.connect_to_ip("192.168.1.141", "332");
-           // Delay(10000);
-
-        }
-        if (wifi.is_connected_to_server) {
-            i1 = strlen("BIBA\n");
-
-            wifi.send_request("BIBA\n");
-        }
+//        if (wifi.is_connected_to_wifi && !wifi.is_connected_to_server) {
+//            wifi.connect_to_ip("192.168.1.141", "332");
+//           // Delay(10000);
+//
+//        }
+//        if (wifi.is_connected_to_server) {
+//            i1 = strlen("BIBA\n");
+//
+//            wifi.send_request("BIBA\n");
+//        }
         Delay(700000);
 	}
 }
@@ -346,6 +367,8 @@ void interrupt_initialize()
 	GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource0);
     // BTN_CALL.
     GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource1);
+
+    GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource4);
 
 	// IRQ Driven Button BTN_OPEN.
 	EXTI_InitStructure.EXTI_Line = EXTI_Line0;
@@ -373,6 +396,31 @@ void interrupt_initialize()
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 
+    EXTI_InitStructure.EXTI_Line = EXTI_Line4;
+    EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
+    EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+    EXTI_Init(&EXTI_InitStructure);
+
+    NVIC_InitStructure.NVIC_IRQChannel =  EXTI4_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x08;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x08;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
+//----------------------------------------------
+    EXTI_InitStructure.EXTI_Line = EXTI_Line10;
+    EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
+    EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+    EXTI_Init(&EXTI_InitStructure);
+
+    // RC522 Timer And PICC Receive Interrupt.
+    NVIC_InitStructure.NVIC_IRQChannel = EXTI15_10_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x09;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x09;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
+//----------------------------------------------
 	// TIM2 timer, used as on second watchdog for enc28j60, rc522.
 	// Also do some periodical not priority calls.
 	NVIC_InitStructure.NVIC_IRQChannel = TIM3_IRQn;
