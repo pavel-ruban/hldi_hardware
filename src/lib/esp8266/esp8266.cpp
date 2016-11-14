@@ -11,6 +11,12 @@ Esp8266::~Esp8266() {
 
 }
 
+void Esp8266::Delay(uint32_t nCount)
+{
+    for(; nCount != 0; nCount--);
+}
+
+
 char* Esp8266::strstr(char *haystack, const char *needle) {
     if (haystack == NULL || needle == NULL) {
         return NULL;

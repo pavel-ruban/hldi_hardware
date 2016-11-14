@@ -19,6 +19,7 @@ extern "C" {
     #include <string.h>
 }
 
+#include "lib/rc522/mfrc522.h"
 #include "include/utils.h"
 #include <led/led.hpp>
 #include "machine_state/machine_state.h"
@@ -72,12 +73,29 @@ Esp8266 wifi(&uart);
 /* Private function prototypes -----------------------------------------------*/
 void RCC_Configuration(void);
 void NVIC_Configuration(void);
-void Delay(vu32 nCount);
+//void Delay(vu32 nCount);
 extern "C" void custom_asm();
-void rc522_irq_prepare();
+//void rc522_irq_prepare();
 void RTC_Configuration();
 
 extern "C" void reset_asm();
+
+void Delay(uint32_t nCount)
+{
+    for(; nCount != 0; nCount--);
+}
+
+void rc522_irq_prepare()
+{
+    mfrc522_write(BitFramingReg, 0x07); // TxLastBists = BitFramingReg[2..0]	???
+
+    // Clear all interrupts flags.
+    mfrc522_write(ComIrqReg, (uint8_t) ~0x80);
+    uint8_t status = mfrc522_read(Status1Reg);
+
+    // Start timer.
+    mfrc522_write(ControlReg, 1 << TStartNow);
+}
 
 char* strstr(char *haystack, const char *needle) {
     if (haystack == NULL || needle == NULL) {
@@ -230,6 +248,14 @@ extern "C" void initialize_systick();
 
 extern "C" void __initialize_hardware()
 {
+
+    rc522_set_pins();
+    rc522_2_set_pins();
+    //enc28j60_set_pins();
+
+    set_spi_registers();
+    set_spi2_registers();
+
     // Bind GPIOA, GPIOB to APB2 bus.
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
@@ -322,7 +348,7 @@ main(void)
     leds[LED_STATE_INDICATOR]->on();
     //machine_state.set_state_idle();
     interrupt_initialize();
-	__enable_irq();
+	//__enable_irq();
     InitializeTimer();
     GPIO_ResetBits(EM_LOCK_PORT, EM_LOCK_PIN);
     //SPI_InitTypeDef * biba;
@@ -330,8 +356,12 @@ main(void)
     //rc522_pcd_select(pcd);
     //mfrc522_init();
 
-    rc522_pcd_select(1);
+    rc522_pcd_select(RC522_PCD_1);
     mfrc522_init();
+
+    __enable_irq();
+
+    rc522_irq_prepare();
 //    rc522_irq_prepare();
   //  Delay(7000000);
   //  wifi.connect_to_wifi("i20.pub", "i20biz2015");

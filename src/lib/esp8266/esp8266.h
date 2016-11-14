@@ -53,6 +53,7 @@ public:
     uint8_t handle_response();
     uint8_t recieve_string();
     void send_request(char* request);
+    void Delay(uint32_t nCount);
 
     void connect_to_wifi(char* ssid, char* password);
 };
