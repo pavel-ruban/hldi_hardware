@@ -1,8 +1,10 @@
 #pragma once
 #pragma pack(1)
 #include <stdint.h>
+#include <binds.h>
 #include "uart/uart.h"
 #include "config.h"
+#include <utils.h>
 
 #define BUFFER_SIZE 100
 

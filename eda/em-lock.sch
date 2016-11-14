@@ -300,8 +300,6 @@ F 3 "" H 8650 3350 50  0000 C CNN
 	1    8650 3350
 	0    1    1    0   
 $EndComp
-Text GLabel 8550 3150 0    60   Input ~ 0
-EM_LOCK
 $Comp
 L VDD #PWR04
 U 1 1 57BFAAAC
@@ -462,7 +460,7 @@ U 1 1 5829A13D
 P 1450 6350
 F 0 "P2" H 1527 6391 50  0000 L CNN
 F 1 "RC522A" H 1527 6300 50  0000 L CNN
-F 2 "I20:RC522_Full" H 1450 6350 50  0001 C CNN
+F 2 "I20:b8b-ph-kl" H 1450 6350 50  0001 C CNN
 F 3 "" H 1450 6350 50  0000 C CNN
 	1    1450 6350
 	-1   0    0    1   
@@ -1200,8 +1198,6 @@ Wire Wire Line
 Connection ~ 4800 3700
 Wire Wire Line
 	4800 3650 4800 3900
-Wire Wire Line
-	8550 3150 8950 3150
 Connection ~ 9150 4300
 Wire Wire Line
 	9150 4250 9150 4300
@@ -1286,8 +1282,6 @@ Connection ~ 1950 6000
 Wire Wire Line
 	8650 3200 8650 3150
 Connection ~ 8650 3150
-Wire Wire Line
-	8950 3250 8850 3250
 Wire Wire Line
 	8850 3250 8850 3600
 Wire Wire Line
@@ -1529,4 +1523,10 @@ Wire Wire Line
 	3300 3750 2450 3750
 Wire Wire Line
 	2450 3750 2450 3400
+Text GLabel 8550 3150 0    60   Input ~ 0
+EM_LOCK
+Wire Wire Line
+	8550 3150 8950 3150
+Wire Wire Line
+	8850 3250 8950 3250
 $EndSCHEMATC

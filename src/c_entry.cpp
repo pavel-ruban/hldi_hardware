@@ -536,17 +536,6 @@ void NVIC_Configuration(void)
 #endif
 }
 
-/*******************************************************************************
- * Function Name  : Delay
- * Description    : Inserts a delay time.
- * Input          : nCount: specifies the delay time length.
- * Output         : None
- * Return         : None
- *******************************************************************************/
-void Delay(vu32 nCount)
-{
-	for(; nCount != 0; nCount--);
-}
 
 #ifdef  DEBUG
 /*******************************************************************************
