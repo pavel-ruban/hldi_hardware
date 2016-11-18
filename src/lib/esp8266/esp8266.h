@@ -17,7 +17,8 @@
 #define STATE_WAITING_WIFI_CONNECT 2
 #define STATE_WAITING_IP_CONNECT 3
 #define STATE_WAITING_RESPONSE 5
-#define STATE_BUSY 4;
+#define STATE_RESETTING 4
+#define AP_CONNECT_TIMEOUT 5000
 
 //Esp8266
 
@@ -32,6 +33,8 @@ private:
     void send_request_to_connect();
     char buf[10] = {0};
 public:
+    void reset();
+    void change_mode();
     char* int_to_string(uint32_t i);
     void clear_buffer();
     char* strcat(char *dest, const char *src);
@@ -56,4 +59,5 @@ public:
     void Delay(uint32_t nCount);
 
     void connect_to_wifi(char* ssid, char* password);
+    void connect_to_wifi();
 };

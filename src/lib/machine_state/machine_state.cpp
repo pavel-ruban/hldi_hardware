@@ -42,7 +42,7 @@ uint8_t Machine_state::get_state() {
 void Machine_state::set_state_idle() {
     current_state = MACHINE_STATE_IDLE;
     led_scheduler.invalidate(leds[LED_STATE_INDICATOR]);
-    leds[LED_STATE_INDICATOR]->set_color(LED_COLOR_ORANGE);
+    leds[LED_STATE_INDICATOR]->set_color(LED_COLOR_WHITE);
     leds[LED_STATE_INDICATOR]->set_blink(1,1000,1000);
     leds[LED_STATE_INDICATOR]->on();
     state_scheduler.invalidate(this);
@@ -71,3 +71,26 @@ void Machine_state::set_state_guest_call(uint32_t delay) {
     state_scheduler.invalidate(this);
     state_scheduler.push(idle_event);
 }
+
+void Machine_state::set_state_network_problem() {
+    current_state = MACHINE_STATE_INITIALIZING;
+    led_scheduler.invalidate(leds[LED_STATE_INDICATOR]);
+    leds[LED_STATE_INDICATOR]->set_color(LED_COLOR_RED);
+    leds[LED_STATE_INDICATOR]->set_blink(0,500,500);
+    leds[LED_STATE_INDICATOR]->on();
+    //Event<Machine_state> idle_event(state_scheduler.get_current_time() + delay,this,&Machine_state::set_state_idle);
+    state_scheduler.invalidate(this);
+    //state_scheduler.push(idle_event);
+}
+
+void Machine_state::set_state_initializing(uint32_t delay) {
+    current_state = MACHINE_STATE_INITIALIZING;
+    led_scheduler.invalidate(leds[LED_STATE_INDICATOR]);
+    leds[LED_STATE_INDICATOR]->set_color(LED_COLOR_PURPLE);
+    leds[LED_STATE_INDICATOR]->set_blink(1,500,500);
+    leds[LED_STATE_INDICATOR]->on();
+    Event<Machine_state> network_problem(state_scheduler.get_current_time() + delay,this,&Machine_state::set_state_network_problem);
+    state_scheduler.invalidate(this);
+    state_scheduler.push(network_problem);
+}
+

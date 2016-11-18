@@ -33,3 +33,5 @@ void __enable_enc28j60_irq();
 void __disable_enc28j60_irq();
 
 void Delay(vu32 nCount);
+
+#pragma pack(1)

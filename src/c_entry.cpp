@@ -34,6 +34,10 @@ extern "C" {
 #include "include/queue.h"
 #include "lib/array/array.h"
 
+#define EVENT_ACCESS_REQ 1
+#define ACCESS_GRANTED 0x1
+#define ACCESS_DENIED 0x0
+
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
@@ -67,6 +71,7 @@ Queue<tag_cache_entry, 100> tag_cache;
 Queue<tag_event, 100> tag_events;
 Scheduler<Event<led>, 100> led_scheduler;
 Scheduler<Event<Machine_state>, 100> state_scheduler;
+Scheduler<Event<Esp8266>, 5> connection_scheduler;
 Uart uart(UART1, 115200);
 Esp8266 wifi(&uart);
 
@@ -140,6 +145,130 @@ void RTC_Configuration()
 	RCC_LSEConfig(RCC_LSE_ON);
 }
 
+uint8_t get_pcd_id()
+{
+    return rc522_select == rc522_2_select ? RC522_PCD_2 : RC522_PCD_1;
+}
+
+uint8_t somi_access_check(uint8_t tag_id[], uint8_t node_id[], uint8_t pcd_id)
+{
+    // @todo use here network request.
+    return 0xff;
+}
+
+uint8_t somi_access_check_1()
+{
+    return 0xff;
+}
+
+void access_denied_signal()
+{
+    for(;;)
+    {}
+}
+
+void open_node()
+{
+    for(;;)
+    {}
+//    // @todo implement here hardware EMI lock control.
+//    static uint8_t x = 0;
+//    x ^= 1;
+//
+//    if (x) GPIO_SetBits(GPIOA, GPIO_Pin_1);
+//    else access_denied_signal();
+}
+
+void somi_event_handler(uint8_t event, uint8_t flags)
+{
+    switch (event)
+    {
+        case EVENT_ACCESS_REQ:
+            if (flags & ACCESS_GRANTED) {
+                open_node();
+            }
+            else {
+                access_denied_signal();
+            }
+            break;
+    }
+}
+
+void rfid_irq_tag_handler()
+{
+    __disable_irq();
+
+    uint8_t tag_id[16];
+    memset(tag_id, 0, sizeof(tag_id));
+    uint8_t status = mfrc522_get_card_serial(tag_id);
+    __enable_irq();
+
+    if (status == CARD_FOUND) {
+        static uint8_t led_state = 0;
+        led_state ? GPIO_SetBits(GPIOA, GPIO_Pin_1) : GPIO_ResetBits(GPIOA, GPIO_Pin_1);
+        led_state ^= 1;
+
+        // Check if tag was cached.
+        uint8_t flags;
+
+        tag_cache_entry *cache = nullptr;
+
+        for (auto it = tag_cache.begin(); it != tag_cache.end(); ++it) {
+            if (*((uint32_t *) &(it->tag_id[0])) == *((uint32_t *) &(tag_id[0]))) {
+                cache = &(*it);
+                break;
+            }
+        }
+
+        // We have to do the next things:
+        // a) Get access for the tag.
+        // Access can be retreived from network or via cache.
+        // b) Track event about access request.
+        // Events can be tracked directly by network request or via RabitMQ queue.
+
+        // If no, request data from network and cache result.
+        if (cache)
+        {
+            // If queue has space then use cache and store event to the cache.
+            if (!tag_events.full) {
+                tag_event event;
+                memcpy(event.tag_id, tag_id, 4);
+                event.event_time = RTC_GetCounter();
+                event.node = get_pcd_id();
+
+                // Add event to the queue.
+                tag_events.push_back(event);
+
+                // Get access flags from cache.
+                flags = cache->flags;
+            }
+                // Otherwise initiate direct network request.
+            else {
+                flags = somi_access_check_1();
+            }
+        }
+            // If cache hasn't tag request data from network and store it to the cache.
+        else {
+            flags = somi_access_check_1();
+            if (!tag_cache.full) {
+                tag_cache_entry cache_entry;
+
+                memcpy(cache_entry.tag_id, tag_id, 4);
+                cache_entry.flags = flags;
+                cache_entry.cached = RTC_GetCounter();
+
+                tag_cache.push_back(cache_entry);
+            }
+        }
+
+        // Trigger event handler.
+        somi_event_handler(EVENT_ACCESS_REQ, flags);
+    }
+
+    // Activate timer.
+    rc522_irq_prepare();
+}
+
 extern "C" void WRONG_IRQ_EXCEPTION()
 {
 	while (1) {}
@@ -165,6 +294,7 @@ extern "C" void SysTick_Handler(void)
 {
     led_scheduler.handle();
     state_scheduler.handle();
+    connection_scheduler.handle();
 	ticks++;
 }
 
@@ -232,8 +362,73 @@ extern "C" void EXTI1_IRQHandler()
 
 extern "C" void EXTI15_10_IRQHandler()
 {
-    for (;;)
-    {}
+    if (EXTI_GetITStatus(EXTI_Line10) == SET)
+    {
+        rc522_pcd_select(RC522_PCD_1);
+    }
+    else if (EXTI_GetITStatus(EXTI_Line11) == SET)
+    {
+        rc522_pcd_select(RC522_PCD_2);
+    }
+
+    // Get active interrupts from RC522.
+    uint8_t mfrc522_com_irq_reg = mfrc522_read(ComIrqReg);
+
+    // If some PICC answered handle it to retrieve additional data from it.
+    if (mfrc522_com_irq_reg & (1 << RxIEn)) {
+        //static uint8_t led_state = 0;
+
+        // Acknowledge receive irq.
+        mfrc522_write(ComIrqReg, 1 << RxIEn);
+
+        // Attempt to retrieve tag ID and in case of success check node access.
+        rfid_irq_tag_handler();
+
+        rc522_irq_prepare();
+    }
+        // If it's timer IRQ then request RC522 to start looking for CARD again
+        // and back control to the main thread.
+    else if (mfrc522_com_irq_reg & TimerIEn) {
+        // Down timer irq.
+        mfrc522_write(ComIrqReg, TimerIEn);
+
+        // As was checked, after Transceive_CMD the FIFO is emptied, so we need put PICC_REQALL
+        // here again, otherwise PICC won't be able response to RC522.
+        mfrc522_write(FIFOLevelReg, mfrc522_read(FIFOLevelReg) | 0x80); // flush FIFO data
+        mfrc522_write(FIFODataReg, PICC_REQALL);
+
+        // Unfortunately Transceive seems not terminates receive stage automatically if PICC doesn't respond.
+        // so we again need activate command to enter transmitter state to pass PICC_REQALL cmd to PICC
+        // otherwise it won't response due to the ISO 14443 standard.
+        mfrc522_write(CommandReg, Transceive_CMD);
+
+        // When data and command are correct issue the transmit operation.
+        mfrc522_write(BitFramingReg, mfrc522_read(BitFramingReg) | 0x80);
+
+        // Start timer. When it will end it again cause this IRQ handler to search the PICC.
+
+        // Clear STM32 irq bit.
+        if (rc522_select == rc522_1_select)
+        {
+            EXTI_ClearITPendingBit(EXTI_Line10);
+        }
+        else if (rc522_select == rc522_2_select)
+        {
+            EXTI_ClearITPendingBit(EXTI_Line11);
+        }
+
+        mfrc522_write(ControlReg, 1 << TStartNow);
+        return;
+    }
+
+    if (rc522_select == rc522_1_select)
+    {
+        EXTI_ClearITPendingBit(EXTI_Line10);
+    }
+    else if (rc522_select == rc522_2_select)
+    {
+        EXTI_ClearITPendingBit(EXTI_Line11);
+    }
 }
 
 extern "C" void EXTI9_5_IRQHandler()
@@ -346,11 +541,11 @@ main(void)
     led rgb_led(LED_TYPE_RGB, GPIOA, GPIO_Pin_1, GPIO_Pin_2, GPIO_Pin_3, LED_COLOR_WHITE);
     leds[LED_STATE_INDICATOR] =  &rgb_led;
     leds[LED_STATE_INDICATOR]->on();
-    //machine_state.set_state_idle();
+    machine_state.set_state_initializing(50000);
     interrupt_initialize();
 	//__enable_irq();
     InitializeTimer();
-    GPIO_ResetBits(EM_LOCK_PORT, EM_LOCK_PIN);
+//    GPIO_ResetBits(EM_LOCK_PORT, EM_LOCK_PIN);
     //SPI_InitTypeDef * biba;
     //uint8_t pcd = RC522_PCD_1;
     //rc522_pcd_select(pcd);
@@ -360,21 +555,28 @@ main(void)
     mfrc522_init();
 
     __enable_irq();
-
     rc522_irq_prepare();
 //    rc522_irq_prepare();
   //  Delay(7000000);
-  //  wifi.connect_to_wifi("i20.pub", "i20biz2015");
+    wifi.connect_to_wifi("i20.pub", "i20biz2015");
+    Event<Esp8266> try2connect(connection_scheduler.get_current_time() + AP_CONNECT_TIMEOUT, &wifi, &Esp8266::reset);
+    connection_scheduler.push(try2connect);
+    Event<Esp8266> try2connect1(connection_scheduler.get_current_time() + AP_CONNECT_TIMEOUT * 2, &wifi, &Esp8266::reset);
+    connection_scheduler.push(try2connect1);
+    Event<Esp8266> try2connect2(connection_scheduler.get_current_time() + AP_CONNECT_TIMEOUT * 3, &wifi, &Esp8266::reset);
+    connection_scheduler.push(try2connect2);
     //int_to_string(4235353);
     int i1 = 10;
     while (1)
 	{
 
-//        if (wifi.is_connected_to_wifi && !wifi.is_connected_to_server) {
-//            wifi.connect_to_ip("192.168.1.141", "332");
-//           // Delay(10000);
-//
-//        }
+        if (wifi.is_connected_to_wifi && !wifi.is_connected_to_server) {
+            connection_scheduler.invalidate(&wifi);
+            machine_state.set_state_idle();
+           // wifi.connect_to_ip("192.168.1.141", "332");
+           // Delay(10000);
+
+        }
 //        if (wifi.is_connected_to_server) {
 //            i1 = strlen("BIBA\n");
 //
@@ -400,43 +602,45 @@ void interrupt_initialize()
 
     GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource4);
 
+    GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource10);
+
 	// IRQ Driven Button BTN_OPEN.
-	EXTI_InitStructure.EXTI_Line = EXTI_Line0;
-	EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
-	EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
-	EXTI_InitStructure.EXTI_LineCmd = ENABLE;
-	EXTI_Init(&EXTI_InitStructure);
-
-    NVIC_InitStructure.NVIC_IRQChannel = EXTI0_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x03;
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x03;
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-    NVIC_Init(&NVIC_InitStructure);
-
-    // IRQ Driven Button BTN_CALL.
-    EXTI_InitStructure.EXTI_Line = EXTI_Line1;
-    EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
-    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
-    EXTI_InitStructure.EXTI_LineCmd = ENABLE;
-    EXTI_Init(&EXTI_InitStructure);
-
-    NVIC_InitStructure.NVIC_IRQChannel = EXTI1_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x04;
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x04;
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-    NVIC_Init(&NVIC_InitStructure);
-
-    EXTI_InitStructure.EXTI_Line = EXTI_Line4;
-    EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
-    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
-    EXTI_InitStructure.EXTI_LineCmd = ENABLE;
-    EXTI_Init(&EXTI_InitStructure);
-
-    NVIC_InitStructure.NVIC_IRQChannel =  EXTI4_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x08;
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x08;
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-    NVIC_Init(&NVIC_InitStructure);
+//	EXTI_InitStructure.EXTI_Line = EXTI_Line0;
+//	EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+//	EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
+//	EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+//	EXTI_Init(&EXTI_InitStructure);
+//
+//    NVIC_InitStructure.NVIC_IRQChannel = EXTI0_IRQn;
+//    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x03;
+//    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x03;
+//    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+//    NVIC_Init(&NVIC_InitStructure);
+//
+//    // IRQ Driven Button BTN_CALL.
+//    EXTI_InitStructure.EXTI_Line = EXTI_Line1;
+//    EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+//    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
+//    EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+//    EXTI_Init(&EXTI_InitStructure);
+//
+//    NVIC_InitStructure.NVIC_IRQChannel = EXTI1_IRQn;
+//    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x04;
+//    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x04;
+//    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+//    NVIC_Init(&NVIC_InitStructure);
+//
+//    EXTI_InitStructure.EXTI_Line = EXTI_Line4;
+//    EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+//    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
+//    EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+//    EXTI_Init(&EXTI_InitStructure);
+//
+//    NVIC_InitStructure.NVIC_IRQChannel =  EXTI4_IRQn;
+//    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x08;
+//    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x08;
+//    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+//    NVIC_Init(&NVIC_InitStructure);
 //----------------------------------------------
     EXTI_InitStructure.EXTI_Line = EXTI_Line10;
     EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;

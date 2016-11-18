@@ -68,6 +68,13 @@ void Esp8266::clear_buffer() {
     }
 }
 
+void Esp8266::reset() {
+    current_state = STATE_RESETTING;
+    GPIO_ResetBits(ESP8266_RESET_PORT,ESP8266_RESET_PIN);
+    Delay(100);
+    GPIO_SetBits(ESP8266_RESET_PORT,ESP8266_RESET_PIN);
+}
+
 void Esp8266::send_request(char* request) {
     message_sent = 0;
 
@@ -117,18 +124,34 @@ uint8_t Esp8266::refresh_status() {
 }
 
 void Esp8266::send_request_to_connect() {
+    current_state = STATE_WAITING_WIFI_CONNECT;
+    clear_buffer();
     strcat(buffer_string, "AT+CWJAP=\"");
     strcat(buffer_string, ssid);
     strcat(buffer_string, "\",\"");
     strcat(buffer_string, password);
     strcat(buffer_string, "\"\r\n");
     _uart->send(buffer_string);
-    current_state = STATE_WAITING_WIFI_CONNECT;
+
+}
+
+void Esp8266::change_mode() {
+
+    current_state = STATE_WAITING_MODE_CHANGE;
+    _uart->send("AT+CWMODE=1\r\n");
+
 }
 
 uint8_t Esp8266::handle_response() {
     recieve_string();
+    if (current_state == STATE_RESETTING) {
+        if (strstr(last_string, "ready")) {
+            change_mode();
+            return INTERNAL_RESPONSE;
+        }
+    }
     if (current_state == STATE_WAITING_MODE_CHANGE) {
+        recieve_string();
         if (strstr(last_string, "OK")) {
             send_request_to_connect();
             return INTERNAL_RESPONSE;
@@ -174,9 +197,18 @@ uint8_t Esp8266::handle_response() {
     return EXTERNAL_RESPONSE;
 }
 
+
+
 void Esp8266::connect_to_wifi(char* ssid, char* password) {
     this->ssid = ssid;
     this->password = password;
-    _uart->send("AT+CWMODE=1\r\n");
-    current_state = STATE_WAITING_MODE_CHANGE;
+    reset();
+    //Delay(20000);
+
+    //change_mode();
+}
+
+void Esp8266::connect_to_wifi() {
+    reset();
+    //Delay(10000);
 }

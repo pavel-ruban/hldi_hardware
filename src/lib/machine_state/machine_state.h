@@ -15,6 +15,8 @@
 #define MACHINE_STATE_IDLE 0
 #define MACHINE_STATE_LOCK_OPEN 1
 #define MACHINE_STATE_GUEST_CALL 2
+#define MACHINE_STATE_INITIALIZING 3
+#define MACHINE_STATE_NETWORK_PROBLEM 4
 
 class Machine_state{
 public:
@@ -22,6 +24,8 @@ public:
     void set_state_idle();
     void set_state_lock_open(uint32_t delay);
     void set_state_guest_call(uint32_t delay);
+    void set_state_initializing(uint32_t delay);
+    void set_state_network_problem();
     uint8_t get_state();
     Machine_state();
     ~Machine_state();
