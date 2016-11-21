@@ -309,6 +309,9 @@ void Responce_Handler() {
         return;
 }
 
+char biba[20][200];
+int i65 = -1;
+
 extern "C" void USART1_IRQHandler()
 {
     // Receive Data register not empty interrupt.
@@ -322,6 +325,8 @@ extern "C" void USART1_IRQHandler()
         } else {
             for (uint16_t i = 0; i < RECV_STRING_MAX_SIZE; ++i) {
                 uart.last_string[i] = 0;
+                //if (uart.last_string[i] == '\0')
+                 //   break;
             }
             uart.last_string_ready = 0;
             uart.last_string[0] = uart.last_byte;
@@ -330,6 +335,14 @@ extern "C" void USART1_IRQHandler()
 
         if (uart.last_byte == '\n') {
             uart.last_string_ready = 1;
+            //uart.send(uart.last_string);
+//            i65++;
+//            for (int i = 0; i < 200; i++) {
+//                biba[i65][i] = uart.last_string[i];
+//            }
+//            if (i65 > 10) {
+//                int fgfg = 0;
+//            }
             wifi.handle_response();
         }
     }
@@ -513,6 +526,28 @@ void InitializeTimer()
     TIM_ITConfig(TIM3, TIM_IT_Update, ENABLE);
 }
 
+void connect_to_wifi (uint16_t connection_timeout, char* ssid, char* password) {
+    machine_state.set_state_ap_connecting(3 * connection_timeout);
+    connection_scheduler.invalidate(&wifi);
+    wifi.connect_to_wifi(ssid, password);
+    Event<Esp8266> try2connect(connection_scheduler.get_current_time() + connection_timeout, &wifi, &Esp8266::reset);
+    connection_scheduler.push(try2connect);
+    Event<Esp8266> try2connect1(connection_scheduler.get_current_time() + connection_timeout * 2, &wifi, &Esp8266::reset);
+    connection_scheduler.push(try2connect1);
+    Event<Esp8266> try2connect2(connection_scheduler.get_current_time() + connection_timeout * 3, &wifi, &Esp8266::reset);
+    connection_scheduler.push(try2connect2);
+}
+
+void connect_to_server (uint16_t connection_timeout, char* ip, char* port) {
+    machine_state.set_state_server_connecting(connection_timeout * 1000);
+    connection_scheduler.invalidate(&wifi);
+    //wifi.refresh_status();
+    //wifi.disconnect_from_server();
+    //Delay(50000);
+    wifi.connect_to_ip(ip, port);
+}
+
+
 int *xx;
 extern "C" int
 main(void)
@@ -541,16 +576,10 @@ main(void)
     led rgb_led(LED_TYPE_RGB, GPIOA, GPIO_Pin_1, GPIO_Pin_2, GPIO_Pin_3, LED_COLOR_WHITE);
     leds[LED_STATE_INDICATOR] =  &rgb_led;
     leds[LED_STATE_INDICATOR]->on();
-    machine_state.set_state_initializing(50000);
+
     interrupt_initialize();
 	//__enable_irq();
     InitializeTimer();
-//    GPIO_ResetBits(EM_LOCK_PORT, EM_LOCK_PIN);
-    //SPI_InitTypeDef * biba;
-    //uint8_t pcd = RC522_PCD_1;
-    //rc522_pcd_select(pcd);
-    //mfrc522_init();
-
     rc522_pcd_select(RC522_PCD_1);
     mfrc522_init();
 
@@ -558,30 +587,27 @@ main(void)
     rc522_irq_prepare();
 //    rc522_irq_prepare();
   //  Delay(7000000);
-    wifi.connect_to_wifi("i20.pub", "i20biz2015");
-    Event<Esp8266> try2connect(connection_scheduler.get_current_time() + AP_CONNECT_TIMEOUT, &wifi, &Esp8266::reset);
-    connection_scheduler.push(try2connect);
-    Event<Esp8266> try2connect1(connection_scheduler.get_current_time() + AP_CONNECT_TIMEOUT * 2, &wifi, &Esp8266::reset);
-    connection_scheduler.push(try2connect1);
-    Event<Esp8266> try2connect2(connection_scheduler.get_current_time() + AP_CONNECT_TIMEOUT * 3, &wifi, &Esp8266::reset);
-    connection_scheduler.push(try2connect2);
+
+    //Delay(1000000);
+    connect_to_wifi(AP_CONNECT_TIMEOUT, "i20.pub", "i20biz2015");
     //int_to_string(4235353);
     int i1 = 10;
     while (1)
 	{
 
-        if (wifi.is_connected_to_wifi && !wifi.is_connected_to_server) {
+        if (wifi.is_connected_to_wifi && !wifi.is_connected_to_server && wifi.current_state == STATE_READY) {
             connection_scheduler.invalidate(&wifi);
-            machine_state.set_state_idle();
-           // wifi.connect_to_ip("192.168.1.141", "332");
-           // Delay(10000);
-
+            connect_to_server(10, "www.google.com", "80");
         }
-//        if (wifi.is_connected_to_server) {
-//            i1 = strlen("BIBA\n");
-//
-//            wifi.send_request("BIBA\n");
-//        }
+        if (wifi.is_connected_to_wifi && wifi.is_connected_to_server) {
+           // connection_scheduler.invalidate(&wifi);
+            if (machine_state.get_state() == MACHINE_STATE_SERVER_CONNECTING)
+                machine_state.set_state_idle();
+            wifi.refresh_status();
+           // i1 = strlen("BIBA\n");
+
+           // wifi.send_request("BIBA\n");
+        }
         Delay(700000);
 	}
 }

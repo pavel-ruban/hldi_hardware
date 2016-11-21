@@ -5,6 +5,7 @@ Esp8266::Esp8266(Uart *uart) {
     is_connected_to_wifi = 0;
     message_sent = 0;
     is_authorized = 0;
+    busy = 0;
 }
 
 Esp8266::~Esp8266() {
@@ -69,10 +70,12 @@ void Esp8266::clear_buffer() {
 }
 
 void Esp8266::reset() {
+    busy = 1;
     current_state = STATE_RESETTING;
     GPIO_ResetBits(ESP8266_RESET_PORT,ESP8266_RESET_PIN);
     Delay(100);
     GPIO_SetBits(ESP8266_RESET_PORT,ESP8266_RESET_PIN);
+
 }
 
 void Esp8266::send_request(char* request) {
@@ -95,7 +98,9 @@ void Esp8266::send_request(char* request) {
 }
 
 uint8_t Esp8266::connect_to_ip(char* ip, char* port) {
+    busy = 1;
     if (current_state == STATE_READY) {
+        is_connected_to_server = 0;
         clear_buffer();
         strcat(buffer_string, "AT+CIPSTART=\"TCP\",\"");
         strcat(buffer_string, ip);
@@ -104,6 +109,27 @@ uint8_t Esp8266::connect_to_ip(char* ip, char* port) {
         strcat(buffer_string, "\r\n");
         _uart->send(buffer_string);
         current_state = STATE_WAITING_IP_CONNECT;
+    } else return current_state;
+}
+
+uint8_t Esp8266::set_server_timeout(uint8_t seconds) {
+    if (current_state == STATE_READY) {
+        clear_buffer();
+        strcat(buffer_string, "AT+CIPSTO=");
+        strcat(buffer_string, int_to_string(seconds));
+        strcat(buffer_string, "\r\n");
+        _uart->send(buffer_string);
+        current_state = STATE_WAITING_RESPONSE;
+    } else return current_state;
+}
+
+uint8_t Esp8266::disconnect_from_server() {
+    if (current_state == STATE_READY) {
+        clear_buffer();
+        strcat(buffer_string, "AT+CIPCLOSE");
+        strcat(buffer_string, "\r\n");
+        _uart->send(buffer_string);
+        current_state = STATE_WAITING_RESPONSE;
     } else return current_state;
 }
 
@@ -118,6 +144,7 @@ uint8_t Esp8266::recieve_string() {
 }
 
 uint8_t Esp8266::refresh_status() {
+    busy = 1;
     if (current_state == STATE_READY) {
         _uart->send("AT+CIPSTATUS\r\n");
     } else return current_state;
@@ -153,6 +180,8 @@ uint8_t Esp8266::handle_response() {
     if (current_state == STATE_WAITING_MODE_CHANGE) {
         recieve_string();
         if (strstr(last_string, "OK")) {
+            //_uart->send("ATE0");
+            //Delay(500000);
             send_request_to_connect();
             return INTERNAL_RESPONSE;
         }
@@ -161,13 +190,26 @@ uint8_t Esp8266::handle_response() {
         if (strstr(last_string, "OK")) {
             is_connected_to_wifi = 1;
             current_state = STATE_READY;
+            busy = 0;
             return INTERNAL_RESPONSE;
         }
     }
     if (current_state == STATE_WAITING_IP_CONNECT) {
-        if (strstr(last_string, "OK")) {
+        recieve_string();
+        if (strstr(last_string, "CONNECT")) {
             is_connected_to_server = 1;
             current_state = STATE_READY;
+            busy = 0;
+            return INTERNAL_RESPONSE;
+        }
+    }
+
+    if (current_state == STATE_WAITING_IP_CONNECT) {
+        //recieve_string();
+        if (strstr(_uart->last_string, "DNS")) {
+            is_connected_to_server = 0;
+            current_state = STATE_READY;
+            busy = 0;
             return INTERNAL_RESPONSE;
         }
     }
@@ -186,17 +228,29 @@ uint8_t Esp8266::handle_response() {
             return INTERNAL_RESPONSE;
         }
     }
+    if (strstr(last_string, "STATUS:3")) {
+        is_connected_to_wifi = 1;
+        is_connected_to_server = 1;
+        busy = 0;
+        return INTERNAL_RESPONSE;
+    }
     if (strstr(last_string, "STATUS:5")) {
         is_connected_to_wifi = 1;
+        is_connected_to_server = 0;
+        busy = 0;
         return INTERNAL_RESPONSE;
     }
     if (strstr(last_string, "STATUS:4")) {
         is_connected_to_wifi = 0;
+        is_connected_to_server = 0;
+        busy = 0;
         return INTERNAL_RESPONSE;
     }
     return EXTERNAL_RESPONSE;
 }
-
+//Коннект к серваку - статус 3.
+//Коннект к точке, без сервака - статус 5.
+//Нету коннекта к точке, (и к серваку, очевидно) - статус 4.
 
 
 void Esp8266::connect_to_wifi(char* ssid, char* password) {
