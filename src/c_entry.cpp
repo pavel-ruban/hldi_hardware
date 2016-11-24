@@ -18,7 +18,7 @@ extern "C" {
     #include <binds.h>
     #include <string.h>
 }
-
+char test_buffer[60][60];
 #include "lib/rc522/mfrc522.h"
 #include "include/utils.h"
 #include <led/led.hpp>
@@ -73,6 +73,8 @@ Scheduler<Event<led>, 100> led_scheduler;
 Scheduler<Event<Machine_state>, 100> state_scheduler;
 Scheduler<Event<Esp8266>, 5> connection_scheduler;
 Uart uart(UART1, 115200);
+Uart uart3(UART3, 115200);
+
 Esp8266 wifi(&uart);
 
 /* Private function prototypes -----------------------------------------------*/
@@ -90,6 +92,36 @@ void Delay(uint32_t nCount)
     for(; nCount != 0; nCount--);
 }
 
+void USART3_test_init() {
+    GPIO_InitTypeDef gpio;
+    USART_InitTypeDef usart;
+
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART3, ENABLE);
+
+    GPIO_StructInit(&gpio);
+
+//    gpio.GPIO_Mode = GPIO_Mode_AF_PP;
+//    gpio.GPIO_Pin = GPIO_Pin_10;
+//    gpio.GPIO_Speed = GPIO_Speed_50MHz;
+//    GPIO_Init(GPIOB, &gpio);
+//
+//    gpio.GPIO_Mode = GPIO_Mode_AF_PP;
+//    gpio.GPIO_Pin = GPIO_Pin_11;
+//    gpio.GPIO_Speed = GPIO_Speed_50MHz;
+//    GPIO_Init(GPIOB, &gpio);
+
+//    GPIO_PinAFConfig(GPIOC, GPIO_PinSource10, GPIO_AF_USART3);
+//    GPIO_PinAFConfig(GPIOC, GPIO_PinSource11, GPIO_AF_USART3);
+
+    USART_StructInit(&usart);
+    usart.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
+    usart.USART_BaudRate = 115200;
+    USART_Init(USART3, &usart);
+
+   // NVIC_EnableIRQ(USART3_IRQn);
+    USART_Cmd(USART3, ENABLE);
+}
+
 void rc522_irq_prepare()
 {
     mfrc522_write(BitFramingReg, 0x07); // TxLastBists = BitFramingReg[2..0]	???
@@ -97,7 +129,6 @@ void rc522_irq_prepare()
     // Clear all interrupts flags.
     mfrc522_write(ComIrqReg, (uint8_t) ~0x80);
     uint8_t status = mfrc522_read(Status1Reg);
-
     // Start timer.
     mfrc522_write(ControlReg, 1 << TStartNow);
 }
@@ -293,8 +324,8 @@ extern "C" void TIM3_IRQHandler()
 extern "C" void SysTick_Handler(void)
 {
     led_scheduler.handle();
-    state_scheduler.handle();
-    connection_scheduler.handle();
+    //state_scheduler.handle();
+    //connection_scheduler.handle();
 	ticks++;
 }
 
@@ -312,6 +343,16 @@ void Responce_Handler() {
 char biba[20][200];
 int i65 = -1;
 
+extern "C" void USART3_IRQHandler()
+{
+    if (USART_GetITStatus(USART3, USART_IT_TC) != RESET)
+    {
+        USART_ClearITPendingBit(USART3, USART_IT_TC);
+
+
+    }
+}
+int test_counter = 0;
 extern "C" void USART1_IRQHandler()
 {
     // Receive Data register not empty interrupt.
@@ -334,6 +375,8 @@ extern "C" void USART1_IRQHandler()
         }
 
         if (uart.last_byte == '\n') {
+            stpcpy(test_buffer[test_counter], uart.last_string);
+            test_counter++;
             uart.last_string_ready = 1;
             //uart.send(uart.last_string);
 //            i65++;
@@ -343,7 +386,7 @@ extern "C" void USART1_IRQHandler()
 //            if (i65 > 10) {
 //                int fgfg = 0;
 //            }
-            wifi.handle_response();
+           // wifi.handle_response();
         }
     }
     // Transmission complete interrupt.
@@ -589,6 +632,11 @@ main(void)
   //  Delay(7000000);
 
     //Delay(1000000);
+    //uart3.init_uart(115200,UART3);
+    //USART3_test_init();
+    //USART_ITConfig(USART3, USART_IT_TC, ENABLE);
+    //Delay(1200);
+    spi_transmit(0x7E, SKIP_RECEIVE, RC522_SPI_CH);
     connect_to_wifi(AP_CONNECT_TIMEOUT, "i20.pub", "i20biz2015");
     //int_to_string(4235353);
     int i1 = 10;
@@ -608,7 +656,8 @@ main(void)
 
            // wifi.send_request("BIBA\n");
         }
-        Delay(700000);
+        Delay(70000);
+        uart.send("NU I HERNYA TUT TVORITSYA\r\n");
 	}
 }
 
@@ -698,8 +747,8 @@ void interrupt_initialize()
 	NVIC_Init(&NVIC_InitStructure);
 
     NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn; //канал
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x05; //приоритет
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x05;//приоритет субгруппы
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x01; //приоритет
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x01;//приоритет субгруппы
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE; //включаем канал
     NVIC_Init(&NVIC_InitStructure); //инициализируем
     USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
