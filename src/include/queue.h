@@ -22,6 +22,7 @@ public:
 	uint16_t start_index;
 	uint16_t end_index;
 	uint8_t full;
+	uint8_t override_data;
 
 	Queue();
 	~Queue();
@@ -47,8 +48,9 @@ public:
 	{
 	private:
 		Queue<T, qsize> *queue;
-		uint16_t index;
+
 	public:
+        uint16_t index;
 		iterator(Queue *, uint16_t index);
 		~iterator();
 
@@ -132,6 +134,7 @@ uint8_t Queue<T, qsize>::iterator::operator==(iterator it)
 template <typename T, uint16_t qsize>
 Queue<T, qsize>::Queue()
 {
+	override_data = 0;
 	full = QUEUE_IS_NOT_FULL;
 	start_index = end_index = 0;
 }
@@ -175,7 +178,13 @@ uint8_t Queue<T, qsize>::push_back(T const &item)
 {
 	// If storage has no space return.
 	if (full) return 0;
-
+	if (override_data && end_index == qsize - 1)
+	{
+//		if (start_index != qsize - 1) {
+//			start_index++;
+//		} else start_index = 0;
+        end_index = 0;
+	}
 	// When storage has right side free space.
 	if (end_index >= start_index) {
 		if (end_index < qsize)
@@ -196,10 +205,12 @@ uint8_t Queue<T, qsize>::push_back(T const &item)
 	}
 
 	// Check for full state.
-	if (end_index >= qsize || end_index == start_index)
-	{
-		full = QUEUE_FULL;
-	}
+    if (!override_data)
+    {
+        if (end_index >= qsize || end_index == start_index) {
+            full = QUEUE_FULL;
+        }
+    }
 
 	return 1;
 }

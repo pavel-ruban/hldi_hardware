@@ -5,6 +5,7 @@
 #include "uart/uart.h"
 #include "config.h"
 #include <utils.h>
+#include <scheduler/include/scheduler.h>
 
 #define BUFFER_SIZE 100
 
@@ -27,13 +28,29 @@
 #define INTERNAL_RESPONSE 1
 #define EXTERNAL_RESPONSE 0
 
+class CmdHandler {
+private:
+
+    Uart *_uart;
+
+public:
+    char command[60];
+    char test_ = 0;
+    CmdHandler();
+    ~CmdHandler();
+    void bind_uart(Uart *uart);
+    void handle_uart_queue();
+};
+
 class Esp8266{
 private:
+    CmdHandler hndl;
     char last_string[RECV_STRING_MAX_SIZE];
     char buffer_string[BUFFER_SIZE];
     void send_request_to_connect();
     char buf[10] = {0};
 public:
+    void invoke_uart_handler();
     uint8_t disconnect_from_server();
     uint8_t set_server_timeout(uint8_t seconds);
     void reset();

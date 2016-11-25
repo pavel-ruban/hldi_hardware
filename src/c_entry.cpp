@@ -18,7 +18,8 @@ extern "C" {
     #include <binds.h>
     #include <string.h>
 }
-char test_buffer[60][60];
+char test_buffer[60][100];
+uint8_t test_points[60][3];
 #include "lib/rc522/mfrc522.h"
 #include "include/utils.h"
 #include <led/led.hpp>
@@ -70,13 +71,17 @@ typedef struct {
 Queue<tag_cache_entry, 100> tag_cache;
 Queue<tag_event, 100> tag_events;
 Scheduler<Event<led>, 100> led_scheduler;
+
+
 Scheduler<Event<Machine_state>, 100> state_scheduler;
 Scheduler<Event<Esp8266>, 5> connection_scheduler;
 Uart uart(UART1, 115200);
 Uart uart3(UART3, 115200);
+uint8_t test_flag = 0;
+
 
 Esp8266 wifi(&uart);
-
+Scheduler<Event<Esp8266>, 10> handler_scheduler;
 /* Private function prototypes -----------------------------------------------*/
 void RCC_Configuration(void);
 void NVIC_Configuration(void);
@@ -321,13 +326,7 @@ extern "C" void TIM3_IRQHandler()
     TIM_ClearITPendingBit(TIM3, TIM_IT_Update);
 }
 
-extern "C" void SysTick_Handler(void)
-{
-    led_scheduler.handle();
-    //state_scheduler.handle();
-    //connection_scheduler.handle();
-	ticks++;
-}
+
 
 extern "C" void EXTI2_IRQHandler()
 {
@@ -341,7 +340,7 @@ void Responce_Handler() {
 }
 
 char biba[20][200];
-int i65 = -1;
+
 
 extern "C" void USART3_IRQHandler()
 {
@@ -352,42 +351,49 @@ extern "C" void USART3_IRQHandler()
 
     }
 }
-int test_counter = 0;
+
+
 extern "C" void USART1_IRQHandler()
 {
     // Receive Data register not empty interrupt.
     if (USART_GetITStatus(USART1, USART_IT_RXNE) != RESET) {
         uart.last_byte = USART_ReceiveData(USART1);
         GPIO_SetBits(EM_LOCK_PORT, EM_LOCK_PIN);
-
-        if (!uart.last_string_ready) {
-            uart.last_string[uart.last_char] = uart.last_byte;
-            uart.last_char++;
-        } else {
-            for (uint16_t i = 0; i < RECV_STRING_MAX_SIZE; ++i) {
-                uart.last_string[i] = 0;
-                //if (uart.last_string[i] == '\0')
-                 //   break;
-            }
-            uart.last_string_ready = 0;
-            uart.last_string[0] = uart.last_byte;
-            uart.last_char = 1;
-        }
-
+        //counter++;
+        uart.cyclo_buffer.push_back(uart.last_byte);
         if (uart.last_byte == '\n') {
-            stpcpy(test_buffer[test_counter], uart.last_string);
-            test_counter++;
             uart.last_string_ready = 1;
-            //uart.send(uart.last_string);
-//            i65++;
-//            for (int i = 0; i < 200; i++) {
-//                biba[i65][i] = uart.last_string[i];
-//            }
-//            if (i65 > 10) {
-//                int fgfg = 0;
-//            }
-           // wifi.handle_response();
         }
+
+
+//        if (!uart.last_string_ready) {
+//            uart.last_string[uart.last_char] = uart.last_byte;
+//            uart.last_char++;
+//        } else {
+//            for (uint16_t i = 0; i < RECV_STRING_MAX_SIZE; ++i) {
+//                uart.last_string[i] = 0;
+//                //if (uart.last_string[i] == '\0')
+//                 //   break;
+//            }
+//            uart.last_string_ready = 0;
+//            uart.last_string[0] = uart.last_byte;
+//            uart.last_char = 1;
+//        }
+//
+//        if (uart.last_byte == '\n') {
+//            stpcpy(test_buffer[test_counter], uart.last_string);
+//            test_counter++;
+//            uart.last_string_ready = 1;
+//            //uart.send(uart.last_string);
+////            i65++;
+////            for (int i = 0; i < 200; i++) {
+////                biba[i65][i] = uart.last_string[i];
+////            }
+////            if (i65 > 10) {
+////                int fgfg = 0;
+////            }
+//           // wifi.handle_response();
+//        }
     }
     // Transmission complete interrupt.
     GPIO_ResetBits(EM_LOCK_PORT, EM_LOCK_PIN);
@@ -396,6 +402,15 @@ extern "C" void USART1_IRQHandler()
     {
         USART_ClearITPendingBit(USART1, USART_IT_TC);
     }
+}
+
+extern "C" void SysTick_Handler(void)
+{
+    led_scheduler.handle();
+    //state_scheduler.handle();
+    //connection_scheduler.handle();
+    handler_scheduler.handle();
+    ticks++;
 }
 
 extern "C" void EXTI0_IRQHandler()
@@ -639,25 +654,44 @@ main(void)
     spi_transmit(0x7E, SKIP_RECEIVE, RC522_SPI_CH);
     connect_to_wifi(AP_CONNECT_TIMEOUT, "i20.pub", "i20biz2015");
     //int_to_string(4235353);
-    int i1 = 10;
+    int i1 = 0;
+    char test_str[100];
+    char test_conc[2];
+    Delay(5000000);
+    test_flag = 1;
     while (1)
 	{
+        wifi.Delay(1);
+        Event<Esp8266> handle_uart(connection_scheduler.get_current_time() + 10, &wifi, &Esp8266::invoke_uart_handler);
+        handler_scheduler.invalidate(&wifi);
+        handler_scheduler.push(handle_uart);
+//        if (wifi.is_connected_to_wifi && !wifi.is_connected_to_server && wifi.current_state == STATE_READY) {
+//            connection_scheduler.invalidate(&wifi);
+//            connect_to_server(10, "www.google.com", "80");
+//        }
+//        if (wifi.is_connected_to_wifi && wifi.is_connected_to_server) {
+//           // connection_scheduler.invalidate(&wifi);
+//            if (machine_state.get_state() == MACHINE_STATE_SERVER_CONNECTING)
+//                machine_state.set_state_idle();
+//            wifi.refresh_status();
+//           // i1 = strlen("BIBA\n");
+//
+//           // wifi.send_request("BIBA\n");
+//        }
 
-        if (wifi.is_connected_to_wifi && !wifi.is_connected_to_server && wifi.current_state == STATE_READY) {
-            connection_scheduler.invalidate(&wifi);
-            connect_to_server(10, "www.google.com", "80");
-        }
-        if (wifi.is_connected_to_wifi && wifi.is_connected_to_server) {
-           // connection_scheduler.invalidate(&wifi);
-            if (machine_state.get_state() == MACHINE_STATE_SERVER_CONNECTING)
-                machine_state.set_state_idle();
-            wifi.refresh_status();
-           // i1 = strlen("BIBA\n");
-
-           // wifi.send_request("BIBA\n");
-        }
+        i1++;
         Delay(70000);
-        uart.send("NU I HERNYA TUT TVORITSYA\r\n");
+        memset(test_str,0,100);
+        test_conc[0] = i1 + '101';
+        test_conc[1] = i1 + '141';
+        strcat(test_str, test_conc);
+        strcat(test_str,"JEBANIY ROT ETOGO CASINO\r\n");
+
+        uart.send(test_str);
+//        Delay(70000);
+//        uart.send("123456789ABCDEF\r\n");
+//        Delay(70000);
+//        uart.send("3463654675475475475474\r\n");
 	}
 }
 

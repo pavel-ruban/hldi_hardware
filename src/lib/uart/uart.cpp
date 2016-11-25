@@ -84,6 +84,7 @@ void Uart::init_uart(uint32_t speed, uint8_t uart)
 
 Uart::Uart(uint8_t uart_number, uint32_t speed)
 {
+    cyclo_buffer.override_data = 1;
     for (uint16_t i = 0; i < RECV_STRING_MAX_SIZE; ++i) {
         last_string[i] = 0;
     }

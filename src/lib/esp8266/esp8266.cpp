@@ -1,15 +1,88 @@
 #include "esp8266.h"
 
+
+
+    CmdHandler::CmdHandler() {
+        //_uart = uart;
+        test_ = 1;
+    }
+    void CmdHandler::bind_uart(Uart *uart) {
+        _uart = uart;
+    }
+
+    CmdHandler::~CmdHandler() {
+
+    }
+    void CmdHandler::handle_uart_queue() {
+        uint8_t buf = 0;
+        uint8_t buf_start = 0;
+        uint8_t buf_end = 0;
+
+        memset(command,'\0',60);
+        uint16_t iter = 0;
+        if (_uart->last_string_ready) {
+           // counter_4a++;
+            typename Queue<uint8_t, 200>::iterator it = _uart->cyclo_buffer.begin();
+            buf = (*it);
+            buf_start = it.index;
+            //while (it.index != uart.cyclo_buffer.end_index)
+            while (it.index != _uart->cyclo_buffer.end_index) {
+                buf = it.index;
+                command[iter] = *it;
+                ++it;
+                if(buf > it.index)
+                {
+                   // int fgdg = 342;
+                } else
+                    iter++;
+            }
+//        if (it.index < uart.cyclo_buffer.end_index) {
+//            command[iter] = *it;
+//        }
+            //++it;
+            //command[iter] = '\n';
+            //command[iter] = *it;
+            _uart->cyclo_buffer.start_index = it.index;
+            buf_end = it.index;
+            iter = 0;
+            _uart->last_string_ready = 0;
+
+//            if (test_flag) {
+//                stpcpy(test_buffer[counter1],command);
+//                test_points[counter1][0] = buf_start;
+//                test_points[counter1][1] = buf_end;
+//                test_points[counter1][2] = uart.cyclo_buffer.end_index;
+//                counter1++;
+//            }
+//            if (counter1 > 15) {
+//                while (1)
+//                {
+//                    int idf = 0;
+//                }
+//            }
+        }
+
+
+    }
+
+
+
+
 Esp8266::Esp8266(Uart *uart) {
     _uart = uart;
     is_connected_to_wifi = 0;
     message_sent = 0;
     is_authorized = 0;
     busy = 0;
+    hndl.bind_uart(uart);
 }
 
 Esp8266::~Esp8266() {
 
+}
+
+void Esp8266::invoke_uart_handler() {
+    hndl.handle_uart_queue();
 }
 
 void Esp8266::Delay(uint32_t nCount)
