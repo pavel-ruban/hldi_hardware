@@ -18,8 +18,7 @@ extern "C" {
     #include <binds.h>
     #include <string.h>
 }
-char test_buffer[60][100];
-uint8_t test_points[60][3];
+
 #include "lib/rc522/mfrc522.h"
 #include "include/utils.h"
 #include <led/led.hpp>
@@ -54,7 +53,6 @@ extern uint8_t mac_addr[6];
 extern uint8_t enc28j60_revid;
 volatile uint32_t ticks;
 int timerValue = 0;
-uint8_t machine_status;
 
 typedef struct {
 	uint8_t tag_id[4];
@@ -97,35 +95,6 @@ void Delay(uint32_t nCount)
     for(; nCount != 0; nCount--);
 }
 
-void USART3_test_init() {
-    GPIO_InitTypeDef gpio;
-    USART_InitTypeDef usart;
-
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART3, ENABLE);
-
-    GPIO_StructInit(&gpio);
-
-//    gpio.GPIO_Mode = GPIO_Mode_AF_PP;
-//    gpio.GPIO_Pin = GPIO_Pin_10;
-//    gpio.GPIO_Speed = GPIO_Speed_50MHz;
-//    GPIO_Init(GPIOB, &gpio);
-//
-//    gpio.GPIO_Mode = GPIO_Mode_AF_PP;
-//    gpio.GPIO_Pin = GPIO_Pin_11;
-//    gpio.GPIO_Speed = GPIO_Speed_50MHz;
-//    GPIO_Init(GPIOB, &gpio);
-
-//    GPIO_PinAFConfig(GPIOC, GPIO_PinSource10, GPIO_AF_USART3);
-//    GPIO_PinAFConfig(GPIOC, GPIO_PinSource11, GPIO_AF_USART3);
-
-    USART_StructInit(&usart);
-    usart.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
-    usart.USART_BaudRate = 115200;
-    USART_Init(USART3, &usart);
-
-   // NVIC_EnableIRQ(USART3_IRQn);
-    USART_Cmd(USART3, ENABLE);
-}
 
 void rc522_irq_prepare()
 {
@@ -334,21 +303,12 @@ extern "C" void EXTI2_IRQHandler()
 }
 
 
-void Responce_Handler() {
-    if (!uart.last_string_ready)
-        return;
-}
-
-char biba[20][200];
-
 
 extern "C" void USART3_IRQHandler()
 {
     if (USART_GetITStatus(USART3, USART_IT_TC) != RESET)
     {
         USART_ClearITPendingBit(USART3, USART_IT_TC);
-
-
     }
 }
 
@@ -364,36 +324,6 @@ extern "C" void USART1_IRQHandler()
         if (uart.last_byte == '\n') {
             uart.last_string_ready = 1;
         }
-
-
-//        if (!uart.last_string_ready) {
-//            uart.last_string[uart.last_char] = uart.last_byte;
-//            uart.last_char++;
-//        } else {
-//            for (uint16_t i = 0; i < RECV_STRING_MAX_SIZE; ++i) {
-//                uart.last_string[i] = 0;
-//                //if (uart.last_string[i] == '\0')
-//                 //   break;
-//            }
-//            uart.last_string_ready = 0;
-//            uart.last_string[0] = uart.last_byte;
-//            uart.last_char = 1;
-//        }
-//
-//        if (uart.last_byte == '\n') {
-//            stpcpy(test_buffer[test_counter], uart.last_string);
-//            test_counter++;
-//            uart.last_string_ready = 1;
-//            //uart.send(uart.last_string);
-////            i65++;
-////            for (int i = 0; i < 200; i++) {
-////                biba[i65][i] = uart.last_string[i];
-////            }
-////            if (i65 > 10) {
-////                int fgfg = 0;
-////            }
-//           // wifi.handle_response();
-//        }
     }
     // Transmission complete interrupt.
     GPIO_ResetBits(EM_LOCK_PORT, EM_LOCK_PIN);
@@ -403,13 +333,19 @@ extern "C" void USART1_IRQHandler()
         USART_ClearITPendingBit(USART1, USART_IT_TC);
     }
 }
-
+uint32_t check_amount =0;
 extern "C" void SysTick_Handler(void)
 {
     led_scheduler.handle();
-    //state_scheduler.handle();
-    //connection_scheduler.handle();
+    state_scheduler.handle();
+    connection_scheduler.handle();
     handler_scheduler.handle();
+    if (ticks % 5 == 0) {
+        Event<Esp8266> handle_uart(ticks + 1, &wifi, &Esp8266::invoke_uart_handler);
+        handler_scheduler.invalidate(&wifi);
+        handler_scheduler.push(handle_uart);
+        check_amount++;
+    }
     ticks++;
 }
 
@@ -585,23 +521,21 @@ void InitializeTimer()
 }
 
 void connect_to_wifi (uint16_t connection_timeout, char* ssid, char* password) {
+    wifi.save_creditals(ssid, password);
+    wifi.connect_to_wifi();
     machine_state.set_state_ap_connecting(3 * connection_timeout);
     connection_scheduler.invalidate(&wifi);
-    wifi.connect_to_wifi(ssid, password);
-    Event<Esp8266> try2connect(connection_scheduler.get_current_time() + connection_timeout, &wifi, &Esp8266::reset);
+    Event<Esp8266> try2connect(connection_scheduler.get_current_time() + connection_timeout, &wifi, &Esp8266::connect_to_wifi);
     connection_scheduler.push(try2connect);
-    Event<Esp8266> try2connect1(connection_scheduler.get_current_time() + connection_timeout * 2, &wifi, &Esp8266::reset);
+    Event<Esp8266> try2connect1(connection_scheduler.get_current_time() + connection_timeout * 2, &wifi, &Esp8266::connect_to_wifi);
     connection_scheduler.push(try2connect1);
-    Event<Esp8266> try2connect2(connection_scheduler.get_current_time() + connection_timeout * 3, &wifi, &Esp8266::reset);
+    Event<Esp8266> try2connect2(connection_scheduler.get_current_time() + connection_timeout * 3, &wifi, &Esp8266::connect_to_wifi);
     connection_scheduler.push(try2connect2);
 }
 
 void connect_to_server (uint16_t connection_timeout, char* ip, char* port) {
     machine_state.set_state_server_connecting(connection_timeout * 1000);
     connection_scheduler.invalidate(&wifi);
-    //wifi.refresh_status();
-    //wifi.disconnect_from_server();
-    //Delay(50000);
     wifi.connect_to_ip(ip, port);
 }
 
@@ -629,8 +563,6 @@ main(void)
 //        ++x;
 //        int y = 1;
 //    }
-
-
     led rgb_led(LED_TYPE_RGB, GPIOA, GPIO_Pin_1, GPIO_Pin_2, GPIO_Pin_3, LED_COLOR_WHITE);
     leds[LED_STATE_INDICATOR] =  &rgb_led;
     leds[LED_STATE_INDICATOR]->on();
@@ -643,55 +575,35 @@ main(void)
 
     __enable_irq();
     rc522_irq_prepare();
-//    rc522_irq_prepare();
-  //  Delay(7000000);
-
-    //Delay(1000000);
-    //uart3.init_uart(115200,UART3);
-    //USART3_test_init();
-    //USART_ITConfig(USART3, USART_IT_TC, ENABLE);
-    //Delay(1200);
     spi_transmit(0x7E, SKIP_RECEIVE, RC522_SPI_CH);
-    connect_to_wifi(AP_CONNECT_TIMEOUT, "i20.pub", "i20biz2015");
-    //int_to_string(4235353);
+
     int i1 = 0;
     char test_str[100];
     char test_conc[2];
+    wifi.Delay(0);
+
+    connect_to_wifi(AP_CONNECT_TIMEOUT, "i20.pub", "i20biz2015");
     Delay(5000000);
-    test_flag = 1;
     while (1)
 	{
-        wifi.Delay(1);
-        Event<Esp8266> handle_uart(connection_scheduler.get_current_time() + 10, &wifi, &Esp8266::invoke_uart_handler);
-        handler_scheduler.invalidate(&wifi);
-        handler_scheduler.push(handle_uart);
-//        if (wifi.is_connected_to_wifi && !wifi.is_connected_to_server && wifi.current_state == STATE_READY) {
-//            connection_scheduler.invalidate(&wifi);
-//            connect_to_server(10, "www.google.com", "80");
-//        }
-//        if (wifi.is_connected_to_wifi && wifi.is_connected_to_server) {
-//           // connection_scheduler.invalidate(&wifi);
-//            if (machine_state.get_state() == MACHINE_STATE_SERVER_CONNECTING)
-//                machine_state.set_state_idle();
-//            wifi.refresh_status();
-//           // i1 = strlen("BIBA\n");
-//
-//           // wifi.send_request("BIBA\n");
-//        }
 
-        i1++;
+        if (wifi.is_connected_to_wifi && !wifi.is_connected_to_server && wifi.current_state == STATE_READY) {
+             connection_scheduler.invalidate(&wifi);
+            connect_to_server(10, "192.168.1.170", "2252");
+        }
+        if (wifi.is_connected_to_wifi && wifi.is_connected_to_server) {
+           // connection_scheduler.invalidate(&wifi);
+            if (machine_state.get_state() == MACHINE_STATE_SERVER_CONNECTING)
+                machine_state.set_state_idle();
+            wifi.refresh_status();
+        }
+
         Delay(70000);
         memset(test_str,0,100);
         test_conc[0] = i1 + '101';
         test_conc[1] = i1 + '141';
         strcat(test_str, test_conc);
         strcat(test_str,"JEBANIY ROT ETOGO CASINO\r\n");
-
-        uart.send(test_str);
-//        Delay(70000);
-//        uart.send("123456789ABCDEF\r\n");
-//        Delay(70000);
-//        uart.send("3463654675475475475474\r\n");
 	}
 }
 

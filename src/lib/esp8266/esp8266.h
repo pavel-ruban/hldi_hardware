@@ -27,18 +27,26 @@
 //Esp8266 response types
 #define INTERNAL_RESPONSE 1
 #define EXTERNAL_RESPONSE 0
+#define COMMAND_SIZE 100
+
+class Esp8266;
 
 class CmdHandler {
 private:
 
     Uart *_uart;
+    Esp8266 *_esp;
+    uint32_t packets_recv_prev = 0;
+    uint32_t packets_recv = 0;
+    uint8_t parse_command();
 
 public:
-    char command[60];
-    char test_ = 0;
+    char command[COMMAND_SIZE];
+
     CmdHandler();
     ~CmdHandler();
     void bind_uart(Uart *uart);
+    void bind_esp(Esp8266 *esp);
     void handle_uart_queue();
 };
 
@@ -47,9 +55,11 @@ private:
     CmdHandler hndl;
     char last_string[RECV_STRING_MAX_SIZE];
     char buffer_string[BUFFER_SIZE];
-    void send_request_to_connect();
+
     char buf[10] = {0};
 public:
+    void save_creditals(char* ssid, char* password);
+    void send_request_to_connect();
     void invoke_uart_handler();
     uint8_t disconnect_from_server();
     uint8_t set_server_timeout(uint8_t seconds);
@@ -62,8 +72,10 @@ public:
     uint8_t connect_to_ip(char* ip, char* port);
     char * ssid;
     char * password;
+    uint8_t is_ready_to_connect_to_hotspot;
     uint8_t is_connected_to_wifi;
     uint8_t is_connected_to_server;
+    uint8_t connect_after_reset = 0;
     uint8_t current_state;
     uint8_t busy;
     uint8_t is_authorized;
@@ -74,11 +86,9 @@ public:
     ~Esp8266();
     uint8_t wifi_connected;
     uint32_t ip_address;
-    uint8_t handle_response();
-    uint8_t recieve_string();
     void send_request(char* request);
     void Delay(uint32_t nCount);
 
-    void connect_to_wifi(char* ssid, char* password);
+    void connect_to_wifi_by_creditals(char* ssid, char* password);
     void connect_to_wifi();
 };

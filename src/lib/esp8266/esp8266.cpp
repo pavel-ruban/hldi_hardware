@@ -1,80 +1,142 @@
 #include "esp8266.h"
 
-
-
     CmdHandler::CmdHandler() {
-        //_uart = uart;
-        test_ = 1;
     }
     void CmdHandler::bind_uart(Uart *uart) {
         _uart = uart;
     }
 
+    void CmdHandler::bind_esp(Esp8266 *esp) {
+        _esp = esp;
+    }
+
     CmdHandler::~CmdHandler() {
 
     }
+
+    uint8_t CmdHandler::parse_command() {
+        // Resetting and client mode engaging block.
+        if (_esp->current_state == STATE_RESETTING) {
+            if (strstr(command, "ready")) {
+                _esp->change_mode();
+                return INTERNAL_RESPONSE;
+            }
+        }
+
+        if (_esp->current_state == STATE_WAITING_MODE_CHANGE) {
+            if (strstr(command, "OK")) {
+                _esp->is_ready_to_connect_to_hotspot = 1;
+                if (_esp->connect_after_reset) {
+                    _esp->connect_after_reset = 0;
+                    _esp->send_request_to_connect();
+                } else {
+                    _esp->current_state = STATE_READY;
+                    _esp->busy = 0;
+                }
+                return INTERNAL_RESPONSE;
+            }
+        }
+        // HS/server connections and error handlers
+        if (_esp->current_state == STATE_WAITING_WIFI_CONNECT) {
+            if (strstr(command, "OK")) {
+                _esp->is_connected_to_wifi = 1;
+                _esp->current_state = STATE_READY;
+                _esp->busy = 0;
+                return INTERNAL_RESPONSE;
+            }
+        }
+
+        if (_esp->current_state == STATE_WAITING_WIFI_CONNECT) { // Only wrong creditals tested, others PROBABLY same, but dunno.
+            if (strstr(command, "FAIL")) {
+                _esp->is_connected_to_wifi = 0;
+                _esp->current_state = STATE_READY;
+                _esp->busy = 0;
+                return INTERNAL_RESPONSE;
+            }
+        }
+
+        if (_esp->current_state == STATE_WAITING_IP_CONNECT) {
+            if (strstr(command, "OK")) {
+                _esp->is_connected_to_server = 1;
+                _esp->current_state = STATE_READY;
+                _esp->busy = 0;
+                return INTERNAL_RESPONSE;
+            }
+        }
+
+        if (_esp->current_state == STATE_WAITING_IP_CONNECT) { //Only dns fail tested, others PROBABLY same, but dunno.
+            if (strstr(command, "ERROR")) {
+                _esp->is_connected_to_server = 0;
+                _esp->current_state = STATE_READY;
+                _esp->busy = 0;
+                return INTERNAL_RESPONSE;
+            }
+        }
+        // Status and error handling.
+        if (_esp->is_connected_to_wifi) {
+            if (strstr(command, "CLOSED")) {
+                _esp->is_connected_to_server = 0;
+                return INTERNAL_RESPONSE;
+            }
+        }
+        if (strstr(command, "STATUS:3")) {
+            _esp->is_connected_to_wifi = 1;
+            _esp->is_connected_to_server = 1;
+            _esp->busy = 0;
+            return INTERNAL_RESPONSE;
+        }
+        if (strstr(command, "STATUS:5")) {
+            _esp->is_connected_to_wifi = 1;
+            _esp->is_connected_to_server = 0;
+            _esp->busy = 0;
+            return INTERNAL_RESPONSE;
+        }
+        if (strstr(command, "STATUS:4")) {
+            _esp->is_connected_to_wifi = 0;
+            _esp->is_connected_to_server = 0;
+            _esp->busy = 0;
+            return INTERNAL_RESPONSE;
+        }
+        //Коннект к серваку - статус 3.
+        //Коннект к точке, без сервака - статус 5.
+        //Нету коннекта к точке, (и к серваку, очевидно) - статус 4.
+    }
+
+
     void CmdHandler::handle_uart_queue() {
         uint8_t buf = 0;
         uint8_t buf_start = 0;
-        uint8_t buf_end = 0;
-
-        memset(command,'\0',60);
+        memset(command,'\0',COMMAND_SIZE);
         uint16_t iter = 0;
         if (_uart->last_string_ready) {
-           // counter_4a++;
             typename Queue<uint8_t, 200>::iterator it = _uart->cyclo_buffer.begin();
-            buf = (*it);
-            buf_start = it.index;
-            //while (it.index != uart.cyclo_buffer.end_index)
             while (it.index != _uart->cyclo_buffer.end_index) {
                 buf = it.index;
                 command[iter] = *it;
                 ++it;
                 if(buf > it.index)
                 {
-                   // int fgdg = 342;
                 } else
                     iter++;
             }
-//        if (it.index < uart.cyclo_buffer.end_index) {
-//            command[iter] = *it;
-//        }
-            //++it;
-            //command[iter] = '\n';
-            //command[iter] = *it;
             _uart->cyclo_buffer.start_index = it.index;
-            buf_end = it.index;
-            iter = 0;
             _uart->last_string_ready = 0;
-
-//            if (test_flag) {
-//                stpcpy(test_buffer[counter1],command);
-//                test_points[counter1][0] = buf_start;
-//                test_points[counter1][1] = buf_end;
-//                test_points[counter1][2] = uart.cyclo_buffer.end_index;
-//                counter1++;
-//            }
-//            if (counter1 > 15) {
-//                while (1)
-//                {
-//                    int idf = 0;
-//                }
-//            }
+            if (command[0]) {
+                parse_command();
+            }
         }
-
-
     }
-
-
-
 
 Esp8266::Esp8266(Uart *uart) {
     _uart = uart;
     is_connected_to_wifi = 0;
+    is_connected_to_server = 0;
+    is_ready_to_connect_to_hotspot = 0;
     message_sent = 0;
     is_authorized = 0;
     busy = 0;
     hndl.bind_uart(uart);
+    hndl.bind_esp(this);
 }
 
 Esp8266::~Esp8266() {
@@ -82,6 +144,7 @@ Esp8266::~Esp8266() {
 }
 
 void Esp8266::invoke_uart_handler() {
+
     hndl.handle_uart_queue();
 }
 
@@ -153,7 +216,6 @@ void Esp8266::reset() {
 
 void Esp8266::send_request(char* request) {
     message_sent = 0;
-
     clear_buffer();
     strcat(buffer_string, "AT+CIPSEND=");
     strcat(buffer_string, int_to_string(strlen(request) + 41));
@@ -171,8 +233,9 @@ void Esp8266::send_request(char* request) {
 }
 
 uint8_t Esp8266::connect_to_ip(char* ip, char* port) {
-    busy = 1;
+
     if (current_state == STATE_READY) {
+        busy = 1;
         is_connected_to_server = 0;
         clear_buffer();
         strcat(buffer_string, "AT+CIPSTART=\"TCP\",\"");
@@ -206,16 +269,6 @@ uint8_t Esp8266::disconnect_from_server() {
     } else return current_state;
 }
 
-
-uint8_t Esp8266::recieve_string() {
-    if (_uart->last_string_ready) {
-        for (uint16_t i = 0; i < strlen(_uart->last_string); i++) {
-            last_string[i] = _uart->last_string[i];
-    }
-        return STRING_READY;
-    } else return STRING_IS_NOT_READY;
-}
-
 uint8_t Esp8266::refresh_status() {
     busy = 1;
     if (current_state == STATE_READY) {
@@ -232,110 +285,27 @@ void Esp8266::send_request_to_connect() {
     strcat(buffer_string, password);
     strcat(buffer_string, "\"\r\n");
     _uart->send(buffer_string);
-
 }
 
 void Esp8266::change_mode() {
-
     current_state = STATE_WAITING_MODE_CHANGE;
     _uart->send("AT+CWMODE=1\r\n");
 
 }
-
-uint8_t Esp8266::handle_response() {
-    recieve_string();
-    if (current_state == STATE_RESETTING) {
-        if (strstr(last_string, "ready")) {
-            change_mode();
-            return INTERNAL_RESPONSE;
-        }
-    }
-    if (current_state == STATE_WAITING_MODE_CHANGE) {
-        recieve_string();
-        if (strstr(last_string, "OK")) {
-            //_uart->send("ATE0");
-            //Delay(500000);
-            send_request_to_connect();
-            return INTERNAL_RESPONSE;
-        }
-    }
-    if (current_state == STATE_WAITING_WIFI_CONNECT) {
-        if (strstr(last_string, "OK")) {
-            is_connected_to_wifi = 1;
-            current_state = STATE_READY;
-            busy = 0;
-            return INTERNAL_RESPONSE;
-        }
-    }
-    if (current_state == STATE_WAITING_IP_CONNECT) {
-        recieve_string();
-        if (strstr(last_string, "CONNECT")) {
-            is_connected_to_server = 1;
-            current_state = STATE_READY;
-            busy = 0;
-            return INTERNAL_RESPONSE;
-        }
-    }
-
-    if (current_state == STATE_WAITING_IP_CONNECT) {
-        //recieve_string();
-        if (strstr(_uart->last_string, "DNS")) {
-            is_connected_to_server = 0;
-            current_state = STATE_READY;
-            busy = 0;
-            return INTERNAL_RESPONSE;
-        }
-    }
-
-    if (current_state == STATE_WAITING_RESPONSE) {
-        if (strstr(last_string, "SEND OK")) {
-            message_sent = 1;
-            current_state = STATE_READY;
-            return INTERNAL_RESPONSE;
-        }
-    }
-
-    if (is_connected_to_wifi) {
-        if (strstr(last_string, "CLOSED")) {
-            is_connected_to_server = 0;
-            return INTERNAL_RESPONSE;
-        }
-    }
-    if (strstr(last_string, "STATUS:3")) {
-        is_connected_to_wifi = 1;
-        is_connected_to_server = 1;
-        busy = 0;
-        return INTERNAL_RESPONSE;
-    }
-    if (strstr(last_string, "STATUS:5")) {
-        is_connected_to_wifi = 1;
-        is_connected_to_server = 0;
-        busy = 0;
-        return INTERNAL_RESPONSE;
-    }
-    if (strstr(last_string, "STATUS:4")) {
-        is_connected_to_wifi = 0;
-        is_connected_to_server = 0;
-        busy = 0;
-        return INTERNAL_RESPONSE;
-    }
-    return EXTERNAL_RESPONSE;
-}
-//Коннект к серваку - статус 3.
-//Коннект к точке, без сервака - статус 5.
-//Нету коннекта к точке, (и к серваку, очевидно) - статус 4.
-
-
-void Esp8266::connect_to_wifi(char* ssid, char* password) {
+void Esp8266::save_creditals(char* ssid, char* password) {
     this->ssid = ssid;
     this->password = password;
-    reset();
-    //Delay(20000);
+}
 
-    //change_mode();
+
+void Esp8266::connect_to_wifi_by_creditals(char* ssid, char* password) {
+    this->ssid = ssid;
+    this->password = password;
+    connect_after_reset = 1;
+    reset();
 }
 
 void Esp8266::connect_to_wifi() {
+    connect_after_reset = 1;
     reset();
-    //Delay(10000);
 }
