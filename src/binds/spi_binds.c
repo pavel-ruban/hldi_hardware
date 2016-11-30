@@ -20,6 +20,7 @@ uint8_t spi_transmit(uint8_t byte, uint8_t skip_receive, SPI_TypeDef * SPI_CH)
 
 	/* Send SPIz data */
 	SPI_I2S_SendData(SPI_CH, byte);
+//	SPI_CH->DR = byte;
 
 	while (SPI_I2S_GetFlagStatus(SPI_CH, SPI_I2S_FLAG_RXNE) == RESET);
 
@@ -40,6 +41,8 @@ void set_spi_registers()
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_Init(SPIz_GPIO, &GPIO_InitStructure);
+
+
 	GPIO_InitStructure.GPIO_Pin = SPIz_PIN_MISO;
 
 	/* Configure MISO pin as Input Floating  */

@@ -369,11 +369,16 @@ extern "C" void EXTI1_IRQHandler()
 
 extern "C" void EXTI15_10_IRQHandler()
 {
-    if (EXTI_GetITStatus(EXTI_Line10) == SET)
+
+}
+
+extern "C" void EXTI9_5_IRQHandler()
+{
+    if (EXTI_GetITStatus(EXTI_Line8) == SET)
     {
         rc522_pcd_select(RC522_PCD_1);
     }
-    else if (EXTI_GetITStatus(EXTI_Line11) == SET)
+    else if (EXTI_GetITStatus(EXTI_Line9) == SET)
     {
         rc522_pcd_select(RC522_PCD_2);
     }
@@ -417,11 +422,11 @@ extern "C" void EXTI15_10_IRQHandler()
         // Clear STM32 irq bit.
         if (rc522_select == rc522_1_select)
         {
-            EXTI_ClearITPendingBit(EXTI_Line10);
+            EXTI_ClearITPendingBit(EXTI_Line8);
         }
         else if (rc522_select == rc522_2_select)
         {
-            EXTI_ClearITPendingBit(EXTI_Line11);
+            EXTI_ClearITPendingBit(EXTI_Line9);
         }
 
         mfrc522_write(ControlReg, 1 << TStartNow);
@@ -430,18 +435,12 @@ extern "C" void EXTI15_10_IRQHandler()
 
     if (rc522_select == rc522_1_select)
     {
-        EXTI_ClearITPendingBit(EXTI_Line10);
+        EXTI_ClearITPendingBit(EXTI_Line8);
     }
     else if (rc522_select == rc522_2_select)
     {
-        EXTI_ClearITPendingBit(EXTI_Line11);
+        EXTI_ClearITPendingBit(EXTI_Line9);
     }
-}
-
-extern "C" void EXTI9_5_IRQHandler()
-{
-    for (;;)
-    {}
 }
 
 
@@ -458,6 +457,8 @@ extern "C" void __initialize_hardware()
     set_spi_registers();
     set_spi2_registers();
 
+
+
     // Bind GPIOA, GPIOB to APB2 bus.
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
@@ -468,6 +469,14 @@ extern "C" void __initialize_hardware()
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD;
     GPIO_Init(LED_INDICATOR_PORT, &GPIO_InitStructure);
+
+    //----------------test
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;
+    /* Configure SCK and MOSI pins as Alternate Function Push Pull */
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_Init(GPIOA, &GPIO_InitStructure);
+    //----------------end test
 
     // Buttons pins (BTN_OPEN, BTN_CALL).
     GPIO_InitStructure.GPIO_Pin = BTN_OPEN_PIN | BTN_CALL_PIN;
@@ -571,22 +580,25 @@ main(void)
 	//__enable_irq();
     InitializeTimer();
     rc522_pcd_select(RC522_PCD_1);
-    mfrc522_init();
+    GPIO_ResetBits(RC522_GPIO, RC522_CS_PIN);
+    while (1) {
+        //RC522_SPI_CH->DR = 0x7E;
+        spi_transmit(0x7E, SKIP_RECEIVE, RC522_SPI_CH);
+        Delay(100);
+        //GPIO_SetBits(RC522_GPIO, RC522_CS_PIN);
+    }
+    //mfrc522_init();
 
     __enable_irq();
     rc522_irq_prepare();
-    spi_transmit(0x7E, SKIP_RECEIVE, RC522_SPI_CH);
+    //spi_transmit(0x7E, SKIP_RECEIVE, RC522_SPI_CH);
 
-    int i1 = 0;
-    char test_str[100];
-    char test_conc[2];
-    wifi.Delay(0);
+    //wifi.Delay(0);
 
-    connect_to_wifi(AP_CONNECT_TIMEOUT, "i20.pub", "i20biz2015");
+    //connect_to_wifi(AP_CONNECT_TIMEOUT, "i20.pub", "i20biz2015");
     Delay(5000000);
     while (1)
 	{
-
         if (wifi.is_connected_to_wifi && !wifi.is_connected_to_server && wifi.current_state == STATE_READY) {
              connection_scheduler.invalidate(&wifi);
             connect_to_server(10, "192.168.1.170", "2252");
@@ -595,15 +607,10 @@ main(void)
            // connection_scheduler.invalidate(&wifi);
             if (machine_state.get_state() == MACHINE_STATE_SERVER_CONNECTING)
                 machine_state.set_state_idle();
-            wifi.refresh_status();
+         //   wifi.refresh_status();
         }
 
         Delay(70000);
-        memset(test_str,0,100);
-        test_conc[0] = i1 + '101';
-        test_conc[1] = i1 + '141';
-        strcat(test_str, test_conc);
-        strcat(test_str,"JEBANIY ROT ETOGO CASINO\r\n");
 	}
 }
 
@@ -662,19 +669,32 @@ void interrupt_initialize()
 //    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x08;
 //    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 //    NVIC_Init(&NVIC_InitStructure);
-//----------------------------------------------
-    EXTI_InitStructure.EXTI_Line = EXTI_Line10;
+    //----------------------------------------------
+    EXTI_InitStructure.EXTI_Line = EXTI_Line8;
     EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
     EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
     EXTI_InitStructure.EXTI_LineCmd = ENABLE;
     EXTI_Init(&EXTI_InitStructure);
 
     // RC522 Timer And PICC Receive Interrupt.
-    NVIC_InitStructure.NVIC_IRQChannel = EXTI15_10_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannel = EXTI9_5_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x09;
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x09;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
+//----------------------------------------------
+//    EXTI_InitStructure.EXTI_Line = EXTI_Line10;
+//    EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+//    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
+//    EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+//    EXTI_Init(&EXTI_InitStructure);
+//
+//    // RC522 Timer And PICC Receive Interrupt.
+//    NVIC_InitStructure.NVIC_IRQChannel = EXTI15_10_IRQn;
+//    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x09;
+//    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x09;
+//    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+//    NVIC_Init(&NVIC_InitStructure);
 //----------------------------------------------
 	// TIM2 timer, used as on second watchdog for enc28j60, rc522.
 	// Also do some periodical not priority calls.
@@ -686,18 +706,18 @@ void interrupt_initialize()
 
 	// Systick timer, used for milliseconds granularity
 	// and milliseconds set timeouts.
-	NVIC_InitStructure.NVIC_IRQChannel = SysTick_IRQn;
-	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x00;
-	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x00;
-	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-	NVIC_Init(&NVIC_InitStructure);
+//	NVIC_InitStructure.NVIC_IRQChannel = SysTick_IRQn;
+//	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x00;
+//	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x00;
+//	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+//	NVIC_Init(&NVIC_InitStructure);
 
-    NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn; //канал
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x01; //приоритет
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x01;//приоритет субгруппы
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE; //включаем канал
-    NVIC_Init(&NVIC_InitStructure); //инициализируем
-    USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
+//    NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn; //канал
+//    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x01; //приоритет
+//    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x01;//приоритет субгруппы
+//    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE; //включаем канал
+//    NVIC_Init(&NVIC_InitStructure); //инициализируем
+//    USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
 }
 
 extern "C" void initialize_systick()

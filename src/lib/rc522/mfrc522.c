@@ -65,6 +65,7 @@ void mfrc522_write(uint8_t reg, uint8_t data)
 	rc522_select();
     // 0x7E = 01111110
 	spi_transmit((reg << 1) & 0x7E, SKIP_RECEIVE, RC522_SPI_CH);
+    uint8_t reg_sent = (reg << 1) & 0x7E;
 	spi_transmit(data, SKIP_RECEIVE, RC522_SPI_CH);
 	rc522_release();
 }
