@@ -23,7 +23,7 @@ void rc522_1_release()
 	__enable_irq();
 }
 
-void rc522_set_pins()
+void 	rc522_set_pins()
 {
 	#ifndef RCC_APB2Periph_RC522_Enabled
 		RCC_APB2PeriphClockCmd(RC522_GPIO_CLK, ENABLE);
@@ -37,6 +37,11 @@ void rc522_set_pins()
 
 	// Set reset line to start RC522 chip to work and release it's SPI interface.
 	GPIO_SetBits(RC522_GPIO, RC522_RESET_PIN | RC522_CS_PIN);
+
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+    GPIO_Init(GPIOC, &GPIO_InitStructure);
 
 	// Configure RC522 IRQ pin.
 	GPIO_InitStructure.GPIO_Pin = RC522_IRQ_PIN;

@@ -572,19 +572,24 @@ main(void)
 //        ++x;
 //        int y = 1;
 //    }
-    led rgb_led(LED_TYPE_RGB, GPIOA, GPIO_Pin_1, GPIO_Pin_2, GPIO_Pin_3, LED_COLOR_WHITE);
-    leds[LED_STATE_INDICATOR] =  &rgb_led;
-    leds[LED_STATE_INDICATOR]->on();
+ //   led rgb_led(LED_TYPE_RGB, GPIOA, GPIO_Pin_1, GPIO_Pin_2, GPIO_Pin_3, LED_COLOR_WHITE);
+ //   leds[LED_STATE_INDICATOR] =  &rgb_led;
+   // leds[LED_STATE_INDICATOR]->on();
 
-    interrupt_initialize();
+   // interrupt_initialize();
 	//__enable_irq();
-    InitializeTimer();
-    rc522_pcd_select(RC522_PCD_1);
+  //  InitializeTimer();
+
+//    rc522_pcd_select(RC522_PCD_2);
+//    __disable_irq();
+//    set_spi2_registers();
+    set_spi_registers();
+    rc522_set_pins();
     GPIO_ResetBits(RC522_GPIO, RC522_CS_PIN);
     while (1) {
         //RC522_SPI_CH->DR = 0x7E;
-        spi_transmit(0x7E, SKIP_RECEIVE, RC522_SPI_CH);
-        Delay(100);
+        spi_transmit(0x7E, RECEIVE_BYTE, SPIz);
+//        Delay(100);
         //GPIO_SetBits(RC522_GPIO, RC522_CS_PIN);
     }
     //mfrc522_init();

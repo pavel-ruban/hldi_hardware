@@ -32,6 +32,7 @@ void set_spi_registers()
 	#ifndef RCC_APB2Periph_SPIz_Enabled
 		RCC_APB2PeriphClockCmd(SPIz_CLK, ENABLE);
 	#endif
+    RCC_APB2PeriphClockCmd(SPIz_CLK, ENABLE);
 
 	uint16_t SPIz_Mode = SPI_Mode_Master;
 
@@ -41,7 +42,6 @@ void set_spi_registers()
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_Init(SPIz_GPIO, &GPIO_InitStructure);
-
 
 	GPIO_InitStructure.GPIO_Pin = SPIz_PIN_MISO;
 
@@ -67,9 +67,11 @@ void set_spi_registers()
 
 void set_spi2_registers()
 {
+    return;
 	#ifndef RCC_APB2Periph_SPIy_Enabled
 		RCC_APB2PeriphClockCmd(SPIy_CLK, ENABLE);
 	#endif
+    RCC_APB2PeriphClockCmd(SPIy_CLK, ENABLE);
 
 	uint16_t SPIy_Mode = SPI_Mode_Master;
 
@@ -98,8 +100,8 @@ void set_spi2_registers()
 	SPI_Init(SPIy, &SPI_InitStructure);
 
 	//GPIO_PinRemapConfig(GPIO_Remap_SPI1, ENABLE);
-	AFIO->MAPR |= AFIO_MAPR_SPI1_REMAP;
-	AFIO->MAPR |= AFIO_MAPR_SWJ_CFG_JTAGDISABLE;
+//	AFIO->MAPR |= AFIO_MAPR_SPI1_REMAP;
+//	AFIO->MAPR |= AFIO_MAPR_SWJ_CFG_JTAGDISABLE;
 
 	/* Enable SPIy */
 	SPI_Cmd(SPIy, ENABLE);
