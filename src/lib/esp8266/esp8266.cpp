@@ -97,6 +97,12 @@
             _esp->busy = 0;
             return INTERNAL_RESPONSE;
         }
+
+        if (strstr(command, "status: 0") && _esp->current_state == STATE_WAITING_RESPONSE) {
+            _esp->_machine_state->set_state_other_network_problem();
+            _esp->current_state = STATE_READY;
+            return INTERNAL_RESPONSE;
+        }
         //Коннект к серваку - статус 3.
         //Коннект к точке, без сервака - статус 5.
         //Нету коннекта к точке, (и к серваку, очевидно) - статус 4.
@@ -127,7 +133,8 @@
         }
     }
 
-Esp8266::Esp8266(Uart *uart) {
+Esp8266::Esp8266(Uart *uart, Machine_state *machine_state) {
+    _machine_state = machine_state;
     _uart = uart;
     is_connected_to_wifi = 0;
     is_connected_to_server = 0;
@@ -218,7 +225,7 @@ void Esp8266::send_request(char* request) {
     message_sent = 0;
     clear_buffer();
     strcat(buffer_string, "AT+CIPSEND=");
-    strcat(buffer_string, int_to_string(strlen(request) + 41));
+    strcat(buffer_string, int_to_string(strlen(request) + strlen(NODE_ID) + 9));
     strcat(buffer_string, "\r\n");
     _uart->send(buffer_string);
     Delay(10000);
@@ -230,6 +237,23 @@ void Esp8266::send_request(char* request) {
     _uart->send(buffer_string);
     current_state = STATE_WAITING_RESPONSE;
 
+}
+
+void Esp8266::send_access_request(uint8_t tag_id[]) {
+    char test_buf[100];
+    memset(test_buf, '\0', 100);
+    if (is_connected_to_server && is_connected_to_wifi) {
+        strcat(test_buf,"action: access request\nuid: ");
+        strcat(test_buf, int_to_string(tag_id[0]));
+        strcat(test_buf, ":");
+        strcat(test_buf, int_to_string(tag_id[1]));
+        strcat(test_buf, ":");
+        strcat(test_buf, int_to_string(tag_id[2]));
+        strcat(test_buf, ":");
+        strcat(test_buf, int_to_string(tag_id[3]));
+        strcat(test_buf, "\n\n\n");
+        send_request(test_buf);
+    }
 }
 
 uint8_t Esp8266::connect_to_ip(char* ip, char* port) {

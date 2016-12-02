@@ -6,6 +6,7 @@
 #include "config.h"
 #include <utils.h>
 #include <scheduler/include/scheduler.h>
+#include <machine_state/machine_state.h>
 
 #define BUFFER_SIZE 100
 
@@ -19,7 +20,7 @@
 #define STATE_WAITING_IP_CONNECT 3
 #define STATE_WAITING_RESPONSE 5
 #define STATE_RESETTING 4
-#define AP_CONNECT_TIMEOUT 10000
+#define AP_CONNECT_TIMEOUT 17000
 #define SERVER_CONNECT_TIMEOUT 10000
 
 //Esp8266
@@ -30,6 +31,7 @@
 #define COMMAND_SIZE 100
 
 class Esp8266;
+class Machine_state;
 
 class CmdHandler {
 private:
@@ -53,6 +55,7 @@ public:
 class Esp8266{
 private:
     CmdHandler hndl;
+
     char last_string[RECV_STRING_MAX_SIZE];
     char buffer_string[BUFFER_SIZE];
 
@@ -60,6 +63,7 @@ private:
 public:
     void save_creditals(char* ssid, char* password);
     void send_request_to_connect();
+    void send_access_request(uint8_t tag_id[]);
     void invoke_uart_handler();
     uint8_t disconnect_from_server();
     uint8_t set_server_timeout(uint8_t seconds);
@@ -81,8 +85,9 @@ public:
     uint8_t is_authorized;
     uint8_t message_sent;
     char* strstr(char *haystack, const char *needle);
+    Machine_state *_machine_state;
     Uart *_uart;
-    Esp8266(Uart *uart);
+    Esp8266(Uart *uart, Machine_state *machine_state);
     ~Esp8266();
     uint8_t wifi_connected;
     uint32_t ip_address;

@@ -7,7 +7,7 @@
 
 #define RC522_SPI_CH		SPIz
 
-#define RC522_CS_PIN		GPIO_Pin_10
+#define RC522_CS_PIN		GPIO_Pin_5
 #define RC522_RESET_PIN		GPIO_Pin_7
 #define RC522_IRQ_PIN		GPIO_Pin_8
 

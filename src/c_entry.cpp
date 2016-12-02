@@ -78,7 +78,7 @@ Uart uart3(UART3, 115200);
 uint8_t test_flag = 0;
 
 
-Esp8266 wifi(&uart);
+Esp8266 wifi(&uart, &machine_state);
 Scheduler<Event<Esp8266>, 10> handler_scheduler;
 /* Private function prototypes -----------------------------------------------*/
 void RCC_Configuration(void);
@@ -161,8 +161,9 @@ uint8_t somi_access_check(uint8_t tag_id[], uint8_t node_id[], uint8_t pcd_id)
     return 0xff;
 }
 
-uint8_t somi_access_check_1()
+uint8_t somi_access_check_1(uint8_t tag_id[])
 {
+    wifi.send_access_request(tag_id);
     return 0xff;
 }
 
@@ -174,8 +175,8 @@ void access_denied_signal()
 
 void open_node()
 {
-    for(;;)
-    {}
+//    for(;;)
+//    {}
 //    // @todo implement here hardware EMI lock control.
 //    static uint8_t x = 0;
 //    x ^= 1;
@@ -249,12 +250,12 @@ void rfid_irq_tag_handler()
             }
                 // Otherwise initiate direct network request.
             else {
-                flags = somi_access_check_1();
+                flags = somi_access_check_1(tag_id);
             }
         }
             // If cache hasn't tag request data from network and store it to the cache.
         else {
-            flags = somi_access_check_1();
+            flags = somi_access_check_1(tag_id);
             if (!tag_cache.full) {
                 tag_cache_entry cache_entry;
 
@@ -346,6 +347,7 @@ extern "C" void SysTick_Handler(void)
         handler_scheduler.push(handle_uart);
         check_amount++;
     }
+
     ticks++;
 }
 
@@ -572,35 +574,40 @@ main(void)
 //        ++x;
 //        int y = 1;
 //    }
- //   led rgb_led(LED_TYPE_RGB, GPIOA, GPIO_Pin_1, GPIO_Pin_2, GPIO_Pin_3, LED_COLOR_WHITE);
- //   leds[LED_STATE_INDICATOR] =  &rgb_led;
-   // leds[LED_STATE_INDICATOR]->on();
+    machine_state.bind_wifi(&wifi);
+    led rgb_led(LED_TYPE_RGB, GPIOA, GPIO_Pin_1, GPIO_Pin_2, GPIO_Pin_3, LED_COLOR_WHITE);
+    leds[LED_STATE_INDICATOR] =  &rgb_led;
+    leds[LED_STATE_INDICATOR]->on();
 
-   // interrupt_initialize();
-	//__enable_irq();
-  //  InitializeTimer();
+    interrupt_initialize();
+	__enable_irq();
+  //   ;
 
-//    rc522_pcd_select(RC522_PCD_2);
+    rc522_pcd_select(RC522_PCD_1);
 //    __disable_irq();
 //    set_spi2_registers();
     set_spi_registers();
     rc522_set_pins();
-    GPIO_ResetBits(RC522_GPIO, RC522_CS_PIN);
-    while (1) {
-        //RC522_SPI_CH->DR = 0x7E;
-        spi_transmit(0x7E, RECEIVE_BYTE, SPIz);
+    mfrc522_init();
+    rc522_irq_prepare();
+    //
+//    while (1) {
+//        //RC522_SPI_CH->DR = 0x7E;
+//        GPIO_ResetBits(RC522_GPIO, RC522_CS_PIN);
+//        spi_transmit(0x7E, RECEIVE_BYTE, SPIz);
 //        Delay(100);
-        //GPIO_SetBits(RC522_GPIO, RC522_CS_PIN);
-    }
+//        GPIO_SetBits(RC522_GPIO, RC522_CS_PIN);
+//        Delay(100);
+//    }
     //mfrc522_init();
 
-    __enable_irq();
-    rc522_irq_prepare();
+//    __enable_irq();
+//    rc522_irq_prepare();
     //spi_transmit(0x7E, SKIP_RECEIVE, RC522_SPI_CH);
 
     //wifi.Delay(0);
 
-    //connect_to_wifi(AP_CONNECT_TIMEOUT, "i20.pub", "i20biz2015");
+    connect_to_wifi(AP_CONNECT_TIMEOUT, "i20.pub", "i20biz2015");
     Delay(5000000);
     while (1)
 	{
@@ -609,10 +616,11 @@ main(void)
             connect_to_server(10, "192.168.1.170", "2252");
         }
         if (wifi.is_connected_to_wifi && wifi.is_connected_to_server) {
-           // connection_scheduler.invalidate(&wifi);
+            connection_scheduler.invalidate(&wifi);
             if (machine_state.get_state() == MACHINE_STATE_SERVER_CONNECTING)
                 machine_state.set_state_idle();
          //   wifi.refresh_status();
+           // wifi.send_request("biba");
         }
 
         Delay(70000);
@@ -636,6 +644,8 @@ void interrupt_initialize()
     GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource4);
 
     GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource10);
+
+    GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource8);
 
 	// IRQ Driven Button BTN_OPEN.
 //	EXTI_InitStructure.EXTI_Line = EXTI_Line0;
@@ -711,18 +721,18 @@ void interrupt_initialize()
 
 	// Systick timer, used for milliseconds granularity
 	// and milliseconds set timeouts.
-//	NVIC_InitStructure.NVIC_IRQChannel = SysTick_IRQn;
-//	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x00;
-//	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x00;
-//	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-//	NVIC_Init(&NVIC_InitStructure);
+	NVIC_InitStructure.NVIC_IRQChannel = SysTick_IRQn;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x00;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x00;
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+	NVIC_Init(&NVIC_InitStructure);
 
-//    NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn; //канал
-//    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x01; //приоритет
-//    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x01;//приоритет субгруппы
-//    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE; //включаем канал
-//    NVIC_Init(&NVIC_InitStructure); //инициализируем
-//    USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
+    NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn; //канал
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x01; //приоритет
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x01;//приоритет субгруппы
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE; //включаем канал
+    NVIC_Init(&NVIC_InitStructure); //инициализируем
+    USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
 }
 
 extern "C" void initialize_systick()
