@@ -354,7 +354,7 @@ extern "C" void SysTick_Handler(void)
 extern "C" void EXTI0_IRQHandler()
 {
     if (!(machine_state.get_state() == MACHINE_STATE_LOCK_OPEN)) {
-        machine_state.set_state_lock_open(MACHINE_STATE_LOCK_OPEN_TIME);
+        machine_state.set_state_lock_open();
     }
 	EXTI_ClearITPendingBit(EXTI_Line0);
 
@@ -363,7 +363,7 @@ extern "C" void EXTI0_IRQHandler()
 extern "C" void EXTI1_IRQHandler()
 {
     if (!(machine_state.get_state() == MACHINE_STATE_GUEST_CALL)) {
-        machine_state.set_state_guest_call(MACHINE_STATE_GUEST_CALL_TIME);
+        machine_state.set_state_guest_call();
     }
     EXTI_ClearITPendingBit(EXTI_Line1);
 }
@@ -534,7 +534,7 @@ void InitializeTimer()
 void connect_to_wifi (uint16_t connection_timeout, char* ssid, char* password) {
     wifi.save_creditals(ssid, password);
     wifi.connect_to_wifi();
-    machine_state.set_state_ap_connecting(3 * connection_timeout);
+    machine_state.set_state_ap_connecting();
     connection_scheduler.invalidate(&wifi);
     Event<Esp8266> try2connect(connection_scheduler.get_current_time() + connection_timeout, &wifi, &Esp8266::connect_to_wifi);
     connection_scheduler.push(try2connect);
@@ -545,7 +545,7 @@ void connect_to_wifi (uint16_t connection_timeout, char* ssid, char* password) {
 }
 
 void connect_to_server (uint16_t connection_timeout, char* ip, char* port) {
-    machine_state.set_state_server_connecting(connection_timeout * 1000);
+    machine_state.set_state_server_connecting();
     connection_scheduler.invalidate(&wifi);
     wifi.connect_to_ip(ip, port);
 }
@@ -648,30 +648,30 @@ void interrupt_initialize()
     GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource8);
 
 	// IRQ Driven Button BTN_OPEN.
-//	EXTI_InitStructure.EXTI_Line = EXTI_Line0;
-//	EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
-//	EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
-//	EXTI_InitStructure.EXTI_LineCmd = ENABLE;
-//	EXTI_Init(&EXTI_InitStructure);
-//
-//    NVIC_InitStructure.NVIC_IRQChannel = EXTI0_IRQn;
-//    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x03;
-//    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x03;
-//    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-//    NVIC_Init(&NVIC_InitStructure);
-//
-//    // IRQ Driven Button BTN_CALL.
-//    EXTI_InitStructure.EXTI_Line = EXTI_Line1;
-//    EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
-//    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
-//    EXTI_InitStructure.EXTI_LineCmd = ENABLE;
-//    EXTI_Init(&EXTI_InitStructure);
-//
-//    NVIC_InitStructure.NVIC_IRQChannel = EXTI1_IRQn;
-//    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x04;
-//    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x04;
-//    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-//    NVIC_Init(&NVIC_InitStructure);
+	EXTI_InitStructure.EXTI_Line = EXTI_Line0;
+	EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+	EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
+	EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+	EXTI_Init(&EXTI_InitStructure);
+
+    NVIC_InitStructure.NVIC_IRQChannel = EXTI0_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x03;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x03;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
+
+    // IRQ Driven Button BTN_CALL.
+    EXTI_InitStructure.EXTI_Line = EXTI_Line1;
+    EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
+    EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+    EXTI_Init(&EXTI_InitStructure);
+
+    NVIC_InitStructure.NVIC_IRQChannel = EXTI1_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x04;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x04;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
 //
 //    EXTI_InitStructure.EXTI_Line = EXTI_Line4;
 //    EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
