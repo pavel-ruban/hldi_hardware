@@ -25,43 +25,7 @@ Machine_state::Machine_state(led **leds) {
     state.lock_is_open = 0;
 }
 
-//void Machine_state::invalidate() {
-//    if (close_time < ticks) {
-//        state.lock_is_open = 0;
-//        state.state_changed = 1;
-//    }
-//
-//    if (!state.state_changed)
-//        return;
-//    else
-//        state.state_changed = 0;
-//
-//    if (!state.lock_is_open) {
-//        if (state.connected_to_ap == 2) {
-//            set_state_ap_connecting();
-//        }
-//        if (state.connected_to_server == 2) {
-//            set_state_ap_connecting();
-//        }
-//        if (state.connected_to_ap == 1 && state.connected_to_server == 1 && state.other_nodes_unreachable == 0 && state.calling == 0) {
-//            set_state_idle();
-//        }
-//    } else
-//        set_state_lock_open();
-//
-//}
 
-//void Machine_state::open() {
-//    state.lock_is_open = 1;
-//    state.calling = 0;
-//    close_time = ticks + CLOSE_TIME;
-//    state.state_changed = 1;
-//    invalidate();
-//}
-//
-//void Machine_state::network_fail(){
-//
-//}
 
 Machine_state::~Machine_state() {
 

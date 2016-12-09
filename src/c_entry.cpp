@@ -27,8 +27,10 @@ extern "C" {
 #include <config.h>
 #include "lib/led/led.hpp"
 #include "uart/uart.h"
+#include "lib/cache_handler/cache_handler.h"
 #include "esp8266/esp8266.h"
 #include <stdio.h>
+
 
 
 #include "include/queue.h"
@@ -54,21 +56,9 @@ extern uint8_t enc28j60_revid;
 volatile uint32_t ticks;
 int timerValue = 0;
 
-typedef struct {
-	uint8_t tag_id[4];
-	uint8_t flags;
-	uint32_t cached;
-} tag_cache_entry;
 
-typedef struct {
-	uint8_t tag_id[4];
-	uint32_t event_time;
-	uint32_t node;
-} tag_event;
-
-Queue<tag_cache_entry, 100> tag_cache;
-Queue<tag_event, 100> tag_events;
 Scheduler<Event<led>, 100> led_scheduler;
+Cache_handler cache_handler(EXPIRATION_TIME);
 
 
 Scheduler<Event<Machine_state>, 100> state_scheduler;
@@ -78,7 +68,7 @@ Uart uart3(UART3, 115200);
 uint8_t test_flag = 0;
 
 
-Esp8266 wifi(&uart, &machine_state);
+Esp8266 wifi(&uart, &machine_state, &cache_handler);
 Scheduler<Event<Esp8266>, 10> handler_scheduler;
 /* Private function prototypes -----------------------------------------------*/
 void RCC_Configuration(void);
@@ -95,7 +85,7 @@ void Delay(uint32_t nCount)
     for(; nCount != 0; nCount--);
 }
 
-
+uint32_t test_ip_conn_counter = 0;
 void rc522_irq_prepare()
 {
     mfrc522_write(BitFramingReg, 0x07); // TxLastBists = BitFramingReg[2..0]	???
@@ -161,9 +151,17 @@ uint8_t somi_access_check(uint8_t tag_id[], uint8_t node_id[], uint8_t pcd_id)
     return 0xff;
 }
 
-uint8_t somi_access_check_1(uint8_t tag_id[])
+uint8_t somi_access_check_1(uint8_t tag_id[], uint8_t rc522_number)
 {
-    wifi.send_access_request(tag_id);
+
+    if (cache_handler.checkCard(tag_id) == ACCESS_GRANTED) {
+        machine_state.set_state_lock_open();
+        if (!(wifi.is_connected_to_server && wifi.is_connected_to_wifi)) {
+            cache_handler.addEvent(tag_id, rc522_number);
+        }
+        return ACCESS_GRANTED;
+    }
+    wifi.send_access_request(tag_id, rc522_number);
     return 0xff;
 }
 
@@ -200,6 +198,7 @@ void somi_event_handler(uint8_t event, uint8_t flags)
     }
 }
 
+uint32_t last_time_triggered = 0;
 void rfid_irq_tag_handler()
 {
     __disable_irq();
@@ -210,65 +209,11 @@ void rfid_irq_tag_handler()
     __enable_irq();
 
     if (status == CARD_FOUND) {
-        static uint8_t led_state = 0;
-        led_state ? GPIO_SetBits(GPIOA, GPIO_Pin_1) : GPIO_ResetBits(GPIOA, GPIO_Pin_1);
-        led_state ^= 1;
-
-        // Check if tag was cached.
-        uint8_t flags;
-
-        tag_cache_entry *cache = nullptr;
-
-        for (auto it = tag_cache.begin(); it != tag_cache.end(); ++it) {
-            if (*((uint32_t *) &(it->tag_id[0])) == *((uint32_t *) &(tag_id[0]))) {
-                cache = &(*it);
-                break;
-            }
-        }
-
-        // We have to do the next things:
-        // a) Get access for the tag.
-        // Access can be retreived from network or via cache.
-        // b) Track event about access request.
-        // Events can be tracked directly by network request or via RabitMQ queue.
-
-        // If no, request data from network and cache result.
-        if (cache)
+        if (ticks - last_time_triggered > 600) //Delay between riggers;
         {
-            // If queue has space then use cache and store event to the cache.
-            if (!tag_events.full) {
-                tag_event event;
-                memcpy(event.tag_id, tag_id, 4);
-                event.event_time = RTC_GetCounter();
-                event.node = get_pcd_id();
-
-                // Add event to the queue.
-                tag_events.push_back(event);
-
-                // Get access flags from cache.
-                flags = cache->flags;
-            }
-                // Otherwise initiate direct network request.
-            else {
-                flags = somi_access_check_1(tag_id);
-            }
+            last_time_triggered = ticks;
+            somi_access_check_1(tag_id, get_pcd_id());
         }
-            // If cache hasn't tag request data from network and store it to the cache.
-        else {
-            flags = somi_access_check_1(tag_id);
-            if (!tag_cache.full) {
-                tag_cache_entry cache_entry;
-
-                memcpy(cache_entry.tag_id, tag_id, 4);
-                cache_entry.flags = flags;
-                cache_entry.cached = RTC_GetCounter();
-
-                tag_cache.push_back(cache_entry);
-            }
-        }
-
-        // Trigger event handler.
-        somi_event_handler(EVENT_ACCESS_REQ, flags);
     }
 
     // Activate timer.
@@ -347,7 +292,11 @@ extern "C" void SysTick_Handler(void)
         handler_scheduler.push(handle_uart);
         check_amount++;
     }
-
+    if (ticks % 200 == 0 && wifi.is_connected_to_server == 1){
+            if (cache_handler.eventExist()) {
+                int fhdfh = 0;
+            }
+    }
     ticks++;
 }
 
@@ -545,6 +494,7 @@ void connect_to_wifi (uint16_t connection_timeout, char* ssid, char* password) {
 }
 
 void connect_to_server (uint16_t connection_timeout, char* ip, char* port) {
+    //wifi.set_server_timeout(connection_timeout);
     machine_state.set_state_server_connecting();
     connection_scheduler.invalidate(&wifi);
     wifi.connect_to_ip(ip, port);
@@ -605,25 +555,32 @@ main(void)
 //    rc522_irq_prepare();
     //spi_transmit(0x7E, SKIP_RECEIVE, RC522_SPI_CH);
 
-    //wifi.Delay(0);
+    wifi.Delay(0);
 
     connect_to_wifi(AP_CONNECT_TIMEOUT, "i20.pub", "i20biz2015");
     Delay(5000000);
     while (1)
 	{
+        if (!wifi.is_connected_to_wifi && connection_scheduler.size() <= 1) {
+            Event<Esp8266> try2connect(connection_scheduler.get_current_time() + AP_CONNECT_TIMEOUT, &wifi, &Esp8266::connect_to_wifi);
+            connection_scheduler.push(try2connect);
+        }
+
         if (wifi.is_connected_to_wifi && !wifi.is_connected_to_server && wifi.current_state == STATE_READY) {
+
+             test_ip_conn_counter++;
              connection_scheduler.invalidate(&wifi);
-            connect_to_server(10, "192.168.1.170", "2252");
+             connect_to_server(10, "192.168.1.170", "2252");
         }
         if (wifi.is_connected_to_wifi && wifi.is_connected_to_server) {
             connection_scheduler.invalidate(&wifi);
             if (machine_state.get_state() == MACHINE_STATE_SERVER_CONNECTING)
                 machine_state.set_state_idle();
-         //   wifi.refresh_status();
-           // wifi.send_request("biba");
-        }
+             //wifi.refresh_status();
 
-        Delay(70000);
+        }
+        wifi.Delay(0);
+        Delay(900000);
 	}
 }
 

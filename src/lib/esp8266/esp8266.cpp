@@ -103,6 +103,24 @@
             _esp->current_state = STATE_READY;
             return INTERNAL_RESPONSE;
         }
+        //Open trigger.
+        if (strstr(command, "bo_test") && _esp->current_state == STATE_WAITING_RESPONSE) {
+         //   if (strstr(command, "200")) {
+                _esp->_cache_handler->addCard(_esp->last_tag_id, ACCESS_GRANTED);
+                _esp->_machine_state->set_state_lock_open();
+         //   }
+//            if (strstr(command, "403")) {
+//                _esp->_cache_handler->addEvent(_esp->last_tag_id, _esp->last_pcb_id, ACCESS_DENIED);
+//            }
+            _esp->current_state = STATE_READY;
+            return INTERNAL_RESPONSE;
+        }
+
+        if (strstr(command, "biba") && _esp->current_state == STATE_WAITING_RESPONSE) {
+            // _esp->_machine_state->set_state_lock_open();
+            _esp->current_state = STATE_READY;
+            return INTERNAL_RESPONSE;
+        }
         //Коннект к серваку - статус 3.
         //Коннект к точке, без сервака - статус 5.
         //Нету коннекта к точке, (и к серваку, очевидно) - статус 4.
@@ -133,7 +151,8 @@
         }
     }
 
-Esp8266::Esp8266(Uart *uart, Machine_state *machine_state) {
+Esp8266::Esp8266(Uart *uart, Machine_state *machine_state, Cache_handler *cache_handler) {
+    _cache_handler = cache_handler;
     _machine_state = machine_state;
     _uart = uart;
     is_connected_to_wifi = 0;
@@ -225,10 +244,10 @@ void Esp8266::send_request(char* request) {
     message_sent = 0;
     clear_buffer();
     strcat(buffer_string, "AT+CIPSEND=");
-    strcat(buffer_string, int_to_string(strlen(request) + strlen(NODE_ID) + 9));
+    strcat(buffer_string, int_to_string(strlen(request) + strlen(NODE_ID) + 10));
     strcat(buffer_string, "\r\n");
     _uart->send(buffer_string);
-    Delay(10000);
+    Delay(30000);
     clear_buffer();
     strcat(buffer_string, "node_id: ");
     strcat(buffer_string, NODE_ID);
@@ -239,7 +258,7 @@ void Esp8266::send_request(char* request) {
 
 }
 
-void Esp8266::send_access_request(uint8_t tag_id[]) {
+void Esp8266::send_event(uint8_t tag_id[], uint8_t rc522_number, uint32_t time) { //Untested, ctrlc-ctrlv
     char test_buf[100];
     memset(test_buf, '\0', 100);
     if (is_connected_to_server && is_connected_to_wifi) {
@@ -252,6 +271,31 @@ void Esp8266::send_access_request(uint8_t tag_id[]) {
         strcat(test_buf, ":");
         strcat(test_buf, int_to_string(tag_id[3]));
         strcat(test_buf, "\n\n\n");
+        for (uint8_t il = 0; il < 4; ++il) {
+            last_tag_id[il] = tag_id[il];
+        }
+        last_pcb_id = rc522_number;
+        send_request(test_buf);
+    }
+}
+
+void Esp8266::send_access_request(uint8_t tag_id[], uint8_t rc522_number) {
+    char test_buf[100];
+    memset(test_buf, '\0', 100);
+    if (is_connected_to_server && is_connected_to_wifi) {
+        strcat(test_buf,"action: access request\nuid: ");
+        strcat(test_buf, int_to_string(tag_id[0]));
+        strcat(test_buf, ":");
+        strcat(test_buf, int_to_string(tag_id[1]));
+        strcat(test_buf, ":");
+        strcat(test_buf, int_to_string(tag_id[2]));
+        strcat(test_buf, ":");
+        strcat(test_buf, int_to_string(tag_id[3]));
+        strcat(test_buf, "\n\n\n");
+        for (uint8_t il = 0; il < 4; ++il) {
+            last_tag_id[il] = tag_id[il];
+        }
+        last_pcb_id = rc522_number;
         send_request(test_buf);
     }
 }
@@ -259,6 +303,7 @@ void Esp8266::send_access_request(uint8_t tag_id[]) {
 uint8_t Esp8266::connect_to_ip(char* ip, char* port) {
 
     if (current_state == STATE_READY) {
+        current_state = STATE_WAITING_IP_CONNECT;
         busy = 1;
         is_connected_to_server = 0;
         clear_buffer();
@@ -268,7 +313,6 @@ uint8_t Esp8266::connect_to_ip(char* ip, char* port) {
         strcat(buffer_string, port);
         strcat(buffer_string, "\r\n");
         _uart->send(buffer_string);
-        current_state = STATE_WAITING_IP_CONNECT;
     } else return current_state;
 }
 
@@ -295,9 +339,9 @@ uint8_t Esp8266::disconnect_from_server() {
 
 uint8_t Esp8266::refresh_status() {
     busy = 1;
-    if (current_state == STATE_READY) {
+    //if (current_state == STATE_READY) {
         _uart->send("AT+CIPSTATUS\r\n");
-    } else return current_state;
+   // } else return current_state;
 }
 
 void Esp8266::send_request_to_connect() {
