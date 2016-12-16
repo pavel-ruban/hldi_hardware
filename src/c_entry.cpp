@@ -266,6 +266,7 @@ extern "C" void USART1_IRQHandler()
         uart.last_byte = USART_ReceiveData(USART1);
         GPIO_SetBits(EM_LOCK_PORT, EM_LOCK_PIN);
         //counter++;
+        uart.last_char_timing = ticks;
         uart.cyclo_buffer.push_back(uart.last_byte);
         if (uart.last_byte == '\n') {
             uart.last_string_ready = 1;
@@ -280,17 +281,19 @@ extern "C" void USART1_IRQHandler()
     }
 }
 uint32_t check_amount =0;
+char test_string;
 extern "C" void SysTick_Handler(void)
 {
     led_scheduler.handle();
     state_scheduler.handle();
     connection_scheduler.handle();
     handler_scheduler.handle();
-    if (ticks % 5 == 0) {
-        Event<Esp8266> handle_uart(ticks + 1, &wifi, &Esp8266::invoke_uart_handler);
-        handler_scheduler.invalidate(&wifi);
-        handler_scheduler.push(handle_uart);
-        check_amount++;
+    if (uart.last_char_timing != 0 && (ticks - uart.last_char_timing) >= 10 && uart.cyclo_buffer.end_index != uart.cyclo_buffer.start_index) {
+//            Event <Esp8266> handle_uart(ticks + 1, &wifi, &Esp8266::invoke_uart_handler);
+//            handler_scheduler.invalidate(&wifi);
+//            handler_scheduler.push(handle_uart);
+            wifi.invoke_uart_handler();
+            check_amount++;
     }
     if (ticks % 200 == 0 && wifi.is_connected_to_server == 1){
             if (cache_handler.eventExist()) {
@@ -495,7 +498,8 @@ void connect_to_wifi (uint16_t connection_timeout, char* ssid, char* password) {
 
 void connect_to_server (uint16_t connection_timeout, char* ip, char* port) {
     //wifi.set_server_timeout(connection_timeout);
-    machine_state.set_state_server_connecting();
+    if (machine_state.get_state() != MACHINE_STATE_SERVER_CONNECTING)
+        machine_state.set_state_server_connecting();
     connection_scheduler.invalidate(&wifi);
     wifi.connect_to_ip(ip, port);
 }
@@ -556,6 +560,7 @@ main(void)
     //spi_transmit(0x7E, SKIP_RECEIVE, RC522_SPI_CH);
 
     wifi.Delay(0);
+    uart.cyclo_buffer.data();
 
     connect_to_wifi(AP_CONNECT_TIMEOUT, "i20.pub", "i20biz2015");
     Delay(5000000);
@@ -570,17 +575,21 @@ main(void)
 
              test_ip_conn_counter++;
              connection_scheduler.invalidate(&wifi);
-             connect_to_server(10, "192.168.1.170", "2252");
+             connect_to_server(10, "192.168.1.209", "2252");
         }
         if (wifi.is_connected_to_wifi && wifi.is_connected_to_server) {
             connection_scheduler.invalidate(&wifi);
+            if (cache_handler.eventExist() && wifi.current_state == STATE_READY) {
+                tag_event buf = cache_handler.popEvent();
+                wifi.send_event(buf.tag_id, buf.node, buf.event_time);
+            }
             if (machine_state.get_state() == MACHINE_STATE_SERVER_CONNECTING)
                 machine_state.set_state_idle();
              //wifi.refresh_status();
 
         }
         wifi.Delay(0);
-        Delay(900000);
+        Delay(60000);
 	}
 }
 

@@ -26,7 +26,7 @@ uint8_t Cache_handler::eventExist() {
 
 tag_event Cache_handler::popEvent() {
     tag_event buf = tag_events.front();
-    tag_events.pop_front();
+    //tag_events.pop_front();
     return buf;
 }
 

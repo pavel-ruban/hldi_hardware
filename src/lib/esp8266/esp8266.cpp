@@ -65,7 +65,7 @@
         }
 
         if (_esp->current_state == STATE_WAITING_IP_CONNECT) { //Only dns fail tested, others PROBABLY same, but dunno.
-            if (strstr(command, "ERROR")) {
+            if (strstr(command, "ERROR") || strstr(command, "CLOSED")) {
                 _esp->is_connected_to_server = 0;
                 _esp->current_state = STATE_READY;
                 _esp->busy = 0;
@@ -112,9 +112,14 @@
 //            if (strstr(command, "403")) {
 //                _esp->_cache_handler->addEvent(_esp->last_tag_id, _esp->last_pcb_id, ACCESS_DENIED);
 //            }
+            if (strstr(command, "200") && strstr(command, "cache dump"))
+            {
+                //
+            }
             _esp->current_state = STATE_READY;
             return INTERNAL_RESPONSE;
         }
+
 
         if (strstr(command, "biba") && _esp->current_state == STATE_WAITING_RESPONSE) {
             // _esp->_machine_state->set_state_lock_open();
@@ -125,15 +130,19 @@
         //Коннект к точке, без сервака - статус 5.
         //Нету коннекта к точке, (и к серваку, очевидно) - статус 4.
     }
-
-
+//char commandbuf[50][COMMAND_SIZE];
+//int commandpos[50][2];
+//int test_count = 0;
     void CmdHandler::handle_uart_queue() {
         uint8_t buf = 0;
         uint8_t buf_start = 0;
         memset(command,'\0',COMMAND_SIZE);
         uint16_t iter = 0;
-        if (_uart->last_string_ready) {
+        //_uart->cyclo_buffer.back() == '\n'
+        if (true) {
             typename Queue<uint8_t, 200>::iterator it = _uart->cyclo_buffer.begin();
+            int buf_start = _uart->cyclo_buffer.start_index;
+            int buf_end = _uart->cyclo_buffer.end_index;
             while (it.index != _uart->cyclo_buffer.end_index) {
                 buf = it.index;
                 command[iter] = *it;
@@ -145,6 +154,16 @@
             }
             _uart->cyclo_buffer.start_index = it.index;
             _uart->last_string_ready = 0;
+//            if (command[0]) {
+//                commandpos[test_count][0] = buf_start;
+//                commandpos[test_count][1] = buf_end;
+//                strcpy(commandbuf[test_count], command);
+//                if (test_count >= 49) {
+//                    int dgd = 0;
+//                }
+//                test_count++;
+//            }
+
             if (command[0]) {
                 parse_command();
             }
@@ -232,6 +251,7 @@ void Esp8266::clear_buffer() {
 }
 
 void Esp8266::reset() {
+    _uart->cyclo_buffer.clear();
     busy = 1;
     current_state = STATE_RESETTING;
     GPIO_ResetBits(ESP8266_RESET_PORT,ESP8266_RESET_PIN);
@@ -261,8 +281,8 @@ void Esp8266::send_request(char* request) {
 void Esp8266::send_event(uint8_t tag_id[], uint8_t rc522_number, uint32_t time) { //Untested, ctrlc-ctrlv
     char test_buf[100];
     memset(test_buf, '\0', 100);
-    if (is_connected_to_server && is_connected_to_wifi) {
-        strcat(test_buf,"action: access request\nuid: ");
+    if (is_connected_to_server && is_connected_to_wifi && current_state == STATE_READY) {
+        strcat(test_buf,"action: event dump\nuid: ");
         strcat(test_buf, int_to_string(tag_id[0]));
         strcat(test_buf, ":");
         strcat(test_buf, int_to_string(tag_id[1]));
@@ -270,11 +290,11 @@ void Esp8266::send_event(uint8_t tag_id[], uint8_t rc522_number, uint32_t time) 
         strcat(test_buf, int_to_string(tag_id[2]));
         strcat(test_buf, ":");
         strcat(test_buf, int_to_string(tag_id[3]));
+        strcat(test_buf, "\nnode_number: ");
+        strcat(test_buf, int_to_string(rc522_number));
+        strcat(test_buf, "\ntime: ");
+        strcat(test_buf, int_to_string(time));
         strcat(test_buf, "\n\n\n");
-        for (uint8_t il = 0; il < 4; ++il) {
-            last_tag_id[il] = tag_id[il];
-        }
-        last_pcb_id = rc522_number;
         send_request(test_buf);
     }
 }
@@ -369,11 +389,15 @@ void Esp8266::save_creditals(char* ssid, char* password) {
 void Esp8266::connect_to_wifi_by_creditals(char* ssid, char* password) {
     this->ssid = ssid;
     this->password = password;
+    is_connected_to_server = 0;
+    is_connected_to_wifi = 0;
     connect_after_reset = 1;
     reset();
 }
 
 void Esp8266::connect_to_wifi() {
+    is_connected_to_server = 0;
+    is_connected_to_wifi = 0;
     connect_after_reset = 1;
     reset();
 }

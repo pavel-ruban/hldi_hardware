@@ -27,6 +27,7 @@ public:
     uint16_t last_char;
     uint8_t last_string_ready;
     uint8_t last_string_parsed;
+    uint32_t last_char_timing = 0;
 private:
     void init_uart(uint32_t speed, uint8_t uart = UART1);
 };

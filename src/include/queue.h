@@ -187,6 +187,9 @@ uint8_t Queue<T, qsize>::push_back(T const &item)
 	}
 	// When storage has right side free space.
 	if (end_index >= start_index) {
+        if (end_index == start_index && start_index != 0){
+            int biba = 10;
+        }
 		if (end_index < qsize)
 		{
 			array[end_index++] = item;
