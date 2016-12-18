@@ -450,7 +450,7 @@ typedef struct
   */
 
 void SPI_I2S_DeInit(SPI_TypeDef* SPIx);
-void SPI_Init(SPI_TypeDef* SPIx, SPI_InitTypeDef* SPI_InitStruct);
+void SPI_Init(SPI_TypeDef* SPIx, SPI_InitTypeDef* ct);
 void I2S_Init(SPI_TypeDef* SPIx, I2S_InitTypeDef* I2S_InitStruct);
 void SPI_StructInit(SPI_InitTypeDef* SPI_InitStruct);
 void I2S_StructInit(I2S_InitTypeDef* I2S_InitStruct);

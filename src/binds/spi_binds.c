@@ -1,6 +1,8 @@
 #include <stdint.h>
+#include <stm32f10x_spi.h>
 #include <stm32f10x_conf.h>
-#include <binds.h>
+#include "spi_binds.h"
+
 
 extern SPI_InitTypeDef SPI_InitStructure;
 extern GPIO_InitTypeDef GPIO_InitStructure;
@@ -45,7 +47,6 @@ void set_spi_registers()
 	/* Configure MISO pin as Input Floating  */
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
 	GPIO_Init(SPIz_GPIO, &GPIO_InitStructure);
-
 	SPI_InitStructure.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
 	SPI_InitStructure.SPI_Mode = SPI_Mode_Master;
 	SPI_InitStructure.SPI_DataSize = SPI_DataSize_8b;

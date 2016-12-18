@@ -15,6 +15,8 @@
 
 extern "C" {
 	#include <stm32f10x_conf.h>
+    #include <binds.h>
+    #include <string.h>
 }
 
 #include "include/utils.h"
@@ -27,10 +29,6 @@ extern "C" {
 #include "esp8266/esp8266.h"
 #include <stdio.h>
 
-extern "C" {
-	#include <binds.h>
-	#include <string.h>
-}
 
 #include "include/queue.h"
 #include "lib/array/array.h"
@@ -39,7 +37,7 @@ extern "C" {
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-//SPI_InitTypeDef SPI_InitStructure;
+SPI_InitTypeDef SPI_InitStructure;
 GPIO_InitTypeDef GPIO_InitStructure;
 ErrorStatus HSEStartUpStatus;
 led *leds[LED_QUANTITY] = {NULL};
@@ -131,7 +129,7 @@ extern "C" void WRONG_IRQ_EXCEPTION()
 
 extern "C" void EXTI4_IRQHandler()
 {
-	while (1) {}
+    EXTI_ClearITPendingBit(EXTI_Line4);
 }
 
 
@@ -157,6 +155,7 @@ extern "C" void EXTI2_IRQHandler()
 
 }
 
+
 void Responce_Handler() {
     if (!uart.last_string_ready)
         return;
@@ -165,7 +164,7 @@ void Responce_Handler() {
 extern "C" void USART1_IRQHandler()
 {
     // Receive Data register not empty interrupt.
-    if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET) {
+    if (USART_GetITStatus(USART1, USART_IT_RXNE) != RESET) {
         uart.last_byte = USART_ReceiveData(USART1);
         GPIO_SetBits(EM_LOCK_PORT, EM_LOCK_PIN);
 
@@ -183,12 +182,13 @@ extern "C" void USART1_IRQHandler()
 
         if (uart.last_byte == '\n') {
             uart.last_string_ready = 1;
-            wifi.handle_responce();
+            wifi.handle_response();
         }
     }
     // Transmission complete interrupt.
     GPIO_ResetBits(EM_LOCK_PORT, EM_LOCK_PIN);
-    if(USART_GetITStatus(USART1, USART_IT_TC) != RESET)
+
+    if (USART_GetITStatus(USART1, USART_IT_TC) != RESET)
     {
         USART_ClearITPendingBit(USART1, USART_IT_TC);
     }
@@ -211,10 +211,19 @@ extern "C" void EXTI1_IRQHandler()
     EXTI_ClearITPendingBit(EXTI_Line1);
 }
 
+
 extern "C" void EXTI15_10_IRQHandler()
 {
-
+    for (;;)
+    {}
 }
+
+extern "C" void EXTI9_5_IRQHandler()
+{
+    for (;;)
+    {}
+}
+
 
 extern "C" void interrupt_initialize();
 extern "C" void initialize_systick();
@@ -238,12 +247,26 @@ extern "C" void __initialize_hardware()
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
     GPIO_Init(BTN_CALL_PORT, &GPIO_InitStructure);
 
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
+    GPIO_Init(GPIOB, &GPIO_InitStructure);
+
     // Em lock pin.
     GPIO_InitStructure.GPIO_Pin = EM_LOCK_PIN;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
     GPIO_Init(EM_LOCK_PORT, &GPIO_InitStructure);
     GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE);
+
+    GPIO_InitStructure.GPIO_Pin = ESP8266_RESET_PIN;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+    GPIO_Init(ESP8266_RESET_PORT, &GPIO_InitStructure);
+   // GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE);
+
+    GPIO_ResetBits(ESP8266_RESET_PORT,ESP8266_RESET_PIN);
+    GPIO_SetBits(ESP8266_RESET_PORT,ESP8266_RESET_PIN);
 
 	initialize_systick();
 }
@@ -274,24 +297,25 @@ extern "C" int
 main(void)
 {
 //    std::string ss("gxfdsfs");
-    int x = 0;
-    Uart uart2(UART2, 115200);
+//    int x = 0;
+//    Uart uart2(UART2, 115200);
+//
+//    xx = (int *) malloc(334);
+//    while (1) {
+//        char s1[] = "Hello green cube";
+//        char s2[] = "Lets go further";
+//        int z = strlen(s1);
+//        int z2 = strlen(s2);
+//
+//        char s4[100];
+//
+//        sprintf(s4, "Hello my greeting is %s Usually I say it %d times!!!\n\n", s1, 5);
+//
+//        uart2.send(s4);
+//        ++x;
+//        int y = 1;
+//    }
 
-    xx = (int *) malloc(334);
-    while (1) {
-        char s1[] = "Hello green cube";
-        char s2[] = "Lets go further";
-        int z = strlen(s1);
-        int z2 = strlen(s2);
-
-        char s4[100];
-
-        sprintf(s4, "Hello my greeting is %s Usually I say it %d times!!!\n\n", s1, 5);
-
-        uart2.send(s4);
-        ++x;
-        int y = 1;
-    }
 
     led rgb_led(LED_TYPE_RGB, GPIOA, GPIO_Pin_1, GPIO_Pin_2, GPIO_Pin_3, LED_COLOR_WHITE);
     leds[LED_STATE_INDICATOR] =  &rgb_led;
@@ -301,22 +325,31 @@ main(void)
 	__enable_irq();
     InitializeTimer();
     GPIO_ResetBits(EM_LOCK_PORT, EM_LOCK_PIN);
-    wifi.connect_to_wifi("i20.pub", "i20biz2015");
+    //SPI_InitTypeDef * biba;
+    //uint8_t pcd = RC522_PCD_1;
+    //rc522_pcd_select(pcd);
+    //mfrc522_init();
+
+    rc522_pcd_select(1);
+    mfrc522_init();
+//    rc522_irq_prepare();
+  //  Delay(7000000);
+  //  wifi.connect_to_wifi("i20.pub", "i20biz2015");
     //int_to_string(4235353);
     int i1 = 10;
     while (1)
 	{
 
-        if (wifi.is_connected_to_wifi && !wifi.is_connected_to_server) {
-            wifi.connect_to_ip("192.168.1.141", "2525");
-           // Delay(10000);
-
-        }
-        if (wifi.is_connected_to_server) {
-            i1 = strlen("BIBA\n");
-
-            wifi.send_request("BIBA\n");
-        }
+//        if (wifi.is_connected_to_wifi && !wifi.is_connected_to_server) {
+//            wifi.connect_to_ip("192.168.1.141", "332");
+//           // Delay(10000);
+//
+//        }
+//        if (wifi.is_connected_to_server) {
+//            i1 = strlen("BIBA\n");
+//
+//            wifi.send_request("BIBA\n");
+//        }
         Delay(700000);
 	}
 }
@@ -334,6 +367,8 @@ void interrupt_initialize()
 	GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource0);
     // BTN_CALL.
     GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource1);
+
+    GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource4);
 
 	// IRQ Driven Button BTN_OPEN.
 	EXTI_InitStructure.EXTI_Line = EXTI_Line0;
@@ -361,6 +396,31 @@ void interrupt_initialize()
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 
+    EXTI_InitStructure.EXTI_Line = EXTI_Line4;
+    EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
+    EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+    EXTI_Init(&EXTI_InitStructure);
+
+    NVIC_InitStructure.NVIC_IRQChannel =  EXTI4_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x08;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x08;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
+//----------------------------------------------
+    EXTI_InitStructure.EXTI_Line = EXTI_Line10;
+    EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
+    EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+    EXTI_Init(&EXTI_InitStructure);
+
+    // RC522 Timer And PICC Receive Interrupt.
+    NVIC_InitStructure.NVIC_IRQChannel = EXTI15_10_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x09;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x09;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);
+//----------------------------------------------
 	// TIM2 timer, used as on second watchdog for enc28j60, rc522.
 	// Also do some periodical not priority calls.
 	NVIC_InitStructure.NVIC_IRQChannel = TIM3_IRQn;
@@ -476,17 +536,6 @@ void NVIC_Configuration(void)
 #endif
 }
 
-/*******************************************************************************
- * Function Name  : Delay
- * Description    : Inserts a delay time.
- * Input          : nCount: specifies the delay time length.
- * Output         : None
- * Return         : None
- *******************************************************************************/
-void Delay(vu32 nCount)
-{
-	for(; nCount != 0; nCount--);
-}
 
 #ifdef  DEBUG
 /*******************************************************************************

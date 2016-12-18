@@ -21,7 +21,9 @@
  *
  */
 
-#include <binds.h>
+#include "mfrc522.h"
+
+
 
 void mfrc522_init()
 {
@@ -92,7 +94,7 @@ uint8_t	mfrc522_request(uint8_t req_mode, uint8_t * tag_type)
 
 	if ((status != CARD_FOUND) || (backBits != 0x10))
 	{
-		status = ERROR;
+		status = CARD_ERROR;
 	}
 
 	return status;
@@ -100,7 +102,7 @@ uint8_t	mfrc522_request(uint8_t req_mode, uint8_t * tag_type)
 
 uint8_t mfrc522_to_card(uint8_t cmd, uint8_t *send_data, uint8_t send_data_len, uint8_t *back_data, uint32_t *back_data_len)
 {
-	uint8_t status = ERROR;
+	uint8_t status = CARD_ERROR;
 	uint8_t irqEn = 0x00;
 	uint8_t waitIRq = 0x00;
 	uint8_t lastBits;
@@ -203,7 +205,7 @@ uint8_t mfrc522_to_card(uint8_t cmd, uint8_t *send_data, uint8_t send_data_len, 
 		}
 		else
 		{
-			status = ERROR;
+			status = CARD_ERROR;
 		}
 
 	}
@@ -237,7 +239,7 @@ uint8_t mfrc522_get_card_serial(uint8_t * serial_out)
 		}
 		if (serNumCheck != serial_out[i])
 		{
-			status = ERROR;
+			status = CARD_ERROR;
 		}
 	}
 	return status;

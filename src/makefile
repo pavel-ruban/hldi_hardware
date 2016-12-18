@@ -1,7 +1,7 @@
 # setup
 TARGET_OPTS = -mcpu=cortex-m3 -mthumb
 COMPILE_OPTS = $(TARGET_OPTS) -DSTM32F10X_MD -DUSE_STDPERIPH_DRIVER -DHSE_VALUE=8000000 -Wall  -nostdinc
-INCLUDE_DIRS =  -I lib -I include -I system/include/cmsis -I system/include/stm32f1-stdperiph -I system/include -I binds/include -I lib/ethernet -I lib/enc28j60 -I system/arm-none-eabi/include -I system/arm-none-eabi/gcc/arm-none-eabi/6.2.0/include -I system/arm-none-eabi/gcc/arm-none-eabi/6.2.0/include-fixed
+INCLUDE_DIRS =  -I lib -I include -I system/include/cmsis -I system/include/stm32f1-stdperiph -I system/include -I binds/include -I lib/ethernet -I lib/enc28j60 -I system/arm-none-eabi/include -I system/arm-none-eabi/gcc/arm-none-eabi/6.2.0/include -I system/arm-none-eabi/gcc/arm-none-eabi/6.2.0/include-fixed -I lib/rc522 -I binds
 LIBS_INCLUDE_DIRS = -I $(HARDWARE_LIBS_DIR)/rc522 -I$(HARDWARE_LIBS_DIR)/led
 INCLUDE_DIRS += $(LIBS_INCLUDE_DIRS)
 

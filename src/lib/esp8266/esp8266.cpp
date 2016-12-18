@@ -3,6 +3,8 @@
 Esp8266::Esp8266(Uart *uart) {
     _uart = uart;
     is_connected_to_wifi = 0;
+    message_sent = 0;
+    is_authorized = 0;
 }
 
 Esp8266::~Esp8266() {
@@ -25,7 +27,7 @@ char* Esp8266::strstr(char *haystack, const char *needle) {
 }
 
 char* Esp8266::strcat(char *dest, const char *src) {
-    size_t i,j;
+    uint32_t i,j;
     for (i = 0; dest[i] != '\0'; i++)
         ;
     for (j = 0; src[j] != '\0'; j++)
@@ -61,13 +63,21 @@ void Esp8266::clear_buffer() {
 }
 
 void Esp8266::send_request(char* request) {
+    message_sent = 0;
+
     clear_buffer();
     strcat(buffer_string, "AT+CIPSEND=");
-    strcat(buffer_string, int_to_string(strlen(request) - 1));
+    strcat(buffer_string, int_to_string(strlen(request) + 41));
     strcat(buffer_string, "\r\n");
     _uart->send(buffer_string);
-    Delay(1000);
-    _uart->send(request);
+    Delay(10000);
+    clear_buffer();
+    strcat(buffer_string, "node_id: ");
+    strcat(buffer_string, NODE_ID);
+    strcat(buffer_string, "\n");
+    strcat(buffer_string, request);
+    _uart->send(buffer_string);
+    current_state = STATE_WAITING_RESPONSE;
 
 }
 
@@ -83,6 +93,7 @@ uint8_t Esp8266::connect_to_ip(char* ip, char* port) {
         current_state = STATE_WAITING_IP_CONNECT;
     } else return current_state;
 }
+
 
 uint8_t Esp8266::recieve_string() {
     if (_uart->last_string_ready) {
@@ -109,43 +120,52 @@ void Esp8266::send_request_to_connect() {
     current_state = STATE_WAITING_WIFI_CONNECT;
 }
 
-uint8_t Esp8266::handle_responce() {
+uint8_t Esp8266::handle_response() {
     recieve_string();
     if (current_state == STATE_WAITING_MODE_CHANGE) {
         if (strstr(last_string, "OK")) {
             send_request_to_connect();
-            return INTERNAL_RESPONCE;
+            return INTERNAL_RESPONSE;
         }
     }
     if (current_state == STATE_WAITING_WIFI_CONNECT) {
         if (strstr(last_string, "OK")) {
             is_connected_to_wifi = 1;
             current_state = STATE_READY;
-            return INTERNAL_RESPONCE;
+            return INTERNAL_RESPONSE;
         }
     }
     if (current_state == STATE_WAITING_IP_CONNECT) {
         if (strstr(last_string, "OK")) {
             is_connected_to_server = 1;
             current_state = STATE_READY;
-            return INTERNAL_RESPONCE;
+            return INTERNAL_RESPONSE;
         }
     }
+
+    if (current_state == STATE_WAITING_RESPONSE) {
+        if (strstr(last_string, "SEND OK")) {
+            message_sent = 1;
+            current_state = STATE_READY;
+            return INTERNAL_RESPONSE;
+        }
+    }
+
     if (is_connected_to_wifi) {
         if (strstr(last_string, "CLOSED")) {
             is_connected_to_server = 0;
-            return INTERNAL_RESPONCE;
+            return INTERNAL_RESPONSE;
         }
     }
     if (strstr(last_string, "STATUS:5")) {
         is_connected_to_wifi = 1;
-        return INTERNAL_RESPONCE;
+        return INTERNAL_RESPONSE;
     }
     if (strstr(last_string, "STATUS:4")) {
         is_connected_to_wifi = 0;
-        return INTERNAL_RESPONCE;
+        return INTERNAL_RESPONSE;
     }
-    return EXTERNAL_RESPONCE;
+    return EXTERNAL_RESPONSE;
 }
 
 void Esp8266::connect_to_wifi(char* ssid, char* password) {
