@@ -18,3 +18,15 @@ GPIO_Init(PORT, &GPIO_InitStructure)
 #define LED_BLINK_ON 1
 #define LED BLINK_OFF 0
 
+/*******************************************************************************
+ * Function Name  : Delay
+ * Description    : Inserts a delay time.
+ * Input          : nCount: specifies the delay time length.
+ * Output         : None
+ * Return         : None
+ *******************************************************************************/
+void Delay(uint32_t nCount)
+{
+    for(; nCount != 0; nCount--);
+}
+

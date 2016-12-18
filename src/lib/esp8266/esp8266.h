@@ -1,9 +1,10 @@
 #pragma once
 #pragma pack(1)
 #include <stdint.h>
+#include <binds.h>
 #include "uart/uart.h"
 #include "config.h"
-#include "binds.h"
+#include <utils.h>
 
 #define BUFFER_SIZE 100
 
@@ -15,13 +16,14 @@
 #define STATE_WAITING_MODE_CHANGE 1
 #define STATE_WAITING_WIFI_CONNECT 2
 #define STATE_WAITING_IP_CONNECT 3
+#define STATE_WAITING_RESPONSE 5
 #define STATE_BUSY 4;
 
 //Esp8266
 
-//Esp8266 responce types
-#define INTERNAL_RESPONCE 1
-#define EXTERNAL_RESPONCE 0
+//Esp8266 response types
+#define INTERNAL_RESPONSE 1
+#define EXTERNAL_RESPONSE 0
 
 class Esp8266{
 private:
@@ -40,13 +42,15 @@ public:
     uint8_t is_connected_to_wifi;
     uint8_t is_connected_to_server;
     uint8_t current_state;
+    uint8_t is_authorized;
+    uint8_t message_sent;
     char* strstr(char *haystack, const char *needle);
     Uart *_uart;
     Esp8266(Uart *uart);
     ~Esp8266();
     uint8_t wifi_connected;
     uint32_t ip_address;
-    uint8_t handle_responce();
+    uint8_t handle_response();
     uint8_t recieve_string();
     void send_request(char* request);
 

@@ -1096,7 +1096,7 @@ ErrorStatus I2C_CheckEvent(I2C_TypeDef* I2Cx, uint32_t I2C_EVENT)
   }
   else
   {
-    /* ERROR: last event is different from I2C_EVENT */
+    /* CARD_ERROR: last event is different from I2C_EVENT */
     status = ERROR;
   }
   /* Return status */

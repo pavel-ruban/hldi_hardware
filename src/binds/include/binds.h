@@ -18,6 +18,8 @@
 #define BTN_OPEN_PIN GPIO_Pin_0
 #define EM_LOCK_PORT GPIOB
 #define EM_LOCK_PIN GPIO_Pin_3
+#define ESP8266_RESET_PIN GPIO_Pin_8
+#define ESP8266_RESET_PORT GPIOA
 
 extern volatile uint32_t ticks;
 
