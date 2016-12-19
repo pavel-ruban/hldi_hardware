@@ -24,6 +24,7 @@
 #define STATE_EVENTS_DUMPING 6
 #define AP_CONNECT_TIMEOUT 17000
 #define SERVER_CONNECT_TIMEOUT 10000
+#define TO_SERVER_PROBLEM 20 * 1000
 
 //Esp8266
 
@@ -62,6 +63,8 @@ private:
 
     char buf[10] = {0};
 public:
+    uint32_t reset_time = 0;
+    uint8_t attempts_done = 0;
     uint8_t last_tag_id[4];
     uint8_t last_pcb_id;
     Cache_handler *_cache_handler;

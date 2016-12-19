@@ -153,15 +153,27 @@ uint8_t somi_access_check(uint8_t tag_id[], uint8_t node_id[], uint8_t pcd_id)
 
 uint8_t somi_access_check_1(uint8_t tag_id[], uint8_t rc522_number)
 {
+    if (wifi.is_connected_to_server && wifi.is_connected_to_wifi) {
+        wifi.send_access_request(tag_id, rc522_number);
+    }
 
     if (cache_handler.checkCard(tag_id) == ACCESS_GRANTED) {
         machine_state.set_state_lock_open();
         if (!(wifi.is_connected_to_server && wifi.is_connected_to_wifi)) {
-            cache_handler.addEvent(tag_id, rc522_number);
+            cache_handler.addEvent(tag_id, rc522_number, ACCESS_GRANTED);
         }
         return ACCESS_GRANTED;
     }
-    wifi.send_access_request(tag_id, rc522_number);
+
+    if (cache_handler.checkCard(tag_id) == ACCESS_DENIED || cache_handler.checkCard(tag_id) == NOT_CACHED) {
+        //machine_state.set_state_lock_open();
+        if (!(wifi.is_connected_to_server && wifi.is_connected_to_wifi)) {
+            cache_handler.addEvent(tag_id, rc522_number, ACCESS_DENIED);
+        }
+        return ACCESS_DENIED;
+    }
+
+
     return 0xff;
 }
 
@@ -486,6 +498,7 @@ void InitializeTimer()
 void connect_to_wifi (uint16_t connection_timeout, char* ssid, char* password) {
     wifi.save_creditals(ssid, password);
     wifi.connect_to_wifi();
+    state_scheduler.invalidate(&machine_state);
     machine_state.set_state_ap_connecting();
     connection_scheduler.invalidate(&wifi);
     Event<Esp8266> try2connect(connection_scheduler.get_current_time() + connection_timeout, &wifi, &Esp8266::connect_to_wifi);
@@ -498,6 +511,15 @@ void connect_to_wifi (uint16_t connection_timeout, char* ssid, char* password) {
 
 void connect_to_server (uint16_t connection_timeout, char* ip, char* port) {
     //wifi.set_server_timeout(connection_timeout);
+    if (wifi.attempts_done == 10) {
+        wifi.attempts_done = 255;
+        wifi.reset_time = ticks + TO_SERVER_PROBLEM;
+        machine_state.set_state_server_problem();
+        return;
+    }
+    if (wifi.attempts_done == 255 && wifi.reset_time > ticks) {
+        connect_to_wifi(AP_CONNECT_TIMEOUT, "i20.pub", "i20biz2015");
+    }
     if (machine_state.get_state() != MACHINE_STATE_SERVER_CONNECTING)
         machine_state.set_state_server_connecting();
     connection_scheduler.invalidate(&wifi);
@@ -509,6 +531,7 @@ int *xx;
 extern "C" int
 main(void)
 {
+    uint64_t global_counter;
 //    std::string ss("gxfdsfs");
 //    int x = 0;
 //    Uart uart2(UART2, 115200);
@@ -566,14 +589,13 @@ main(void)
     Delay(5000000);
     while (1)
 	{
+        global_counter++;
         if (!wifi.is_connected_to_wifi && connection_scheduler.size() <= 1) {
             Event<Esp8266> try2connect(connection_scheduler.get_current_time() + AP_CONNECT_TIMEOUT, &wifi, &Esp8266::connect_to_wifi);
             connection_scheduler.push(try2connect);
         }
 
-        if (wifi.is_connected_to_wifi && !wifi.is_connected_to_server && wifi.current_state == STATE_READY) {
-
-             test_ip_conn_counter++;
+        if (wifi.is_connected_to_wifi && !wifi.is_connected_to_server && global_counter % 100 == 0) {
              connection_scheduler.invalidate(&wifi);
              connect_to_server(10, "192.168.1.209", "2252");
         }

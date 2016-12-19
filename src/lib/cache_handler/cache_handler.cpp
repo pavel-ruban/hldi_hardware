@@ -6,12 +6,13 @@
 
 
 //to do: когда очищать очередь?
-void Cache_handler::addEvent(uint8_t tag_id[4], uint8_t node) {
+void Cache_handler::addEvent(uint8_t tag_id[4], uint8_t node, uint8_t status) {
 
     if (!tag_events.full) {
         tag_event event;
         event.event_time = ticks;
         event.node = node;
+        event.status = status;
         for (uint8_t i = 0; i < 4; ++i) {
             event.tag_id[i] = tag_id[i];
         }
@@ -64,6 +65,7 @@ uint8_t Cache_handler::checkCard(uint8_t tag_id[4]) {
             return card_cache[i].status;
         }
     }
+    return NOT_CACHED;
 }
 
 Cache_handler::Cache_handler(uint32_t live_time) {

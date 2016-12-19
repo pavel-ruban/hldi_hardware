@@ -18,6 +18,7 @@ typedef struct {
     uint8_t tag_id[4];
     uint32_t event_time;
     uint8_t node;
+    uint8_t status;
 } tag_event;
 
 
@@ -32,7 +33,7 @@ public:
     tag_event popEvent();
     Cache_handler(uint32_t live_time);
     ~Cache_handler();
-    void addEvent(uint8_t tag_id[4], uint8_t node);
+    void addEvent(uint8_t tag_id[4], uint8_t node, uint8_t status);
     uint8_t checkCard(uint8_t tag_id[4]);
     void addCard(uint8_t tag_id[4], uint8_t status);
 private:

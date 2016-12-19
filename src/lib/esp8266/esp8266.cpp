@@ -57,6 +57,7 @@
 
         if (_esp->current_state == STATE_WAITING_IP_CONNECT) {
             if (strstr(command, "OK")) {
+                _esp->attempts_done = 0;
                 _esp->is_connected_to_server = 1;
                 _esp->current_state = STATE_READY;
                 _esp->busy = 0;
@@ -253,11 +254,12 @@ void Esp8266::clear_buffer() {
 void Esp8266::reset() {
     _uart->cyclo_buffer.clear();
     busy = 1;
+    attempts_done = 0;
+    reset_time = 0;
     current_state = STATE_RESETTING;
     GPIO_ResetBits(ESP8266_RESET_PORT,ESP8266_RESET_PIN);
     Delay(100);
     GPIO_SetBits(ESP8266_RESET_PORT,ESP8266_RESET_PIN);
-
 }
 
 void Esp8266::send_request(char* request) {
@@ -322,6 +324,7 @@ void Esp8266::send_access_request(uint8_t tag_id[], uint8_t rc522_number) {
 
 uint8_t Esp8266::connect_to_ip(char* ip, char* port) {
 
+    attempts_done++;
     if (current_state == STATE_READY) {
         current_state = STATE_WAITING_IP_CONNECT;
         busy = 1;
