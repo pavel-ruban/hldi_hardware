@@ -22,6 +22,7 @@
 #define MACHINE_STATE_SERVER_PROBLEM 6
 #define MACHINE_STATE_OTHER_NETWORK_PROBLEM 7
 #define MACHINE_STATE_DUMMY 8
+#define MACHINE_STATE_ACCESS_DENIED 9
 #define CLOSE_TIME 3000
 #define RING_TIME 5000
 
@@ -54,6 +55,7 @@ public:
     void set_state_network_problem();
     void set_state_other_network_problem();
     void set_state_dummy();
+    void set_state_access_denied();
     uint8_t get_state();
     Esp8266 *_wifi;
     Machine_state();

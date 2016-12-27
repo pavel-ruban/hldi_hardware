@@ -88,7 +88,7 @@ void Machine_state::return_to_correct_state(uint32_t delay, uint8_t _state){
 }
 
 void Machine_state::set_state_dummy() {
-    if (current_state == MACHINE_STATE_LOCK_OPEN || current_state == MACHINE_STATE_GUEST_CALL) {
+    if (current_state == MACHINE_STATE_LOCK_OPEN || current_state == MACHINE_STATE_GUEST_CALL || current_state == MACHINE_STATE_ACCESS_DENIED) {
         previous_state = current_state;
         current_state = MACHINE_STATE_DUMMY;
     } else
@@ -96,7 +96,7 @@ void Machine_state::set_state_dummy() {
 }
 
 void Machine_state::set_state_idle() {
-    if (current_state == MACHINE_STATE_LOCK_OPEN || current_state == MACHINE_STATE_GUEST_CALL) {
+    if (current_state == MACHINE_STATE_LOCK_OPEN || current_state == MACHINE_STATE_GUEST_CALL || current_state == MACHINE_STATE_ACCESS_DENIED) {
         return_to_correct_state(CLOSE_TIME + 10, MACHINE_STATE_IDLE);
         return;
     }
@@ -110,7 +110,7 @@ void Machine_state::set_state_idle() {
 }
 
 void Machine_state::set_state_other_network_problem() {
-    if (current_state == MACHINE_STATE_LOCK_OPEN || current_state == MACHINE_STATE_GUEST_CALL) {
+    if (current_state == MACHINE_STATE_LOCK_OPEN || current_state == MACHINE_STATE_GUEST_CALL || current_state == MACHINE_STATE_ACCESS_DENIED) {
         return_to_correct_state(CLOSE_TIME + 10, MACHINE_STATE_OTHER_NETWORK_PROBLEM);
         return;
     }
@@ -137,6 +137,20 @@ void Machine_state::set_state_lock_open() {
     GPIO_ResetBits(EM_LOCK_PORT,EM_LOCK_PIN);
 }
 
+void Machine_state::set_state_access_denied() {
+    if (current_state == MACHINE_STATE_ACCESS_DENIED)
+        return;
+    previous_state = current_state;
+    current_state = MACHINE_STATE_ACCESS_DENIED;
+    led_scheduler.invalidate(leds[LED_STATE_INDICATOR]);
+    leds[LED_STATE_INDICATOR]->set_color(LED_COLOR_RED);
+    leds[LED_STATE_INDICATOR]->set_blink(0,1000,1000);
+    leds[LED_STATE_INDICATOR]->on();
+    state_scheduler.invalidate(this);
+    return_to_correct_state(CLOSE_TIME, previous_state);
+    GPIO_ResetBits(EM_LOCK_PORT,EM_LOCK_PIN);
+}
+
 void Machine_state::set_state_guest_call() {
     if (current_state != MACHINE_STATE_IDLE)
         return;
@@ -152,7 +166,7 @@ void Machine_state::set_state_guest_call() {
 }
 
 void Machine_state::set_state_network_problem() {
-    if (current_state == MACHINE_STATE_LOCK_OPEN || current_state == MACHINE_STATE_GUEST_CALL) {
+    if (current_state == MACHINE_STATE_LOCK_OPEN || current_state == MACHINE_STATE_GUEST_CALL || current_state == MACHINE_STATE_ACCESS_DENIED) {
         return_to_correct_state(CLOSE_TIME + 10, MACHINE_STATE_NETWORK_PROBLEM);
         return;
     }
@@ -166,7 +180,7 @@ void Machine_state::set_state_network_problem() {
 }
 
 void Machine_state::set_state_ap_connecting() {
-    if (current_state == MACHINE_STATE_LOCK_OPEN || current_state == MACHINE_STATE_GUEST_CALL) {
+    if (current_state == MACHINE_STATE_LOCK_OPEN || current_state == MACHINE_STATE_GUEST_CALL || current_state == MACHINE_STATE_ACCESS_DENIED) {
         return_to_correct_state(CLOSE_TIME + 10, MACHINE_STATE_AP_CONNECTING);
         return;
     }
@@ -180,7 +194,7 @@ void Machine_state::set_state_ap_connecting() {
 }
 
 void Machine_state::set_state_server_problem() {
-    if (current_state == MACHINE_STATE_LOCK_OPEN || current_state == MACHINE_STATE_GUEST_CALL) {
+    if (current_state == MACHINE_STATE_LOCK_OPEN || current_state == MACHINE_STATE_GUEST_CALL || current_state == MACHINE_STATE_ACCESS_DENIED) {
         return_to_correct_state(CLOSE_TIME + 10, MACHINE_STATE_SERVER_PROBLEM);
         return;
     }
@@ -194,7 +208,7 @@ void Machine_state::set_state_server_problem() {
 }
 
 void Machine_state::set_state_server_connecting() {
-    if (current_state == MACHINE_STATE_LOCK_OPEN || current_state == MACHINE_STATE_GUEST_CALL) {
+    if (current_state == MACHINE_STATE_LOCK_OPEN || current_state == MACHINE_STATE_GUEST_CALL || current_state == MACHINE_STATE_ACCESS_DENIED) {
         return_to_correct_state(CLOSE_TIME + 10, MACHINE_STATE_SERVER_CONNECTING);
         return;
     }

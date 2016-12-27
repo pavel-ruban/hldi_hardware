@@ -6,6 +6,7 @@
 
 
 //to do: когда очищать очередь?
+//очередь в каком-то говне, индексы летят не пойми как.
 void Cache_handler::addEvent(uint8_t tag_id[4], uint8_t node, uint8_t status) {
 
     if (!tag_events.full) {
@@ -18,7 +19,6 @@ void Cache_handler::addEvent(uint8_t tag_id[4], uint8_t node, uint8_t status) {
         }
         tag_events.push_back(event);
     }
-
 }
 
 uint8_t Cache_handler::eventExist() {
@@ -27,7 +27,7 @@ uint8_t Cache_handler::eventExist() {
 
 tag_event Cache_handler::popEvent() {
     tag_event buf = tag_events.front();
-    //tag_events.pop_front();
+    tag_events.pop_front();
     return buf;
 }
 
@@ -70,6 +70,7 @@ uint8_t Cache_handler::checkCard(uint8_t tag_id[4]) {
 
 Cache_handler::Cache_handler(uint32_t live_time) {
     _live_time = live_time;
+   // tag_events.override_data = 1;
 }
 
 Cache_handler::~Cache_handler() {

@@ -69,6 +69,7 @@ public:
     uint8_t last_pcb_id;
     Cache_handler *_cache_handler;
     void save_creditals(char* ssid, char* password);
+    void sync_time();
     void send_request_to_connect();
     void send_access_request(uint8_t tag_id[], uint8_t rc522_number);
     void invoke_uart_handler();
@@ -91,6 +92,7 @@ public:
     uint8_t busy;
     uint8_t is_authorized;
     uint8_t message_sent;
+    uint8_t time_synced = 0;
     char* strstr(char *haystack, const char *needle);
     Machine_state *_machine_state;
     Uart *_uart;
@@ -98,9 +100,9 @@ public:
     ~Esp8266();
     uint8_t wifi_connected;
     uint32_t ip_address;
-    void send_request(char* request);
+    void send_request(char* request, uint8_t w8resp);
     void Delay(uint32_t nCount);
-    void send_event(uint8_t tag_id[], uint8_t rc522_number, uint32_t time);
+    void send_event(uint8_t tag_id[], uint8_t rc522_number, uint32_t time, uint8_t status);
     void connect_to_wifi_by_creditals(char* ssid, char* password);
     void connect_to_wifi();
 };

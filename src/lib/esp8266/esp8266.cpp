@@ -105,14 +105,17 @@
             return INTERNAL_RESPONSE;
         }
         //Open trigger.
-        if (strstr(command, "bo_test") && _esp->current_state == STATE_WAITING_RESPONSE) {
-         //   if (strstr(command, "200")) {
+        if (strstr(command, "status:") && _esp->current_state == STATE_WAITING_RESPONSE) {
+            if (strstr(command, "200")) {
+                _esp->_cache_handler->addEvent(_esp->last_tag_id, _esp->last_pcb_id, ACCESS_GRANTED);
                 _esp->_cache_handler->addCard(_esp->last_tag_id, ACCESS_GRANTED);
                 _esp->_machine_state->set_state_lock_open();
-         //   }
-//            if (strstr(command, "403")) {
-//                _esp->_cache_handler->addEvent(_esp->last_tag_id, _esp->last_pcb_id, ACCESS_DENIED);
-//            }
+            }
+            if (strstr(command, "403")) {
+                _esp->_cache_handler->addEvent(_esp->last_tag_id, _esp->last_pcb_id, ACCESS_DENIED);
+                _esp->_cache_handler->addCard(_esp->last_tag_id, ACCESS_DENIED);
+                _esp->_machine_state->set_state_access_denied();
+            }
             if (strstr(command, "200") && strstr(command, "cache dump"))
             {
                 //
@@ -262,7 +265,7 @@ void Esp8266::reset() {
     GPIO_SetBits(ESP8266_RESET_PORT,ESP8266_RESET_PIN);
 }
 
-void Esp8266::send_request(char* request) {
+void Esp8266::send_request(char* request, uint8_t w8resp) {
     message_sent = 0;
     clear_buffer();
     strcat(buffer_string, "AT+CIPSEND=");
@@ -276,11 +279,26 @@ void Esp8266::send_request(char* request) {
     strcat(buffer_string, "\n");
     strcat(buffer_string, request);
     _uart->send(buffer_string);
-    current_state = STATE_WAITING_RESPONSE;
+    if (w8resp)
+        current_state = STATE_WAITING_RESPONSE;
+    else
+        current_state = STATE_READY;
 
 }
 
-void Esp8266::send_event(uint8_t tag_id[], uint8_t rc522_number, uint32_t time) { //Untested, ctrlc-ctrlv
+void Esp8266::sync_time() {
+    if (time_synced)
+        return;
+    char buf[20] = {0};
+    strcat(buf, "time: ");
+    strcat(buf, int_to_string(ticks));
+    strcat(buf, "\n\n\n");
+    send_request(buf, 0);
+    time_synced = 1;
+
+}
+
+void Esp8266::send_event(uint8_t tag_id[], uint8_t rc522_number, uint32_t time, uint8_t status) { //Untested, ctrlc-ctrlv
     char test_buf[100];
     memset(test_buf, '\0', 100);
     if (is_connected_to_server && is_connected_to_wifi && current_state == STATE_READY) {
@@ -296,8 +314,10 @@ void Esp8266::send_event(uint8_t tag_id[], uint8_t rc522_number, uint32_t time) 
         strcat(test_buf, int_to_string(rc522_number));
         strcat(test_buf, "\ntime: ");
         strcat(test_buf, int_to_string(time));
+        strcat(test_buf, "\nstatus: ");
+        strcat(test_buf, int_to_string(status));
         strcat(test_buf, "\n\n\n");
-        send_request(test_buf);
+        send_request(test_buf, 0);
     }
 }
 
@@ -318,7 +338,7 @@ void Esp8266::send_access_request(uint8_t tag_id[], uint8_t rc522_number) {
             last_tag_id[il] = tag_id[il];
         }
         last_pcb_id = rc522_number;
-        send_request(test_buf);
+        send_request(test_buf, 1);
     }
 }
 

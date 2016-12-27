@@ -153,22 +153,36 @@ uint8_t somi_access_check(uint8_t tag_id[], uint8_t node_id[], uint8_t pcd_id)
 
 uint8_t somi_access_check_1(uint8_t tag_id[], uint8_t rc522_number)
 {
-    if (wifi.is_connected_to_server && wifi.is_connected_to_wifi) {
-        wifi.send_access_request(tag_id, rc522_number);
+    led_scheduler.invalidate(leds[LED_STATE_INDICATOR]);
+    leds[LED_STATE_INDICATOR]->set_color(LED_COLOR_BLUE);
+    leds[LED_STATE_INDICATOR]->set_blink(0,1000,1000);
+    leds[LED_STATE_INDICATOR]->on();
+
+    if (cache_handler.checkCard(tag_id) == NOT_CACHED) {
+        //machine_state.set_state_lock_open();
+        if (wifi.is_connected_to_server && wifi.is_connected_to_wifi) {
+            wifi.send_access_request(tag_id, rc522_number);
+
+        }
+       // return ACCESS_DENIED;
     }
+
 
     if (cache_handler.checkCard(tag_id) == ACCESS_GRANTED) {
         machine_state.set_state_lock_open();
-        if (!(wifi.is_connected_to_server && wifi.is_connected_to_wifi)) {
-            cache_handler.addEvent(tag_id, rc522_number, ACCESS_GRANTED);
-        }
+        cache_handler.addEvent(tag_id, rc522_number, ACCESS_GRANTED);
         return ACCESS_GRANTED;
     }
 
-    if (cache_handler.checkCard(tag_id) == ACCESS_DENIED || cache_handler.checkCard(tag_id) == NOT_CACHED) {
-        //machine_state.set_state_lock_open();
-        if (!(wifi.is_connected_to_server && wifi.is_connected_to_wifi)) {
+    if (cache_handler.checkCard(tag_id) == ACCESS_DENIED) {
+        machine_state.set_state_access_denied();
             cache_handler.addEvent(tag_id, rc522_number, ACCESS_DENIED);
+        return ACCESS_DENIED;
+    }
+
+    if (cache_handler.checkCard(tag_id) == NOT_CACHED) {
+        if (!(wifi.is_connected_to_server && wifi.is_connected_to_wifi)) {
+            cache_handler.addEvent(tag_id, rc522_number, NOT_CACHED);
         }
         return ACCESS_DENIED;
     }
@@ -301,13 +315,10 @@ extern "C" void SysTick_Handler(void)
     connection_scheduler.handle();
     handler_scheduler.handle();
     if (uart.last_char_timing != 0 && (ticks - uart.last_char_timing) >= 10 && uart.cyclo_buffer.end_index != uart.cyclo_buffer.start_index) {
-//            Event <Esp8266> handle_uart(ticks + 1, &wifi, &Esp8266::invoke_uart_handler);
-//            handler_scheduler.invalidate(&wifi);
-//            handler_scheduler.push(handle_uart);
             wifi.invoke_uart_handler();
             check_amount++;
     }
-    if (ticks % 200 == 0 && wifi.is_connected_to_server == 1){
+    if (ticks % 200 == 0 && wifi.is_connected_to_server == 1 && wifi.current_state == STATE_READY){
             if (cache_handler.eventExist()) {
                 int fhdfh = 0;
             }
@@ -558,8 +569,6 @@ main(void)
 
     interrupt_initialize();
 	__enable_irq();
-  //   ;
-
     rc522_pcd_select(RC522_PCD_1);
 //    __disable_irq();
 //    set_spi2_registers();
@@ -567,20 +576,6 @@ main(void)
     rc522_set_pins();
     mfrc522_init();
     rc522_irq_prepare();
-    //
-//    while (1) {
-//        //RC522_SPI_CH->DR = 0x7E;
-//        GPIO_ResetBits(RC522_GPIO, RC522_CS_PIN);
-//        spi_transmit(0x7E, RECEIVE_BYTE, SPIz);
-//        Delay(100);
-//        GPIO_SetBits(RC522_GPIO, RC522_CS_PIN);
-//        Delay(100);
-//    }
-    //mfrc522_init();
-
-//    __enable_irq();
-//    rc522_irq_prepare();
-    //spi_transmit(0x7E, SKIP_RECEIVE, RC522_SPI_CH);
 
     wifi.Delay(0);
     uart.cyclo_buffer.data();
@@ -597,13 +592,17 @@ main(void)
 
         if (wifi.is_connected_to_wifi && !wifi.is_connected_to_server && global_counter % 100 == 0) {
              connection_scheduler.invalidate(&wifi);
+             wifi.time_synced = 0;
              connect_to_server(10, "192.168.1.209", "2252");
         }
         if (wifi.is_connected_to_wifi && wifi.is_connected_to_server) {
             connection_scheduler.invalidate(&wifi);
+
+            wifi.sync_time();
             if (cache_handler.eventExist() && wifi.current_state == STATE_READY) {
+
                 tag_event buf = cache_handler.popEvent();
-                wifi.send_event(buf.tag_id, buf.node, buf.event_time);
+                wifi.send_event(buf.tag_id, buf.node, buf.event_time, buf.status);
             }
             if (machine_state.get_state() == MACHINE_STATE_SERVER_CONNECTING)
                 machine_state.set_state_idle();
