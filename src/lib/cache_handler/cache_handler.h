@@ -4,6 +4,7 @@
 
 #include <stdint.h>
 #include "queue.h"
+#include "config.h"
 
 //10 hours.
 #define EXPIRATION_TIME 36000000
@@ -12,13 +13,19 @@
 
 #define ACCESS_DENIED 0
 #define ACCESS_GRANTED 1
+#define CURRENTLY_UNKNOWN 4
+
 #define NOT_CACHED 2
+#define CACHED 3
+#define IN_PROGRESS 5
 
 typedef struct {
     uint8_t tag_id[4];
     uint32_t event_time;
     uint8_t node;
-    uint8_t status;
+    uint8_t access_result;
+    uint8_t cache_status;
+    uint8_t needs_validation;
 } tag_event;
 
 
@@ -30,10 +37,11 @@ class Cache_handler {
 public:
 
     uint8_t eventExist();
-    tag_event popEvent();
+    tag_event popOldestEvent();
     Cache_handler(uint32_t live_time);
     ~Cache_handler();
-    void addEvent(uint8_t tag_id[4], uint8_t node, uint8_t status);
+    void addEvent(uint8_t tag_id[4], uint8_t node, uint8_t access_result, uint8_t cache_status, uint32_t time, uint8_t needs_validation);
+    void updateEvent(uint8_t tag_id[4], uint8_t node, uint8_t access_result, uint32_t time, uint8_t needs_validation);
     uint8_t checkCard(uint8_t tag_id[4]);
     void addCard(uint8_t tag_id[4], uint8_t status);
 private:
@@ -47,7 +55,8 @@ private:
 
 
     card_status card_cache[CARD_CACHE_SIZE];
+    tag_event event_cache[EVENT_CACHE_SIZE] = {0};
     //Queue<tag_cache_entry, 100> tag_cache;
 
-    Queue<tag_event, EVENT_CACHE_SIZE> tag_events;
+    //Queue<tag_event, EVENT_CACHE_SIZE> tag_events;
 };

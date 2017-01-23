@@ -22,8 +22,7 @@
 #define STATE_WAITING_RESPONSE 5
 #define STATE_RESETTING 4
 #define STATE_EVENTS_DUMPING 6
-#define AP_CONNECT_TIMEOUT 17000
-#define SERVER_CONNECT_TIMEOUT 10000
+
 #define TO_SERVER_PROBLEM 20 * 1000
 
 //Esp8266
@@ -31,7 +30,7 @@
 //Esp8266 response types
 #define INTERNAL_RESPONSE 1
 #define EXTERNAL_RESPONSE 0
-#define COMMAND_SIZE 100
+#define COMMAND_SIZE 200
 
 class Esp8266;
 class Machine_state;
@@ -63,6 +62,7 @@ private:
 
     char buf[10] = {0};
 public:
+    uint8_t awaiting_system_answer = 0;
     uint32_t reset_time = 0;
     uint8_t attempts_done = 0;
     uint8_t last_tag_id[4];
@@ -71,7 +71,7 @@ public:
     void save_creditals(char* ssid, char* password);
     void sync_time();
     void send_request_to_connect();
-    void send_access_request(uint8_t tag_id[], uint8_t rc522_number);
+    void send_access_request(uint8_t tag_id[], uint8_t rc522_number, uint32_t time);
     void invoke_uart_handler();
     uint8_t disconnect_from_server();
     uint8_t set_server_timeout(uint8_t seconds);
@@ -93,7 +93,7 @@ public:
     uint8_t is_authorized;
     uint8_t message_sent;
     uint8_t time_synced = 0;
-    char* strstr(char *haystack, const char *needle);
+    char* strstr_b(char *haystack, const char *needle, uint16_t size);
     Machine_state *_machine_state;
     Uart *_uart;
     Esp8266(Uart *uart, Machine_state *machine_state, Cache_handler *cache_handler);
@@ -102,7 +102,7 @@ public:
     uint32_t ip_address;
     void send_request(char* request, uint8_t w8resp);
     void Delay(uint32_t nCount);
-    void send_event(uint8_t tag_id[], uint8_t rc522_number, uint32_t time, uint8_t status);
+    void send_event(uint8_t tag_id[], uint8_t rc522_number, uint32_t time, uint8_t access_result, uint8_t cache_status);
     void connect_to_wifi_by_creditals(char* ssid, char* password);
     void connect_to_wifi();
 };

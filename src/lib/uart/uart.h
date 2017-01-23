@@ -21,7 +21,9 @@ public:
     uint8_t current_uart_number;
     void send_byte(uint8_t data);
     void send(char *string);
+    uint8_t prev_byte;
     uint8_t last_byte;
+    uint16_t crlf_count = 0;
     char last_string[RECV_STRING_MAX_SIZE];
     uint8_t last_string_empty;
     uint16_t last_char;

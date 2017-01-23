@@ -14,17 +14,27 @@
 
     }
 
+//    uint16_t CmdHandler::find_first_crlf() {
+//        uint16
+//    }
+//
+//    uint16_t CmdHandler::find_last_crlf() {
+//
+//    }
+
     uint8_t CmdHandler::parse_command() {
         // Resetting and client mode engaging block.
         if (_esp->current_state == STATE_RESETTING) {
-            if (strstr(command, "ready")) {
+            if (_esp->strstr_b(command, "ready", COMMAND_SIZE)) {
+                _esp->awaiting_system_answer = 0;
                 _esp->change_mode();
                 return INTERNAL_RESPONSE;
             }
         }
 
         if (_esp->current_state == STATE_WAITING_MODE_CHANGE) {
-            if (strstr(command, "OK")) {
+            if (_esp->strstr_b(command, "OK", COMMAND_SIZE)) {
+                _esp->awaiting_system_answer = 0;
                 _esp->is_ready_to_connect_to_hotspot = 1;
                 if (_esp->connect_after_reset) {
                     _esp->connect_after_reset = 0;
@@ -38,7 +48,9 @@
         }
         // HS/server connections and error handlers
         if (_esp->current_state == STATE_WAITING_WIFI_CONNECT) {
-            if (strstr(command, "OK")) {
+            if (_esp->strstr_b(command, "OK", COMMAND_SIZE)) {
+                //_uart->crlf_count = 0;
+                _esp->awaiting_system_answer = 0;
                 _esp->is_connected_to_wifi = 1;
                 _esp->current_state = STATE_READY;
                 _esp->busy = 0;
@@ -47,7 +59,8 @@
         }
 
         if (_esp->current_state == STATE_WAITING_WIFI_CONNECT) { // Only wrong creditals tested, others PROBABLY same, but dunno.
-            if (strstr(command, "FAIL")) {
+            if (_esp->strstr_b(command, "FAIL", COMMAND_SIZE)) {
+                _esp->awaiting_system_answer = 0;
                 _esp->is_connected_to_wifi = 0;
                 _esp->current_state = STATE_READY;
                 _esp->busy = 0;
@@ -56,7 +69,8 @@
         }
 
         if (_esp->current_state == STATE_WAITING_IP_CONNECT) {
-            if (strstr(command, "OK")) {
+            if (_esp->strstr_b(command, "OK", COMMAND_SIZE)) {
+                _esp->awaiting_system_answer = 0;
                 _esp->attempts_done = 0;
                 _esp->is_connected_to_server = 1;
                 _esp->current_state = STATE_READY;
@@ -66,7 +80,8 @@
         }
 
         if (_esp->current_state == STATE_WAITING_IP_CONNECT) { //Only dns fail tested, others PROBABLY same, but dunno.
-            if (strstr(command, "ERROR") || strstr(command, "CLOSED")) {
+            if (_esp->strstr_b(command, "ERROR", COMMAND_SIZE) || _esp->strstr_b(command, "CLOSED", COMMAND_SIZE)) {
+                _esp->awaiting_system_answer = 0;
                 _esp->is_connected_to_server = 0;
                 _esp->current_state = STATE_READY;
                 _esp->busy = 0;
@@ -75,48 +90,48 @@
         }
         // Status and error handling.
         if (_esp->is_connected_to_wifi) {
-            if (strstr(command, "CLOSED")) {
+            if (_esp->strstr_b(command, "CLOSED", COMMAND_SIZE)) {
                 _esp->is_connected_to_server = 0;
                 return INTERNAL_RESPONSE;
             }
         }
-        if (strstr(command, "STATUS:3")) {
+        if (_esp->strstr_b(command, "STATUS:3", COMMAND_SIZE)) {
             _esp->is_connected_to_wifi = 1;
             _esp->is_connected_to_server = 1;
             _esp->busy = 0;
             return INTERNAL_RESPONSE;
         }
-        if (strstr(command, "STATUS:5")) {
+        if (_esp->strstr_b(command, "STATUS:5", COMMAND_SIZE)) {
             _esp->is_connected_to_wifi = 1;
             _esp->is_connected_to_server = 0;
             _esp->busy = 0;
             return INTERNAL_RESPONSE;
         }
-        if (strstr(command, "STATUS:4")) {
+        if (_esp->strstr_b(command, "STATUS:4", COMMAND_SIZE)) {
             _esp->is_connected_to_wifi = 0;
             _esp->is_connected_to_server = 0;
             _esp->busy = 0;
             return INTERNAL_RESPONSE;
         }
 
-        if (strstr(command, "status: 0") && _esp->current_state == STATE_WAITING_RESPONSE) {
+        if (_esp->strstr_b(command, "status: 0", COMMAND_SIZE) && _esp->current_state == STATE_WAITING_RESPONSE) {
             _esp->_machine_state->set_state_other_network_problem();
             _esp->current_state = STATE_READY;
             return INTERNAL_RESPONSE;
         }
         //Open trigger.
-        if (strstr(command, "status:") && _esp->current_state == STATE_WAITING_RESPONSE) {
-            if (strstr(command, "200")) {
-                _esp->_cache_handler->addEvent(_esp->last_tag_id, _esp->last_pcb_id, ACCESS_GRANTED);
+        if (_esp->strstr_b(command, "status:", COMMAND_SIZE) && _esp->current_state == STATE_WAITING_RESPONSE) {
+            if (_esp->strstr_b(command, "200", COMMAND_SIZE)) {
+                _esp->_cache_handler->addEvent(_esp->last_tag_id, _esp->last_pcb_id, ACCESS_GRANTED, NOT_CACHED, ticks, 0);
                 _esp->_cache_handler->addCard(_esp->last_tag_id, ACCESS_GRANTED);
                 _esp->_machine_state->set_state_lock_open();
             }
-            if (strstr(command, "403")) {
-                _esp->_cache_handler->addEvent(_esp->last_tag_id, _esp->last_pcb_id, ACCESS_DENIED);
+            if (_esp->strstr_b(command, "403", COMMAND_SIZE)) {
+                _esp->_cache_handler->addEvent(_esp->last_tag_id, _esp->last_pcb_id, ACCESS_DENIED, NOT_CACHED, ticks, 0);
                 _esp->_cache_handler->addCard(_esp->last_tag_id, ACCESS_DENIED);
                 _esp->_machine_state->set_state_access_denied();
             }
-            if (strstr(command, "200") && strstr(command, "cache dump"))
+            if (_esp->strstr_b(command, "200", COMMAND_SIZE) && _esp->strstr_b(command, "cache dump", COMMAND_SIZE))
             {
                 //
             }
@@ -125,7 +140,7 @@
         }
 
 
-        if (strstr(command, "biba") && _esp->current_state == STATE_WAITING_RESPONSE) {
+        if (_esp->strstr_b(command, "biba", COMMAND_SIZE) && _esp->current_state == STATE_WAITING_RESPONSE) {
             // _esp->_machine_state->set_state_lock_open();
             _esp->current_state = STATE_READY;
             return INTERNAL_RESPONSE;
@@ -158,6 +173,7 @@
             }
             _uart->cyclo_buffer.start_index = it.index;
             _uart->last_string_ready = 0;
+            _uart->crlf_count = 0;
 //            if (command[0]) {
 //                commandpos[test_count][0] = buf_start;
 //                commandpos[test_count][1] = buf_end;
@@ -203,14 +219,15 @@ void Esp8266::Delay(uint32_t nCount)
 }
 
 
-char* Esp8266::strstr(char *haystack, const char *needle) {
+
+char* Esp8266::strstr_b(char *haystack, const char *needle, uint16_t size) {
     if (haystack == NULL || needle == NULL) {
         return NULL;
     }
-    for ( ; *haystack; haystack++) {
+    for (uint16_t passed = 0 ; passed < size; passed++, haystack++) {
         const char *h, *n;
         for (h = haystack, n = needle; *h && *n && (*h == *n); ++h, ++n) {
-        }
+        } //
         if (*n == '\0') {
             return haystack;
         }
@@ -256,6 +273,7 @@ void Esp8266::clear_buffer() {
 
 void Esp8266::reset() {
     _uart->cyclo_buffer.clear();
+    awaiting_system_answer = 1;
     busy = 1;
     attempts_done = 0;
     reset_time = 0;
@@ -298,7 +316,7 @@ void Esp8266::sync_time() {
 
 }
 
-void Esp8266::send_event(uint8_t tag_id[], uint8_t rc522_number, uint32_t time, uint8_t status) { //Untested, ctrlc-ctrlv
+void Esp8266::send_event(uint8_t tag_id[], uint8_t rc522_number, uint32_t time, uint8_t access_result, uint8_t cache_status) { //Untested, ctrlc-ctrlv
     char test_buf[100];
     memset(test_buf, '\0', 100);
     if (is_connected_to_server && is_connected_to_wifi && current_state == STATE_READY) {
@@ -314,14 +332,16 @@ void Esp8266::send_event(uint8_t tag_id[], uint8_t rc522_number, uint32_t time, 
         strcat(test_buf, int_to_string(rc522_number));
         strcat(test_buf, "\ntime: ");
         strcat(test_buf, int_to_string(time));
-        strcat(test_buf, "\nstatus: ");
-        strcat(test_buf, int_to_string(status));
+        strcat(test_buf, "\naccess_result: ");
+        strcat(test_buf, int_to_string(access_result));
+        strcat(test_buf, "\ncache_status: ");
+        strcat(test_buf, int_to_string(cache_status));
         strcat(test_buf, "\n\n\n");
         send_request(test_buf, 0);
     }
 }
 
-void Esp8266::send_access_request(uint8_t tag_id[], uint8_t rc522_number) {
+void Esp8266::send_access_request(uint8_t tag_id[], uint8_t rc522_number, uint32_t time) {
     char test_buf[100];
     memset(test_buf, '\0', 100);
     if (is_connected_to_server && is_connected_to_wifi) {
@@ -345,7 +365,9 @@ void Esp8266::send_access_request(uint8_t tag_id[], uint8_t rc522_number) {
 uint8_t Esp8266::connect_to_ip(char* ip, char* port) {
 
     attempts_done++;
+
     if (current_state == STATE_READY) {
+        awaiting_system_answer = 1;
         current_state = STATE_WAITING_IP_CONNECT;
         busy = 1;
         is_connected_to_server = 0;
@@ -382,12 +404,14 @@ uint8_t Esp8266::disconnect_from_server() {
 
 uint8_t Esp8266::refresh_status() {
     busy = 1;
+    awaiting_system_answer = 1;
     //if (current_state == STATE_READY) {
         _uart->send("AT+CIPSTATUS\r\n");
    // } else return current_state;
 }
 
 void Esp8266::send_request_to_connect() {
+    awaiting_system_answer = 1;
     current_state = STATE_WAITING_WIFI_CONNECT;
     clear_buffer();
     strcat(buffer_string, "AT+CWJAP=\"");
@@ -399,6 +423,7 @@ void Esp8266::send_request_to_connect() {
 }
 
 void Esp8266::change_mode() {
+    awaiting_system_answer = 1;
     current_state = STATE_WAITING_MODE_CHANGE;
     _uart->send("AT+CWMODE=1\r\n");
 
