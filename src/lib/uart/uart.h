@@ -8,6 +8,7 @@
 #include <queue.h>
 
 #define RECV_STRING_MAX_SIZE 200
+#define USART_RING_BUFFER_SIZE 300
 
 #define UART1 1
 #define UART2 2
@@ -15,7 +16,7 @@
 
 class Uart {
 public:
-    Queue<uint8_t, 200> cyclo_buffer;
+    Queue<uint8_t, USART_RING_BUFFER_SIZE> cyclo_buffer;
     Uart(uint8_t uart_number, uint32_t speed);
     ~Uart();
     uint8_t current_uart_number;

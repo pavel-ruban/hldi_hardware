@@ -59,7 +59,8 @@ int timerValue = 0;
 
 Scheduler<Event<led>, 100> led_scheduler;
 Cache_handler cache_handler(EXPIRATION_TIME);
-uint32_t check_amount =0;
+uint32_t check_amount = 0;
+uint64_t tim4_counter = 0;
 
 Scheduler<Event<Machine_state>, 100> state_scheduler;
 Scheduler<Event<Esp8266>, 5> connection_scheduler;
@@ -69,7 +70,6 @@ uint8_t test_flag = 0;
 
 
 Esp8266 wifi(&uart, &machine_state, &cache_handler);
-Scheduler<Event<Esp8266>, 10> handler_scheduler;
 /* Private function prototypes -----------------------------------------------*/
 void RCC_Configuration(void);
 void NVIC_Configuration(void);
@@ -161,10 +161,10 @@ uint8_t somi_access_check_1(uint8_t tag_id[], uint8_t rc522_number)
     if (cache_handler.checkCard(tag_id) == NOT_CACHED) {
         //machine_state.set_state_lock_open();
         if (wifi.is_connected_to_server && wifi.is_connected_to_wifi) {
-            cache_handler.addCard(tag_id, IN_PROGRESS);
+            //cache_handler.addCard(tag_id, IN_PROGRESS);
             //Used for saving current time in sync usage. Between adding event and requesting some interrupts could be invoked.
             uint32_t trigger_time = ticks;
-            cache_handler.addEvent(tag_id, rc522_number, CURRENTLY_UNKNOWN, IN_PROGRESS, trigger_time, 0);
+            cache_handler.addEvent(tag_id, rc522_number, CURRENTLY_UNKNOWN, NOT_CACHED, trigger_time, 0);
             wifi.send_access_request(tag_id, rc522_number, trigger_time);
 
             Event<Machine_state> deny_access(state_scheduler.get_current_time() + SERVER_CONNECT_TIMEOUT, &machine_state, &Machine_state::set_state_access_denied);
@@ -285,13 +285,24 @@ extern "C" void TIM3_IRQHandler()
 
 extern "C" void TIM4_IRQHandler()
 {
+    ++tim4_counter;
     TIM_ClearITPendingBit(TIM4, TIM_IT_Update);
-    if (uart.last_char_timing != 0 && (ticks - uart.last_char_timing) >= 8 && uart.cyclo_buffer.end_index != uart.cyclo_buffer.start_index ) {
+    if (uart.last_char_timing != 0 && (ticks - uart.last_char_timing) >= 4 && uart.cyclo_buffer.end_index != uart.cyclo_buffer.start_index ) {
         wifi.invoke_uart_handler();
         check_amount++;
     }
-}
 
+    if (tim4_counter % 32 == 0) {
+        cache_handler.forceInvalidateStuckEntries();
+        if (wifi.current_state == STATE_READY && (ticks - uart.last_char_timing) >= 4 && wifi.is_connected_to_server) {
+            if (cache_handler.eventExist() && !cache_handler.currentlyProcessing()) {
+                tag_event buf_event = cache_handler.popOldestEvent();
+                //wifi.send_access_request(buf_event.tag_id, buf_event.node, buf_event.event_time);
+                wifi.send_event(buf_event.tag_id, buf_event.node, buf_event.event_time, buf_event.access_result, buf_event.cache_status);
+            }
+        }
+    }
+}
 
 
 extern "C" void EXTI2_IRQHandler()
@@ -345,7 +356,6 @@ extern "C" void SysTick_Handler(void)
     led_scheduler.handle();
     state_scheduler.handle();
     connection_scheduler.handle();
-    handler_scheduler.handle();
     //&& wifi._uart->crlf_count >= 2
 
     if (ticks % 200 == 0 && wifi.is_connected_to_server == 1 && wifi.current_state == STATE_READY){
@@ -520,6 +530,25 @@ extern "C" void __reset_hardware()
 	reset_asm();
 }
 
+void GetClocks() {
+    RCC_ClocksTypeDef clocks;
+    RCC_GetClocksFreq(&clocks);
+
+    uint32_t APB1_TIMCLK_Frequency;
+    uint32_t APB2_TIMCLK_Frequency;
+
+    if (clocks.HCLK_Frequency == clocks.PCLK1_Frequency)
+        APB1_TIMCLK_Frequency = clocks.PCLK1_Frequency;
+    else
+        APB1_TIMCLK_Frequency = 2 * clocks.PCLK1_Frequency;
+
+    if (clocks.HCLK_Frequency == clocks.PCLK2_Frequency)
+        APB2_TIMCLK_Frequency = clocks.PCLK2_Frequency;
+    else
+        APB2_TIMCLK_Frequency = 2 * clocks.PCLK2_Frequency;
+    //APB1, APB2 - 72MHz;
+}
+
 void InitializeTimer()
 {
     RCC_ClocksTypeDef RCC_Clocks;
@@ -538,14 +567,15 @@ void InitializeTimer()
 
 //20 msec?
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
-    timerInitStructure.TIM_Prescaler = 42000-1;
+    timerInitStructure.TIM_Prescaler = 720000-1;
     timerInitStructure.TIM_CounterMode = TIM_CounterMode_Up;
-    timerInitStructure.TIM_Period = 100;
+    timerInitStructure.TIM_Period = 10;
     timerInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
     timerInitStructure.TIM_RepetitionCounter = 0;
     TIM_TimeBaseInit(TIM4, &timerInitStructure);
     TIM_Cmd(TIM4, ENABLE);
     TIM_ITConfig(TIM4, TIM_IT_Update, ENABLE);
+
 }
 
 void connect_to_wifi (uint16_t connection_timeout, char* ssid, char* password) {
@@ -571,7 +601,7 @@ void connect_to_server (uint16_t connection_timeout, char* ip, char* port) {
         return;
     }
     if (wifi.attempts_done == 255 && wifi.reset_time > ticks) {
-        connect_to_wifi(AP_CONNECT_TIMEOUT, "i20.pub", "i20biz2015");
+        connect_to_wifi(AP_CONNECT_TIMEOUT, "i20.biz", "BetFua2Feg");
     }
     if (machine_state.get_state() != MACHINE_STATE_SERVER_CONNECTING)
         machine_state.set_state_server_connecting();
@@ -626,14 +656,13 @@ main(void)
     Delay(5000000);
     while (1)
 	{
-        int timerValue = TIM_GetCounter(TIM2);
         global_counter++;
         if (!wifi.is_connected_to_wifi && connection_scheduler.size() <= 1) {
             Event<Esp8266> try2connect(connection_scheduler.get_current_time() + AP_CONNECT_TIMEOUT, &wifi, &Esp8266::connect_to_wifi);
             connection_scheduler.push(try2connect);
         }
 
-        if (wifi.is_connected_to_wifi && !wifi.is_connected_to_server && global_counter % 100 == 0) {
+        if (wifi.is_connected_to_wifi && !wifi.is_connected_to_server && ticks % 2000 == 0) {
              connection_scheduler.invalidate(&wifi);
              wifi.time_synced = 0;
              connect_to_server(10, "192.168.1.113", "3232");
@@ -642,10 +671,10 @@ main(void)
             connection_scheduler.invalidate(&wifi);
 
             wifi.sync_time();
-            if (cache_handler.eventExist() && wifi.current_state == STATE_READY) {
+            if (cache_handler.eventExist() && wifi.current_state == STATE_READY && ticks % SERVER_CONNECT_TIMEOUT == 10000) {
 
-                tag_event buf = cache_handler.popOldestEvent();
-                wifi.send_event(buf.tag_id, buf.node, buf.event_time, buf.access_result, buf.cache_status);
+                //tag_event buf = cache_handler.popOldestEvent();
+                //wifi.send_event(buf.tag_id, buf.node, buf.event_time, buf.access_result, buf.cache_status);
             }
             if (machine_state.get_state() == MACHINE_STATE_SERVER_CONNECTING)
                 machine_state.set_state_idle();
@@ -653,7 +682,7 @@ main(void)
 
         }
         wifi.Delay(0);
-        Delay(20000);
+        Delay(1000);
 	}
 }
 
@@ -685,8 +714,8 @@ void interrupt_initialize()
 	EXTI_Init(&EXTI_InitStructure);
 
     NVIC_InitStructure.NVIC_IRQChannel = EXTI0_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x03;
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x03;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x0B;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x0B;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 
@@ -698,8 +727,8 @@ void interrupt_initialize()
     EXTI_Init(&EXTI_InitStructure);
 
     NVIC_InitStructure.NVIC_IRQChannel = EXTI1_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x04;
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x04;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x0A;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x0A;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 //

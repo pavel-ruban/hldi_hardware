@@ -15,6 +15,7 @@
 #define ACCESS_GRANTED 1
 #define CURRENTLY_UNKNOWN 4
 
+
 #define NOT_CACHED 2
 #define CACHED 3
 #define IN_PROGRESS 5
@@ -44,7 +45,12 @@ public:
     void updateEvent(uint8_t tag_id[4], uint8_t node, uint8_t access_result, uint32_t time, uint8_t needs_validation);
     uint8_t checkCard(uint8_t tag_id[4]);
     void addCard(uint8_t tag_id[4], uint8_t status);
+    void deleteEvent(uint8_t tag_id[4], uint8_t node,uint32_t time);
+    void forceInvalidateStuckEntries();
+    uint8_t currentlyProcessing();
 private:
+    uint32_t time_of_proc_start = 0;
+    uint16_t current_processing = EVENT_CACHE_SIZE + 1;
     uint32_t _live_time;
     typedef struct {
         uint8_t tag_id[4];

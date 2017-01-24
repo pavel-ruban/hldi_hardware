@@ -5,6 +5,20 @@
 #include "cache_handler.h"
 
 
+void Cache_handler::forceInvalidateStuckEntries() {
+    if (currentlyProcessing() && time_of_proc_start + SERVER_CONNECT_TIMEOUT < ticks) {
+        current_processing = EVENT_CACHE_SIZE + 1;
+    }
+    for (uint16_t i = 0; i < EVENT_CACHE_SIZE; ++i) {
+        if (event_cache[i].access_result == CURRENTLY_UNKNOWN) {
+            if (event_cache[i].event_time + SERVER_CONNECT_TIMEOUT < ticks) {
+                event_cache[i].needs_validation = 1;
+                event_cache[i].access_result = DEFAULT_NOT_CACHED_BEHAVIOUR;
+            }
+        }
+    }
+}
+
 //to do: когда очищать очередь?
 //очередь в каком-то говне, индексы летят не пойми как.
 void Cache_handler::addEvent(uint8_t tag_id[4], uint8_t node, uint8_t access_result, uint8_t cache_status, uint32_t time, uint8_t needs_validation) {
@@ -22,7 +36,7 @@ void Cache_handler::addEvent(uint8_t tag_id[4], uint8_t node, uint8_t access_res
             break;
         }
 
-        if (event_cache[i].event_time < ticks + _live_time)
+        if (event_cache[i].event_time + _live_time < ticks)
         {
             index = i;
             break;
@@ -38,7 +52,7 @@ void Cache_handler::addEvent(uint8_t tag_id[4], uint8_t node, uint8_t access_res
     event_cache[index].node = node;
     event_cache[index].needs_validation = needs_validation;
     for (uint8_t i1 = 0; i1 < 4; ++i1) {
-        event_cache[i1].tag_id[i1] = tag_id[i1];
+        event_cache[index].tag_id[i1] = tag_id[i1];
     }
 //    if (!tag_events.full) {
 //        tag_event event;
@@ -59,7 +73,28 @@ void Cache_handler::updateEvent(uint8_t tag_id[4], uint8_t node, uint8_t access_
             && event_cache[i].tag_id[4]  == tag_id[4] && event_cache[i].node == node && event_cache[i].event_time == time) {
             event_cache[i].access_result = access_result;
             event_cache[i].needs_validation = needs_validation;
-            event_cache[i].cache_status = NOT_CACHED;
+            //event_cache[i].cache_status = NOT_CACHED;
+            return;
+        }
+    }
+}
+
+void Cache_handler::deleteEvent(uint8_t tag_id[4], uint8_t node, uint32_t time) {
+    for(uint16_t i = 0; i < EVENT_CACHE_SIZE; i++) {
+        if (event_cache[i].tag_id[1]  == tag_id[1] && event_cache[i].tag_id[2]  == tag_id[2] && event_cache[i].tag_id[3]  == tag_id[3]
+            && event_cache[i].tag_id[0]  == tag_id[0] && event_cache[i].node == node && event_cache[i].event_time == time) {
+            event_cache[i].access_result = 0;
+            event_cache[i].needs_validation = 0;
+            for (uint8_t il = 0; il < 4; ++il) {
+                event_cache[i].tag_id[il] = 0;
+            }
+            event_cache[i].cache_status = 0;
+            event_cache[i].node = 0;
+            event_cache[i].event_time = 0;
+            if (current_processing == i) {
+                current_processing = EVENT_CACHE_SIZE + 1;
+            }
+            return;
         }
     }
 }
@@ -74,6 +109,10 @@ uint8_t Cache_handler::eventExist() {
     return false;
 }
 
+uint8_t Cache_handler::currentlyProcessing() {
+    return (current_processing != EVENT_CACHE_SIZE + 1);
+}
+
 tag_event Cache_handler::popOldestEvent() {
     uint32_t most_time = 0;
     uint32_t most_time_index = EVENT_CACHE_SIZE;
@@ -83,6 +122,8 @@ tag_event Cache_handler::popOldestEvent() {
             most_time_index = i;
         }
     }
+    time_of_proc_start = ticks;
+    current_processing = most_time_index;
     return event_cache[most_time_index];
 }
 

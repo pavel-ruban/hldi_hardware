@@ -1,5 +1,16 @@
 #include "esp8266.h"
 
+int strtoint( const char * str )
+{
+    int val = 0;
+    while( *str ) {
+        val = val*10 + (*str++ - '0');
+    }
+    return val;
+}
+
+
+
     CmdHandler::CmdHandler() {
     }
     void CmdHandler::bind_uart(Uart *uart) {
@@ -21,6 +32,34 @@
 //    uint16_t CmdHandler::find_last_crlf() {
 //
 //    }
+    uint8_t CmdHandler::parse_param(char* param, char* retval) {
+        char* start_index = _esp->strstr_b(command, param, COMMAND_SIZE);
+        if (!start_index)
+            return 0;
+    while(*start_index != ':') {
+        start_index++;
+    }
+    start_index++;
+    start_index++;
+        while(*start_index != '\n') {
+            *retval = *start_index;
+            retval++;
+            start_index++;
+        }
+    }
+
+    uint8_t CmdHandler::parse_uid(char* uid_string, uint8_t* uid_bytes) {
+        char bytes[4];
+        for (uint8_t i = 0; i < 4; ++i) {
+            while (*uid_string && *uid_string != ':') {
+                uid_bytes[i] *= 10;
+                uid_bytes[i] += (*uid_string - '0');
+                uid_string++;
+            }
+            uid_string++;
+        }
+
+    }
 
     uint8_t CmdHandler::parse_command() {
         // Resetting and client mode engaging block.
@@ -120,20 +159,54 @@
             return INTERNAL_RESPONSE;
         }
         //Open trigger.
-        if (_esp->strstr_b(command, "status:", COMMAND_SIZE) && _esp->current_state == STATE_WAITING_RESPONSE) {
-            if (_esp->strstr_b(command, "200", COMMAND_SIZE)) {
-                _esp->_cache_handler->addEvent(_esp->last_tag_id, _esp->last_pcb_id, ACCESS_GRANTED, NOT_CACHED, ticks, 0);
-                _esp->_cache_handler->addCard(_esp->last_tag_id, ACCESS_GRANTED);
-                _esp->_machine_state->set_state_lock_open();
+        if (_esp->strstr_b(command, "bo_test", COMMAND_SIZE) && _esp->current_state == STATE_WAITING_RESPONSE) {
+            if (_esp->strstr_b(command, "access", COMMAND_SIZE)) {
+                uint8_t int_access_result = 3;
+                char time[13] = {0};
+                parse_param("time", time);
+                char uid[17] = {0};
+                parse_param("uid", uid);
+                uint8_t uid_bytes[4] = {0};
+                parse_uid(uid, uid_bytes);
+                char pcd_number[2] = {0};
+                parse_param("pcd number", pcd_number);
+                char access_result[3] = {0};
+                parse_param("status", access_result);
+
+                if (access_result[0] == '2' && access_result[1] == '0' && access_result[2] == '0') {
+                    int_access_result = ACCESS_GRANTED;
+                } else if (access_result[0] == '4' && access_result[1] == '0' && access_result[2] == '3') {
+                    int_access_result = ACCESS_DENIED;
+                } else
+                    int_access_result = DEFAULT_NOT_CACHED_BEHAVIOUR;
+
+                _esp->_cache_handler->deleteEvent(uid_bytes, strtoint(pcd_number), strtoint(time));
+                _esp->_cache_handler->addCard(_esp->last_tag_id, int_access_result);
+                if (int_access_result == ACCESS_GRANTED)
+                    _esp->_machine_state->set_state_lock_open();
+                else
+                    _esp->_machine_state->set_state_access_denied();
             }
-            if (_esp->strstr_b(command, "403", COMMAND_SIZE)) {
-                _esp->_cache_handler->addEvent(_esp->last_tag_id, _esp->last_pcb_id, ACCESS_DENIED, NOT_CACHED, ticks, 0);
-                _esp->_cache_handler->addCard(_esp->last_tag_id, ACCESS_DENIED);
-                _esp->_machine_state->set_state_access_denied();
-            }
-            if (_esp->strstr_b(command, "200", COMMAND_SIZE) && _esp->strstr_b(command, "cache dump", COMMAND_SIZE))
-            {
-                //
+
+            if (_esp->strstr_b(command, "dump", COMMAND_SIZE)) {
+                uint8_t int_access_result = 3;
+                char time[13] = {0};
+                parse_param("time", time);
+                char uid[17] = {0};
+                parse_param("uid", uid);
+                uint8_t uid_bytes[4] = {0};
+                parse_uid(uid, uid_bytes);
+                char pcd_number[2] = {0};
+                parse_param("pcd number", pcd_number);
+                char access_result[3] = {0};
+                parse_param("status", access_result);
+
+                if (access_result[0] == '2' && access_result[1] == '0' && access_result[2] == '0') {
+                    _esp->_cache_handler->deleteEvent(uid_bytes, strtoint(pcd_number), strtoint(time));
+                    //_esp->_cache_handler->addCard(_esp->last_tag_id, int_access_result);
+                }
+
+
             }
             _esp->current_state = STATE_READY;
             return INTERNAL_RESPONSE;
@@ -159,7 +232,7 @@
         uint16_t iter = 0;
         //_uart->cyclo_buffer.back() == '\n'
         if (true) {
-            typename Queue<uint8_t, 200>::iterator it = _uart->cyclo_buffer.begin();
+            typename Queue<uint8_t, USART_RING_BUFFER_SIZE>::iterator it = _uart->cyclo_buffer.begin();
             int buf_start = _uart->cyclo_buffer.start_index;
             int buf_end = _uart->cyclo_buffer.end_index;
             while (it.index != _uart->cyclo_buffer.end_index) {
@@ -197,8 +270,6 @@ Esp8266::Esp8266(Uart *uart, Machine_state *machine_state, Cache_handler *cache_
     is_connected_to_wifi = 0;
     is_connected_to_server = 0;
     is_ready_to_connect_to_hotspot = 0;
-    message_sent = 0;
-    is_authorized = 0;
     busy = 0;
     hndl.bind_uart(uart);
     hndl.bind_esp(this);
@@ -284,7 +355,6 @@ void Esp8266::reset() {
 }
 
 void Esp8266::send_request(char* request, uint8_t w8resp) {
-    message_sent = 0;
     clear_buffer();
     strcat(buffer_string, "AT+CIPSEND=");
     strcat(buffer_string, int_to_string(strlen(request) + strlen(NODE_ID) + 10));
@@ -317,8 +387,8 @@ void Esp8266::sync_time() {
 }
 
 void Esp8266::send_event(uint8_t tag_id[], uint8_t rc522_number, uint32_t time, uint8_t access_result, uint8_t cache_status) { //Untested, ctrlc-ctrlv
-    char test_buf[100];
-    memset(test_buf, '\0', 100);
+    char test_buf[150];
+    memset(test_buf, '\0', 150);
     if (is_connected_to_server && is_connected_to_wifi && current_state == STATE_READY) {
         strcat(test_buf,"action: event dump\nuid: ");
         strcat(test_buf, int_to_string(tag_id[0]));
@@ -328,7 +398,7 @@ void Esp8266::send_event(uint8_t tag_id[], uint8_t rc522_number, uint32_t time, 
         strcat(test_buf, int_to_string(tag_id[2]));
         strcat(test_buf, ":");
         strcat(test_buf, int_to_string(tag_id[3]));
-        strcat(test_buf, "\nnode_number: ");
+        strcat(test_buf, "\npcd number: ");
         strcat(test_buf, int_to_string(rc522_number));
         strcat(test_buf, "\ntime: ");
         strcat(test_buf, int_to_string(time));
@@ -337,7 +407,7 @@ void Esp8266::send_event(uint8_t tag_id[], uint8_t rc522_number, uint32_t time, 
         strcat(test_buf, "\ncache_status: ");
         strcat(test_buf, int_to_string(cache_status));
         strcat(test_buf, "\n\n\n");
-        send_request(test_buf, 0);
+        send_request(test_buf, 1);
     }
 }
 
@@ -353,6 +423,10 @@ void Esp8266::send_access_request(uint8_t tag_id[], uint8_t rc522_number, uint32
         strcat(test_buf, int_to_string(tag_id[2]));
         strcat(test_buf, ":");
         strcat(test_buf, int_to_string(tag_id[3]));
+        strcat(test_buf, "\ntime: ");
+        strcat(test_buf, int_to_string(time));
+        strcat(test_buf, "\npcd number: ");
+        strcat(test_buf, int_to_string(rc522_number));
         strcat(test_buf, "\n\n\n");
         for (uint8_t il = 0; il < 4; ++il) {
             last_tag_id[il] = tag_id[il];

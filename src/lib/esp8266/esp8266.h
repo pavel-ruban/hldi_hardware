@@ -9,7 +9,7 @@
 #include <machine_state/machine_state.h>
 #include <cache_handler/cache_handler.h>
 
-#define BUFFER_SIZE 100
+#define BUFFER_SIZE 200
 
 #define STRING_IS_NOT_READY 1
 #define STRING_READY 1
@@ -30,7 +30,7 @@
 //Esp8266 response types
 #define INTERNAL_RESPONSE 1
 #define EXTERNAL_RESPONSE 0
-#define COMMAND_SIZE 200
+#define COMMAND_SIZE 300
 
 class Esp8266;
 class Machine_state;
@@ -52,6 +52,8 @@ public:
     void bind_uart(Uart *uart);
     void bind_esp(Esp8266 *esp);
     void handle_uart_queue();
+    uint8_t parse_param(char* param, char* retval);
+    uint8_t parse_uid(char* uid_string, uint8_t* uid_bytes);
 };
 
 class Esp8266{
@@ -90,8 +92,6 @@ public:
     uint8_t connect_after_reset = 0;
     uint8_t current_state;
     uint8_t busy;
-    uint8_t is_authorized;
-    uint8_t message_sent;
     uint8_t time_synced = 0;
     char* strstr_b(char *haystack, const char *needle, uint16_t size);
     Machine_state *_machine_state;
