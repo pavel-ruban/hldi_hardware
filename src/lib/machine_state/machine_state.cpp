@@ -123,7 +123,8 @@ void Machine_state::set_state_other_network_problem() {
     GPIO_SetBits(EM_LOCK_PORT,EM_LOCK_PIN);
 }
 
-void Machine_state::set_state_lock_open() {
+void Machine_state::set_state_lock_open(uint8_t reason) {
+        //reasons[reasons_counter++] = reason;
     if (current_state == MACHINE_STATE_LOCK_OPEN)
         return;
     previous_state = current_state;

@@ -47,6 +47,9 @@ public:
     void addCard(uint8_t tag_id[4], uint8_t status);
     void deleteEvent(uint8_t tag_id[4], uint8_t node,uint32_t time);
     void forceInvalidateStuckEntries();
+    void deleteEventById(uint16_t id);
+    uint8_t test_timings_counter = 0;
+    uint32_t test_timings[100] = {0};
     uint8_t currentlyProcessing();
 private:
     uint32_t time_of_proc_start = 0;

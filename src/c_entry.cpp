@@ -153,10 +153,13 @@ uint8_t somi_access_check(uint8_t tag_id[], uint8_t node_id[], uint8_t pcd_id)
 
 uint8_t somi_access_check_1(uint8_t tag_id[], uint8_t rc522_number)
 {
-    led_scheduler.invalidate(leds[LED_STATE_INDICATOR]);
-    leds[LED_STATE_INDICATOR]->set_color(LED_COLOR_BLUE);
-    leds[LED_STATE_INDICATOR]->set_blink(0,1000,1000);
-    leds[LED_STATE_INDICATOR]->on();
+    if (!(machine_state.get_state() == MACHINE_STATE_ACCESS_DENIED || machine_state.get_state() == MACHINE_STATE_LOCK_OPEN)) {
+        led_scheduler.invalidate(leds[LED_STATE_INDICATOR]);
+        leds[LED_STATE_INDICATOR]->set_color(LED_COLOR_BLUE);
+        leds[LED_STATE_INDICATOR]->set_blink(0,1000,1000);
+        leds[LED_STATE_INDICATOR]->on();
+    }
+
 
     if (cache_handler.checkCard(tag_id) == NOT_CACHED) {
         //machine_state.set_state_lock_open();
@@ -176,7 +179,7 @@ uint8_t somi_access_check_1(uint8_t tag_id[], uint8_t rc522_number)
                 if (DEFAULT_NOT_CACHED_BEHAVIOUR == ACCESS_DENIED)
                     machine_state.set_state_access_denied();
                 else
-                    machine_state.set_state_lock_open();
+                    machine_state.set_state_lock_open(2);
             }
         }
         return DEFAULT_NOT_CACHED_BEHAVIOUR;
@@ -184,7 +187,7 @@ uint8_t somi_access_check_1(uint8_t tag_id[], uint8_t rc522_number)
 
 
     if (cache_handler.checkCard(tag_id) == ACCESS_GRANTED) {
-        machine_state.set_state_lock_open();
+        machine_state.set_state_lock_open(3);
         cache_handler.addEvent(tag_id, rc522_number, ACCESS_GRANTED, CACHED, ticks, 1);
         return ACCESS_GRANTED;
     }
@@ -301,6 +304,7 @@ extern "C" void TIM4_IRQHandler()
                 wifi.send_event(buf_event.tag_id, buf_event.node, buf_event.event_time, buf_event.access_result, buf_event.cache_status);
             }
         }
+        wifi.timeout_invalidation();
     }
 }
 
@@ -357,19 +361,13 @@ extern "C" void SysTick_Handler(void)
     state_scheduler.handle();
     connection_scheduler.handle();
     //&& wifi._uart->crlf_count >= 2
-
-    if (ticks % 200 == 0 && wifi.is_connected_to_server == 1 && wifi.current_state == STATE_READY){
-            if (cache_handler.eventExist()) {
-                int fhdfh = 0;
-            }
-    }
     ticks++;
 }
 
 extern "C" void EXTI0_IRQHandler()
 {
     if (!(machine_state.get_state() == MACHINE_STATE_LOCK_OPEN)) {
-        machine_state.set_state_lock_open();
+        machine_state.set_state_lock_open(4);
     }
 	EXTI_ClearITPendingBit(EXTI_Line0);
 
@@ -648,7 +646,7 @@ main(void)
     rc522_set_pins();
     mfrc522_init();
     rc522_irq_prepare();
-
+    cache_handler.deleteEventById(10);
     wifi.Delay(0);
     uart.cyclo_buffer.data();
 
@@ -681,6 +679,8 @@ main(void)
              //wifi.refresh_status();
 
         }
+        cache_handler.deleteEventById(10);
+        machine_state.get_state();
         wifi.Delay(0);
         Delay(1000);
 	}

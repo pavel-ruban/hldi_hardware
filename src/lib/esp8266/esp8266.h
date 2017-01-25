@@ -22,6 +22,7 @@
 #define STATE_WAITING_RESPONSE 5
 #define STATE_RESETTING 4
 #define STATE_EVENTS_DUMPING 6
+#define STATE_BUSY 7
 
 #define TO_SERVER_PROBLEM 20 * 1000
 
@@ -61,9 +62,10 @@ private:
     CmdHandler hndl;
     char last_string[RECV_STRING_MAX_SIZE];
     char buffer_string[BUFFER_SIZE];
-
+    uint64_t request_time = 0;
     char buf[10] = {0};
 public:
+    void timeout_invalidation();
     uint8_t awaiting_system_answer = 0;
     uint32_t reset_time = 0;
     uint8_t attempts_done = 0;

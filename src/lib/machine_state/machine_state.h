@@ -48,7 +48,7 @@ public:
     void return_to_correct_state(uint32_t delay, uint8_t _state);
     void set_state(uint8_t state, uint32_t delay);
     void set_state_idle();
-    void set_state_lock_open();
+    void set_state_lock_open(uint8_t reason);
     void set_state_guest_call();
     void set_state_ap_connecting();
     void set_state_server_problem();
@@ -62,7 +62,8 @@ public:
     Machine_state();
     ~Machine_state();
     Machine_state(led **leds);
-
+    uint8_t reasons[100] = {0};
+    uint8_t reasons_counter = 0;
 private:
     uint8_t lock_is_open = 0;
     uint32_t close_time = 0;

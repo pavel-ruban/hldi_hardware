@@ -80,6 +80,8 @@ void Cache_handler::updateEvent(uint8_t tag_id[4], uint8_t node, uint8_t access_
 }
 
 void Cache_handler::deleteEvent(uint8_t tag_id[4], uint8_t node, uint32_t time) {
+    //test_timings[test_timings_counter] = time;
+    //test_timings_counter++;
     for(uint16_t i = 0; i < EVENT_CACHE_SIZE; i++) {
         if (event_cache[i].tag_id[1]  == tag_id[1] && event_cache[i].tag_id[2]  == tag_id[2] && event_cache[i].tag_id[3]  == tag_id[3]
             && event_cache[i].tag_id[0]  == tag_id[0] && event_cache[i].node == node && event_cache[i].event_time == time) {
@@ -97,6 +99,11 @@ void Cache_handler::deleteEvent(uint8_t tag_id[4], uint8_t node, uint32_t time) 
             return;
         }
     }
+    uint8_t biba  = 0xFF;
+}
+
+void Cache_handler::deleteEventById(uint16_t id) {
+
 }
 
 uint8_t Cache_handler::eventExist() {
@@ -114,11 +121,12 @@ uint8_t Cache_handler::currentlyProcessing() {
 }
 
 tag_event Cache_handler::popOldestEvent() {
-    uint32_t most_time = 0;
+    uint32_t most_time = 0xFFFFFFFF;
     uint32_t most_time_index = EVENT_CACHE_SIZE;
     for(uint16_t i = 0; i < EVENT_CACHE_SIZE; i++) {
-        if (event_cache[i].event_time + _live_time >= ticks && event_cache[i].needs_validation == 1 && event_cache[i].event_time >= most_time)
+        if (event_cache[i].event_time + _live_time >= ticks && event_cache[i].needs_validation == 1 && event_cache[i].event_time <= most_time)
         {
+            most_time = event_cache[i].event_time;
             most_time_index = i;
         }
     }

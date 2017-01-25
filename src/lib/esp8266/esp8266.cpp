@@ -160,7 +160,7 @@ int strtoint( const char * str )
         }
         //Open trigger.
         if (_esp->strstr_b(command, "bo_test", COMMAND_SIZE) && _esp->current_state == STATE_WAITING_RESPONSE) {
-            if (_esp->strstr_b(command, "access", COMMAND_SIZE)) {
+            if (_esp->strstr_b(command, "action: access request", COMMAND_SIZE) && !_esp->strstr_b(command, "action: cache dump", COMMAND_SIZE)) {
                 uint8_t int_access_result = 3;
                 char time[13] = {0};
                 parse_param("time", time);
@@ -183,7 +183,7 @@ int strtoint( const char * str )
                 _esp->_cache_handler->deleteEvent(uid_bytes, strtoint(pcd_number), strtoint(time));
                 _esp->_cache_handler->addCard(_esp->last_tag_id, int_access_result);
                 if (int_access_result == ACCESS_GRANTED)
-                    _esp->_machine_state->set_state_lock_open();
+                    _esp->_machine_state->set_state_lock_open(1);
                 else
                     _esp->_machine_state->set_state_access_denied();
             }
@@ -355,6 +355,7 @@ void Esp8266::reset() {
 }
 
 void Esp8266::send_request(char* request, uint8_t w8resp) {
+    current_state = STATE_BUSY;
     clear_buffer();
     strcat(buffer_string, "AT+CIPSEND=");
     strcat(buffer_string, int_to_string(strlen(request) + strlen(NODE_ID) + 10));
@@ -367,8 +368,10 @@ void Esp8266::send_request(char* request, uint8_t w8resp) {
     strcat(buffer_string, "\n");
     strcat(buffer_string, request);
     _uart->send(buffer_string);
-    if (w8resp)
+    if (w8resp) {
         current_state = STATE_WAITING_RESPONSE;
+        request_time = ticks;
+    }
     else
         current_state = STATE_READY;
 
@@ -452,6 +455,7 @@ uint8_t Esp8266::connect_to_ip(char* ip, char* port) {
         strcat(buffer_string, port);
         strcat(buffer_string, "\r\n");
         _uart->send(buffer_string);
+        request_time = ticks;
     } else return current_state;
 }
 
@@ -462,6 +466,7 @@ uint8_t Esp8266::set_server_timeout(uint8_t seconds) {
         strcat(buffer_string, int_to_string(seconds));
         strcat(buffer_string, "\r\n");
         _uart->send(buffer_string);
+        request_time = ticks;
         current_state = STATE_WAITING_RESPONSE;
     } else return current_state;
 }
@@ -472,6 +477,7 @@ uint8_t Esp8266::disconnect_from_server() {
         strcat(buffer_string, "AT+CIPCLOSE");
         strcat(buffer_string, "\r\n");
         _uart->send(buffer_string);
+        request_time = ticks;
         current_state = STATE_WAITING_RESPONSE;
     } else return current_state;
 }
@@ -494,12 +500,14 @@ void Esp8266::send_request_to_connect() {
     strcat(buffer_string, password);
     strcat(buffer_string, "\"\r\n");
     _uart->send(buffer_string);
+    request_time = ticks;
 }
 
 void Esp8266::change_mode() {
     awaiting_system_answer = 1;
     current_state = STATE_WAITING_MODE_CHANGE;
     _uart->send("AT+CWMODE=1\r\n");
+    request_time = ticks;
 
 }
 void Esp8266::save_creditals(char* ssid, char* password) {
@@ -522,4 +530,14 @@ void Esp8266::connect_to_wifi() {
     is_connected_to_wifi = 0;
     connect_after_reset = 1;
     reset();
+}
+
+void Esp8266::timeout_invalidation() {
+    if (current_state == STATE_WAITING_RESPONSE && request_time + SERVER_CONNECT_TIMEOUT < ticks) {
+        _uart->cyclo_buffer.clear();
+        clear_buffer();
+        memset(hndl.command,'\0',COMMAND_SIZE);
+        current_state = STATE_READY;
+        disconnect_from_server();
+    }
 }
