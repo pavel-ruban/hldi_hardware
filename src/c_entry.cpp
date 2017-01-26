@@ -254,10 +254,11 @@ void rfid_irq_tag_handler()
     __enable_irq();
 
     if (status == CARD_FOUND) {
-        if (ticks - last_time_triggered > 600) //Delay between riggers;
+        if (ticks - last_time_triggered > 800) //Delay between riggers; 600?
         {
             last_time_triggered = ticks;
             somi_access_check_1(tag_id, get_pcd_id());
+            //somi_access_check_1(tag_id, get_pcd_id());
         }
     }
 
@@ -663,7 +664,7 @@ main(void)
         if (wifi.is_connected_to_wifi && !wifi.is_connected_to_server && ticks % 2000 == 0) {
              connection_scheduler.invalidate(&wifi);
              wifi.time_synced = 0;
-             connect_to_server(10, "192.168.1.113", "3232");
+             connect_to_server(10, "192.168.1.113", "2252");
         }
         if (wifi.is_connected_to_wifi && wifi.is_connected_to_server) {
             connection_scheduler.invalidate(&wifi);

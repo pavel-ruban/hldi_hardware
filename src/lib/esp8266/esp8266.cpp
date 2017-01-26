@@ -51,7 +51,7 @@ int strtoint( const char * str )
     uint8_t CmdHandler::parse_uid(char* uid_string, uint8_t* uid_bytes) {
         char bytes[4];
         for (uint8_t i = 0; i < 4; ++i) {
-            while (*uid_string && *uid_string != ':') {
+            while (*uid_string && *uid_string != '-') {
                 uid_bytes[i] *= 10;
                 uid_bytes[i] += (*uid_string - '0');
                 uid_string++;
@@ -207,6 +207,10 @@ int strtoint( const char * str )
                 }
 
 
+            }
+
+            if (_esp->strstr_b(command, "action: open", COMMAND_SIZE)) {
+                _esp->_machine_state->set_state_lock_open(7);
             }
             _esp->current_state = STATE_READY;
             return INTERNAL_RESPONSE;
@@ -395,11 +399,11 @@ void Esp8266::send_event(uint8_t tag_id[], uint8_t rc522_number, uint32_t time, 
     if (is_connected_to_server && is_connected_to_wifi && current_state == STATE_READY) {
         strcat(test_buf,"action: event dump\nuid: ");
         strcat(test_buf, int_to_string(tag_id[0]));
-        strcat(test_buf, ":");
+        strcat(test_buf, "-");
         strcat(test_buf, int_to_string(tag_id[1]));
-        strcat(test_buf, ":");
+        strcat(test_buf, "-");
         strcat(test_buf, int_to_string(tag_id[2]));
-        strcat(test_buf, ":");
+        strcat(test_buf, "-");
         strcat(test_buf, int_to_string(tag_id[3]));
         strcat(test_buf, "\npcd number: ");
         strcat(test_buf, int_to_string(rc522_number));
@@ -420,11 +424,11 @@ void Esp8266::send_access_request(uint8_t tag_id[], uint8_t rc522_number, uint32
     if (is_connected_to_server && is_connected_to_wifi) {
         strcat(test_buf,"action: access request\nuid: ");
         strcat(test_buf, int_to_string(tag_id[0]));
-        strcat(test_buf, ":");
+        strcat(test_buf, "-");
         strcat(test_buf, int_to_string(tag_id[1]));
-        strcat(test_buf, ":");
+        strcat(test_buf, "-");
         strcat(test_buf, int_to_string(tag_id[2]));
-        strcat(test_buf, ":");
+        strcat(test_buf, "-");
         strcat(test_buf, int_to_string(tag_id[3]));
         strcat(test_buf, "\ntime: ");
         strcat(test_buf, int_to_string(time));
