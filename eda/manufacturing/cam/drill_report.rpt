@@ -1,0 +1,32 @@
+Drill report for em-lock.kicad_pcb
+Created on Thu Oct 13 01:49:07 2016
+
+Copper Layer Stackup:
+    =============================================================
+    L1 :  F.Cu                      front
+    L2 :  B.Cu                      back
+
+
+Drill file 'em-lock.drl' contains
+    plated through holes:
+    =============================================================
+    T1  0.50mm  0.020"  (52 holes)
+    T2  0.60mm  0.024"  (3 holes)
+    T3  0.70mm  0.027"  (2 holes)
+    T4  0.76mm  0.030"  (4 holes)
+    T5  0.80mm  0.031"  (3 holes)  (with 3 slots)
+    T6  0.80mm  0.032"  (2 holes)
+    T7  0.90mm  0.035"  (4 holes)
+    T8  1.00mm  0.039"  (6 holes)
+    T9  1.02mm  0.040"  (21 holes)
+    T10  1.40mm  0.055"  (4 holes)
+
+    Total plated holes count 101
+
+
+Not plated through holes are merged with plated holes
+    unplated through holes:
+    =============================================================
+    T11  3.20mm  0.126"  (4 holes)
+
+    Total unplated holes count 4

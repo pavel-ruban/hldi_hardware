@@ -19,8 +19,10 @@ void Cache_handler::forceInvalidateStuckEntries() {
     }
 }
 
-//to do: когда очищать очередь?
-//очередь в каком-то говне, индексы летят не пойми как.
+/**
+ * @todo когда очищать очередь?
+ * Индексы летят не пойми как.
+ */
 void Cache_handler::addEvent(uint8_t tag_id[4], uint8_t node, uint8_t access_result, uint8_t cache_status, uint32_t time, uint8_t needs_validation) {
     uint32_t lest_time = event_cache[0].event_time;
     uint32_t lest_time_index = EVENT_CACHE_SIZE;
