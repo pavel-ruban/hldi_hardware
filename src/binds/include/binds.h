@@ -21,7 +21,14 @@
 #define ESP8266_RESET_PIN GPIO_Pin_8
 #define ESP8266_RESET_PORT GPIOA
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 extern volatile uint32_t ticks;
+#ifdef __cplusplus
+}
+#endif
 
 void *memcpy(void *s1, const void *s2, size_t n);
 void *memset(void *dst, int val, size_t count);
@@ -33,3 +40,5 @@ void __enable_enc28j60_irq();
 void __disable_enc28j60_irq();
 
 void Delay(vu32 nCount);
+
+#pragma pack(1)

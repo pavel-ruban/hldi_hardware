@@ -40,6 +40,7 @@ void mfrc522_init()
 
 	// Prescaler is 169, timer tick is 2x169 + 1 = 339 tacts, fq is 13.56Mhz,
 	// so 339 * 1 / 13.56 = 0.000025 = 25us per timer tick.
+//#pragma pack(1)
 	mfrc522_write(TPrescalerReg, 0xa9);
 	// Reload val is 1600. 1600 * 0.000025 (25us) = 40ms.
 	mfrc522_write(TReloadReg_1, 0x6);
@@ -62,18 +63,22 @@ void mfrc522_init()
 void mfrc522_write(uint8_t reg, uint8_t data)
 {
 	rc522_select();
+    // 0x7E = 01111110
 	spi_transmit((reg << 1) & 0x7E, SKIP_RECEIVE, RC522_SPI_CH);
+    uint8_t reg_sent = (reg << 1) & 0x7E;
 	spi_transmit(data, SKIP_RECEIVE, RC522_SPI_CH);
 	rc522_release();
 }
 
 uint8_t mfrc522_read(uint8_t reg)
 {
+    __disable_irq();
 	uint8_t data;
 	rc522_select();
 	spi_transmit(((reg << 1) & 0x7E) | 0x80, SKIP_RECEIVE, RC522_SPI_CH);
 	data = spi_transmit(0x00, RECEIVE_BYTE, RC522_SPI_CH);
 	rc522_release();
+    __enable_irq();
 	return data;
 }
 

@@ -2,6 +2,8 @@
 // Created by root on 13/09/16.
 //
 #pragma once
+
+#include <stdint.h>
 #define PINS_OFF(PORT, PINS)                                \
 GPIO_InitStructure.GPIO_Pin = PINS;                         \
 GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;           \
@@ -25,8 +27,4 @@ GPIO_Init(PORT, &GPIO_InitStructure)
  * Output         : None
  * Return         : None
  *******************************************************************************/
-void Delay(uint32_t nCount)
-{
-    for(; nCount != 0; nCount--);
-}
 

@@ -1,18 +1,17 @@
 #pragma once
 
 #include <stm32f10x_conf.h>
-#include <stm32f10x_spi.h>
 
 // Bind SPI to GPIO pins
 #define	SPI_I2S_FLAG_TXE	((uint16_t)0x0002)
 
 #define	SPIy			SPI1
 #define	SPIy_CLK		RCC_APB2Periph_SPI1
-#define	SPIy_GPIO		GPIOB
+#define	SPIy_GPIO		GPIOA
 #define	SPIy_GPIO_CLK		RCC_APB2Periph_GPIOA
-#define	SPIy_PIN_SCK		GPIO_Pin_3
-#define	SPIy_PIN_MISO		GPIO_Pin_4
-#define	SPIy_PIN_MOSI		GPIO_Pin_5
+#define	SPIy_PIN_SCK		GPIO_Pin_5
+#define	SPIy_PIN_MISO		GPIO_Pin_6
+#define	SPIy_PIN_MOSI		GPIO_Pin_7
 
 #define	SPIz			SPI2
 #define	SPIz_CLK		RCC_APB1Periph_SPI2

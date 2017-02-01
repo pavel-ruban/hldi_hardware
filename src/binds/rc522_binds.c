@@ -23,7 +23,7 @@ void rc522_1_release()
 	__enable_irq();
 }
 
-void rc522_set_pins()
+void 	rc522_set_pins()
 {
 	#ifndef RCC_APB2Periph_RC522_Enabled
 		RCC_APB2PeriphClockCmd(RC522_GPIO_CLK, ENABLE);
