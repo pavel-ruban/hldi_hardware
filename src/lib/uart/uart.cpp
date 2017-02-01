@@ -18,36 +18,42 @@ void Uart::init_uart(uint32_t speed, uint8_t uart)
     switch (uart)
     {
         case UART1:
-            uart_rcc_apb2 = RCC_APB2Periph_USART1;
             uart_rcc_apb2_gpio = RCC_APB2Periph_GPIOA;
             uart_pin_rx = GPIO_Pin_10;
             uart_pin_tx = GPIO_Pin_9;
             uart_pins_port = GPIOA;
             usartx = USART1;
+
+            // Включаем тактирование порта А и USART1
+            RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
             break;
 
         case UART2:
-            uart_rcc_apb2 = RCC_APB1Periph_USART2;
             uart_rcc_apb2_gpio = RCC_APB2Periph_GPIOA;
             uart_pin_rx = GPIO_Pin_3;
             uart_pin_tx = GPIO_Pin_2;
             uart_pins_port = GPIOA;
             usartx = USART2;
+
+            // Включаем тактирование порта А и USART1
+            RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE);
             break;
 
 
         case UART3:
-            uart_rcc_apb2 = RCC_APB1Periph_USART3;
             uart_rcc_apb2_gpio = RCC_APB2Periph_GPIOB;
             uart_pin_rx = GPIO_Pin_11;
             uart_pin_tx = GPIO_Pin_10;
             uart_pins_port = GPIOB;
             usartx = USART3;
+
+            // Включаем тактирование порта А и USART1
+            RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART3, ENABLE);
             break;
     }
 
-    // Включаем тактирование порта А и USART1
-    RCC_APB2PeriphClockCmd(uart_rcc_apb2_gpio | uart_rcc_apb2, ENABLE);
+    // Enable GPIO clock.
+    RCC_APB2PeriphClockCmd(uart_rcc_apb2_gpio, ENABLE);
 
     // Настраиваем ногу TxD (PA9) как выход push-pull c альтернативной функцией
     Tx_init.GPIO_Pin = uart_pin_tx;
@@ -69,7 +75,7 @@ void Uart::init_uart(uint32_t speed, uint8_t uart)
     uart_struct.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
     uart_struct.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
 
-    //Инициализируем UART
+    // Инициализируем UART
     USART_Init(usartx, &uart_struct);
 
     //Включаем UART
@@ -78,6 +84,7 @@ void Uart::init_uart(uint32_t speed, uint8_t uart)
 
 Uart::Uart(uint8_t uart_number, uint32_t speed)
 {
+    cyclo_buffer.override_data = 1;
     for (uint16_t i = 0; i < RECV_STRING_MAX_SIZE; ++i) {
         last_string[i] = 0;
     }
@@ -106,8 +113,8 @@ void Uart::send_byte(uint8_t data)
             USART2->DR = data;
             break;
         case UART3:
-            while(!(USART1->SR & USART_SR_TC));
-            USART3->DR = data;
+            while(USART_GetFlagStatus(USART3, USART_FLAG_TXE) == RESET);
+            USART_SendData(USART3, data);
             break;
     }
 }

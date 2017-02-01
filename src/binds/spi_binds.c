@@ -1,8 +1,6 @@
 #include <stdint.h>
-#include <stm32f10x_spi.h>
 #include <stm32f10x_conf.h>
-#include "spi_binds.h"
-
+#include <binds.h>
 
 extern SPI_InitTypeDef SPI_InitStructure;
 extern GPIO_InitTypeDef GPIO_InitStructure;
@@ -22,6 +20,7 @@ uint8_t spi_transmit(uint8_t byte, uint8_t skip_receive, SPI_TypeDef * SPI_CH)
 
 	/* Send SPIz data */
 	SPI_I2S_SendData(SPI_CH, byte);
+//	SPI_CH->DR = byte;
 
 	while (SPI_I2S_GetFlagStatus(SPI_CH, SPI_I2S_FLAG_RXNE) == RESET);
 
@@ -33,6 +32,7 @@ void set_spi_registers()
 	#ifndef RCC_APB2Periph_SPIz_Enabled
 		RCC_APB2PeriphClockCmd(SPIz_CLK, ENABLE);
 	#endif
+    RCC_APB2PeriphClockCmd(SPIz_CLK, ENABLE);
 
 	uint16_t SPIz_Mode = SPI_Mode_Master;
 
@@ -42,18 +42,20 @@ void set_spi_registers()
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_Init(SPIz_GPIO, &GPIO_InitStructure);
+
 	GPIO_InitStructure.GPIO_Pin = SPIz_PIN_MISO;
 
 	/* Configure MISO pin as Input Floating  */
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
 	GPIO_Init(SPIz_GPIO, &GPIO_InitStructure);
+
 	SPI_InitStructure.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
 	SPI_InitStructure.SPI_Mode = SPI_Mode_Master;
 	SPI_InitStructure.SPI_DataSize = SPI_DataSize_8b;
 	SPI_InitStructure.SPI_CPOL = SPI_CPOL_Low;
 	SPI_InitStructure.SPI_CPHA = SPI_CPHA_1Edge;
 	SPI_InitStructure.SPI_NSS = SPI_NSS_Soft;
-	SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_4;
+	SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_64;
 
 	SPI_InitStructure.SPI_FirstBit = SPI_FirstBit_MSB;
 	SPI_InitStructure.SPI_CRCPolynomial = 7;
@@ -68,6 +70,7 @@ void set_spi2_registers()
 	#ifndef RCC_APB2Periph_SPIy_Enabled
 		RCC_APB2PeriphClockCmd(SPIy_CLK, ENABLE);
 	#endif
+    RCC_APB2PeriphClockCmd(SPIy_CLK, ENABLE);
 
 	uint16_t SPIy_Mode = SPI_Mode_Master;
 
@@ -96,8 +99,8 @@ void set_spi2_registers()
 	SPI_Init(SPIy, &SPI_InitStructure);
 
 	//GPIO_PinRemapConfig(GPIO_Remap_SPI1, ENABLE);
-	AFIO->MAPR |= AFIO_MAPR_SPI1_REMAP;
-	AFIO->MAPR |= AFIO_MAPR_SWJ_CFG_JTAGDISABLE;
+//	AFIO->MAPR |= AFIO_MAPR_SPI1_REMAP;
+//	AFIO->MAPR |= AFIO_MAPR_SWJ_CFG_JTAGDISABLE;
 
 	/* Enable SPIy */
 	SPI_Cmd(SPIy, ENABLE);

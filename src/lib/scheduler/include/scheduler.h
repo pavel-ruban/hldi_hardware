@@ -32,6 +32,7 @@ public:
     uint8_t handle();
     uint8_t invalidate(void *obj);
     uint32_t get_current_time();
+    uint32_t size();
     void clear();
 };
 
@@ -79,6 +80,11 @@ uint8_t Scheduler<T, scheduler_size>::invalidate(void *ptr) {
             _events.pop(it.current_index);
         }
     }
+}
+
+template <typename T, uint16_t scheduler_size>
+uint32_t Scheduler<T, scheduler_size>::size() {
+    return _events.size();
 }
 
 template <typename T, uint16_t scheduler_size>

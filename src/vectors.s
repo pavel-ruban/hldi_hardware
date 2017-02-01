@@ -25,12 +25,16 @@
 .word	TIM2_IRQHandler
 .org    0xB4
 .word   TIM3_IRQHandler
+.org    0xB8
+.word   TIM4_IRQHandler
 .org    0xD4
 .word   USART1_IRQHandler
 .org	0xDC
-.word	WRONG_IRQ_EXCEPTION
+.word	USART3_IRQHandler
 .org	0xE0
 .word	EXTI15_10_IRQHandler
+.org    0xE4
+.word   WRONG_IRQ_EXCEPTION
 
 
 @ End of the interrupt vector table.
