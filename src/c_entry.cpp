@@ -291,20 +291,32 @@ extern "C" void TIM4_IRQHandler()
 {
     ++tim4_counter;
     TIM_ClearITPendingBit(TIM4, TIM_IT_Update);
-    if (uart.last_char_timing != 0 && (ticks - uart.last_char_timing) >= 4 && uart.cyclo_buffer.end_index != uart.cyclo_buffer.start_index ) {
+
+    if (uart.last_char_timing != 0 && (ticks - uart.last_char_timing) >= 4
+    	&& uart.cyclo_buffer.end_index != uart.cyclo_buffer.start_index ) {
+
         wifi.invoke_uart_handler();
         check_amount++;
     }
 
     if (tim4_counter % 32 == 0) {
         cache_handler.forceInvalidateStuckEntries();
-        if (wifi.current_state == STATE_READY && (ticks - uart.last_char_timing) >= 4 && wifi.is_connected_to_server) {
+        if (wifi.current_state == STATE_READY && (ticks - uart.last_char_timing) >= 4
+		&& wifi.is_connected_to_server) {
+
             if (cache_handler.eventExist() && !cache_handler.currentlyProcessing()) {
                 tag_event buf_event = cache_handler.popOldestEvent();
-                //wifi.send_access_request(buf_event.tag_id, buf_event.node, buf_event.event_time);
-                wifi.send_event(buf_event.tag_id, buf_event.node, buf_event.event_time, buf_event.access_result, buf_event.cache_status);
+                // wifi.send_access_request(buf_event.tag_id, buf_event.node, buf_event.event_time);
+                wifi.send_event(
+			buf_event.tag_id,
+			buf_event.node,
+			buf_event.event_time,
+			buf_event.access_result,
+			buf_event.cache_status
+		);
             }
         }
+
         wifi.timeout_invalidation();
     }
 }
