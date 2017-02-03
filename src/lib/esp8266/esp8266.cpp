@@ -9,6 +9,10 @@ int strtoint( const char * str )
     return val;
 }
 
+//char int2hex_char(uint8_t byte) {
+//    uint8_t first_digit = byte >>
+//}
+
 
 
     CmdHandler::CmdHandler() {
@@ -169,16 +173,19 @@ int strtoint( const char * str )
                 uint8_t uid_bytes[4] = {0};
                 parse_uid(uid, uid_bytes);
                 char pcd_number[2] = {0};
-                parse_param("pcd number", pcd_number);
+                parse_param("pcd-number", pcd_number);
                 char access_result[3] = {0};
                 parse_param("status", access_result);
 
                 if (access_result[0] == '2' && access_result[1] == '0' && access_result[2] == '0') {
-                    int_access_result = ACCESS_GRANTED;
+                    if (_esp->strstr_b(command, "access: granted", COMMAND_SIZE))
+                        int_access_result = ACCESS_GRANTED;
+                    if (_esp->strstr_b(command, "access: denied", COMMAND_SIZE))
+                        int_access_result = ACCESS_DENIED;
                 } else if (access_result[0] == '4' && access_result[1] == '0' && access_result[2] == '3') {
-                    int_access_result = ACCESS_DENIED;
-                } else
                     int_access_result = DEFAULT_NOT_CACHED_BEHAVIOUR;
+                }
+
 
                 _esp->_cache_handler->deleteEvent(uid_bytes, strtoint(pcd_number), strtoint(time));
                 _esp->_cache_handler->addCard(_esp->last_tag_id, int_access_result);
@@ -197,7 +204,7 @@ int strtoint( const char * str )
                 uint8_t uid_bytes[4] = {0};
                 parse_uid(uid, uid_bytes);
                 char pcd_number[2] = {0};
-                parse_param("pcd number", pcd_number);
+                parse_param("pcd-number", pcd_number);
                 char access_result[3] = {0};
                 parse_param("status", access_result);
 
@@ -205,13 +212,18 @@ int strtoint( const char * str )
                     _esp->_cache_handler->deleteEvent(uid_bytes, strtoint(pcd_number), strtoint(time));
                     //_esp->_cache_handler->addCard(_esp->last_tag_id, int_access_result);
                 }
-
-
             }
 
             if (_esp->strstr_b(command, "action: open", COMMAND_SIZE)) {
                 _esp->_machine_state->set_state_lock_open(7);
             }
+
+            if (_esp->strstr_b(command, "time-sync", COMMAND_SIZE)) {
+                if (_esp->strstr_b(command, "status: 200", COMMAND_SIZE)) {
+                    _esp->time_synced = TIME_SYNCED;
+                }
+            }
+
             _esp->current_state = STATE_READY;
             return INTERNAL_RESPONSE;
         }
@@ -367,7 +379,7 @@ void Esp8266::send_request(char* request, uint8_t w8resp) {
     _uart->send(buffer_string);
     Delay(30000);
     clear_buffer();
-    strcat(buffer_string, "node_id: ");
+    strcat(buffer_string, "node-id: ");
     strcat(buffer_string, NODE_ID);
     strcat(buffer_string, "\n");
     strcat(buffer_string, request);
@@ -384,13 +396,13 @@ void Esp8266::send_request(char* request, uint8_t w8resp) {
 void Esp8266::sync_time() {
     if (time_synced)
         return;
-    char buf[20] = {0};
+    time_synced = TIME_SYNC_IN_PROGRESS;
+    char buf[40] = {0};
     strcat(buf, "time: ");
     strcat(buf, int_to_string(ticks));
+    strcat(buf, "\naction: time-sync");
     strcat(buf, "\n\n\n");
-    send_request(buf, 0);
-    time_synced = 1;
-
+    send_request(buf, 1);
 }
 
 void Esp8266::send_event(uint8_t tag_id[], uint8_t rc522_number, uint32_t time, uint8_t access_result, uint8_t cache_status) { //Untested, ctrlc-ctrlv
@@ -405,13 +417,13 @@ void Esp8266::send_event(uint8_t tag_id[], uint8_t rc522_number, uint32_t time, 
         strcat(test_buf, int_to_string(tag_id[2]));
         strcat(test_buf, "-");
         strcat(test_buf, int_to_string(tag_id[3]));
-        strcat(test_buf, "\npcd number: ");
+        strcat(test_buf, "\npcd-number: ");
         strcat(test_buf, int_to_string(rc522_number));
         strcat(test_buf, "\ntime: ");
         strcat(test_buf, int_to_string(time));
-        strcat(test_buf, "\naccess_result: ");
+        strcat(test_buf, "\naccess: ");
         strcat(test_buf, int_to_string(access_result));
-        strcat(test_buf, "\ncache_status: ");
+        strcat(test_buf, "\ncached: ");
         strcat(test_buf, int_to_string(cache_status));
         strcat(test_buf, "\n\n\n");
         send_request(test_buf, 1);
@@ -432,7 +444,7 @@ void Esp8266::send_access_request(uint8_t tag_id[], uint8_t rc522_number, uint32
         strcat(test_buf, int_to_string(tag_id[3]));
         strcat(test_buf, "\ntime: ");
         strcat(test_buf, int_to_string(time));
-        strcat(test_buf, "\npcd number: ");
+        strcat(test_buf, "\npcd-number: ");
         strcat(test_buf, int_to_string(rc522_number));
         strcat(test_buf, "\n\n\n");
         for (uint8_t il = 0; il < 4; ++il) {

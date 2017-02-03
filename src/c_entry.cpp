@@ -667,6 +667,7 @@ main(void)
     Delay(5000000);
     while (1)
 	{
+        Delay(1000);
         global_counter++;
         if (!wifi.is_connected_to_wifi && connection_scheduler.size() <= 1) {
             Event<Esp8266> try2connect(connection_scheduler.get_current_time() + AP_CONNECT_TIMEOUT, &wifi, &Esp8266::connect_to_wifi);
@@ -675,13 +676,14 @@ main(void)
 
         if (wifi.is_connected_to_wifi && !wifi.is_connected_to_server && ticks % 2000 == 0) {
              connection_scheduler.invalidate(&wifi);
-             wifi.time_synced = 0;
-             connect_to_server(10, "192.168.1.113", "2252");
+             wifi.time_synced = TIME_NOT_SYNCED;
+             connect_to_server(10, "192.168.1.151", "2252");
         }
         if (wifi.is_connected_to_wifi && wifi.is_connected_to_server) {
             connection_scheduler.invalidate(&wifi);
-
-            wifi.sync_time();
+            if (wifi.time_synced == TIME_NOT_SYNCED) {
+                wifi.sync_time();
+            }
             if (cache_handler.eventExist() && wifi.current_state == STATE_READY && ticks % SERVER_CONNECT_TIMEOUT == 10000) {
 
                 //tag_event buf = cache_handler.popOldestEvent();
@@ -695,7 +697,7 @@ main(void)
         cache_handler.deleteEventById(10);
         machine_state.get_state();
         wifi.Delay(0);
-        Delay(1000);
+
 	}
 }
 
