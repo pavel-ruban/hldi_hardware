@@ -212,6 +212,16 @@ int strtoint( const char * str )
                     _esp->_cache_handler->deleteEvent(uid_bytes, strtoint(pcd_number), strtoint(time));
                     //_esp->_cache_handler->addCard(_esp->last_tag_id, int_access_result);
                 }
+                if (_esp->strstr_b(command, "invalidate-cache", COMMAND_SIZE)) {
+                    char inv_result[10] = {0};
+                    parse_param("invalidate-cache", inv_result);
+                    if (inv_result[0] == 'g' && inv_result[1] == 'r' && inv_result[2] == 'a') {
+                        _esp->_cache_handler->updateCard(uid_bytes, ACCESS_GRANTED);
+                    }
+                    if (inv_result[0] == 'd' && inv_result[1] == 'e' && inv_result[2] == 'n') {
+                        _esp->_cache_handler->updateCard(uid_bytes, ACCESS_DENIED);
+                    }
+                }
             }
 
             if (_esp->strstr_b(command, "action: open", COMMAND_SIZE)) {

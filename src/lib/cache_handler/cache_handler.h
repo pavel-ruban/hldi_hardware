@@ -48,6 +48,7 @@ public:
     void updateEvent(uint8_t tag_id[4], uint8_t node, uint8_t access_result, uint32_t time, uint8_t needs_validation);
     uint8_t checkCard(uint8_t tag_id[4]);
     void addCard(uint8_t tag_id[4], uint8_t status);
+    void updateCard(uint8_t tag_id[4], uint8_t status);
     void deleteEvent(uint8_t tag_id[4], uint8_t node,uint32_t time);
     void forceInvalidateStuckEntries();
     void deleteEventById(uint16_t id);
