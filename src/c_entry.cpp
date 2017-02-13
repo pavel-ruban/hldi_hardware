@@ -276,10 +276,50 @@ extern "C" void EXTI4_IRQHandler()
     EXTI_ClearITPendingBit(EXTI_Line4);
 }
 
+void spi_hardware_failure_signal()
+{
+    // @todo fire pink color for 1-1.5 seconds.
+}
 
 extern "C" void TIM2_IRQHandler()
 {
-    TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
+    //TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
+
+    if (TIM_GetITStatus(TIM2, TIM_IT_Update) != RESET) {
+        TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
+
+        uint8_t pcd = RC522_PCD_1;
+
+        do {
+            // Chose rfid device.
+            rc522_pcd_select(pcd);
+            uint8_t status = mfrc522_read(Status1Reg);
+
+            __disable_irq();
+            // If timer is not running and interrupt timer flag is not active reinit device.
+            if (!(status & TRunning)) {
+                uint8_t need_reinit = 0;
+                switch (pcd) {
+                    case RC522_PCD_1:
+                        if (EXTI_GetITStatus(EXTI_Line10) == RESET) need_reinit = 1;
+                        break;
+
+                    case RC522_PCD_2:
+                        if (EXTI_GetITStatus(EXTI_Line11) == RESET) need_reinit = 1;
+                        break;
+                }
+
+                if (need_reinit) {
+                    spi_hardware_failure_signal();
+
+                    mfrc522_init();
+                    __enable_irq();
+                    rc522_irq_prepare();
+                }
+            }
+            __enable_irq();
+        } while (pcd++ < RC522_PCD_2);
+    }
 }
 
 extern "C" void TIM3_IRQHandler()
@@ -677,7 +717,7 @@ main(void)
         if (wifi.is_connected_to_wifi && !wifi.is_connected_to_server && ticks % 2000 == 0) {
              connection_scheduler.invalidate(&wifi);
              wifi.time_synced = TIME_NOT_SYNCED;
-             connect_to_server(10, "192.168.1.151", "2252");
+             connect_to_server(10, "192.168.1.93", "2252");
         }
         if (wifi.is_connected_to_wifi && wifi.is_connected_to_server) {
             connection_scheduler.invalidate(&wifi);
