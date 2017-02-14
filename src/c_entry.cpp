@@ -65,8 +65,6 @@ uint64_t tim4_counter = 0;
 Scheduler<Event<Machine_state>, 100> state_scheduler;
 Scheduler<Event<Esp8266>, 5> connection_scheduler;
 Uart uart(UART1, 115200);
-Uart uart3(UART3, 115200);
-uint8_t test_flag = 0;
 
 
 Esp8266 wifi(&uart, &machine_state, &cache_handler);
@@ -75,7 +73,6 @@ void RCC_Configuration(void);
 void NVIC_Configuration(void);
 //void Delay(vu32 nCount);
 extern "C" void custom_asm();
-//void rc522_irq_prepare();
 void RTC_Configuration();
 
 extern "C" void reset_asm();
@@ -145,12 +142,6 @@ uint8_t get_pcd_id()
     return rc522_select == rc522_2_select ? RC522_PCD_2 : RC522_PCD_1;
 }
 
-uint8_t somi_access_check(uint8_t tag_id[], uint8_t node_id[], uint8_t pcd_id)
-{
-    // @todo use here network request.
-    return 0xff;
-}
-
 uint8_t somi_access_check_1(uint8_t tag_id[], uint8_t rc522_number)
 {
     if (!(machine_state.get_state() == MACHINE_STATE_ACCESS_DENIED || machine_state.get_state() == MACHINE_STATE_LOCK_OPEN)) {
@@ -164,7 +155,6 @@ uint8_t somi_access_check_1(uint8_t tag_id[], uint8_t rc522_number)
     if (cache_handler.checkCard(tag_id) == NOT_CACHED) {
         //machine_state.set_state_lock_open();
         if (wifi.is_connected_to_server && wifi.is_connected_to_wifi) {
-            //cache_handler.addCard(tag_id, IN_PROGRESS);
             //Used for saving current time in sync usage. Between adding event and requesting some interrupts could be invoked.
             uint32_t trigger_time = ticks;
             cache_handler.addEvent(tag_id, rc522_number, CURRENTLY_UNKNOWN, NOT_CACHED, trigger_time, 0);
@@ -198,15 +188,6 @@ uint8_t somi_access_check_1(uint8_t tag_id[], uint8_t rc522_number)
         return ACCESS_DENIED;
     }
 
-//    if (cache_handler.checkCard(tag_id) == NOT_CACHED) {
-//        if (!(wifi.is_connected_to_server && wifi.is_connected_to_wifi)) {
-//            cache_handler.addEvent(tag_id, rc522_number, DEFAULT_NOT_CACHED_BEHAVIOUR, NOT_CACHED);
-//            machine_state.set_state_access_denied();
-//        }
-//        return ACCESS_DENIED;
-//    }
-
-
     return 0xff;
 }
 
@@ -216,32 +197,7 @@ void access_denied_signal()
     {}
 }
 
-void open_node()
-{
-//    for(;;)
-//    {}
-//    // @todo implement here hardware EMI lock control.
-//    static uint8_t x = 0;
-//    x ^= 1;
-//
-//    if (x) GPIO_SetBits(GPIOA, GPIO_Pin_1);
-//    else access_denied_signal();
-}
 
-void somi_event_handler(uint8_t event, uint8_t flags)
-{
-    switch (event)
-    {
-        case EVENT_ACCESS_REQ:
-            if (flags & ACCESS_GRANTED) {
-                open_node();
-            }
-            else {
-                access_denied_signal();
-            }
-            break;
-    }
-}
 
 uint32_t last_time_triggered = 0;
 void rfid_irq_tag_handler()
@@ -254,11 +210,10 @@ void rfid_irq_tag_handler()
     __enable_irq();
 
     if (status == CARD_FOUND) {
-        if (ticks - last_time_triggered > 800) //Delay between riggers; 600?
+        if (ticks - last_time_triggered > 800) //Delay between triggers; 600?
         {
             last_time_triggered = ticks;
             somi_access_check_1(tag_id, get_pcd_id());
-            //somi_access_check_1(tag_id, get_pcd_id());
         }
     }
 
@@ -348,10 +303,8 @@ extern "C" void TIM4_IRQHandler()
         cache_handler.forceInvalidateStuckEntries();
         if (wifi.current_state == STATE_READY && (ticks - uart.last_char_timing) >= 4
 		&& wifi.is_connected_to_server) {
-
             if (cache_handler.eventExist() && !cache_handler.currentlyProcessing()) {
                 tag_event buf_event = cache_handler.popOldestEvent();
-                // wifi.send_access_request(buf_event.tag_id, buf_event.node, buf_event.event_time);
                 wifi.send_event(
 			buf_event.tag_id,
 			buf_event.node,
@@ -369,7 +322,7 @@ extern "C" void TIM4_IRQHandler()
 
 extern "C" void EXTI2_IRQHandler()
 {
-
+    EXTI_ClearITPendingBit(EXTI_Line2);
 }
 
 
@@ -650,16 +603,16 @@ void connect_to_wifi (uint16_t connection_timeout, char* ssid, char* password) {
 
 void connect_to_server (uint16_t connection_timeout, char* ip, char* port) {
     //wifi.set_server_timeout(connection_timeout);
-    if (wifi.attempts_done == 10) {
-        wifi.attempts_done = 255;
-        wifi.reset_time = ticks + TO_SERVER_PROBLEM;
-        machine_state.set_state_server_problem();
-        return;
-    }
-    if (wifi.attempts_done == 255 && wifi.reset_time > ticks) {
-        machine_state.set_state_server_problem();
-        connect_to_wifi(AP_CONNECT_TIMEOUT, "i20.biz", "BetFua2Feg");
-    }
+//    if (wifi.attempts_done == 10) {
+//        wifi.attempts_done = 255;
+//        wifi.reset_time = ticks + TO_SERVER_PROBLEM;
+//        machine_state.set_state_server_problem();
+//        return;
+//    }
+//    if (wifi.attempts_done == 255 && wifi.reset_time > ticks) {
+//        machine_state.set_state_server_problem();
+//        connect_to_wifi(AP_CONNECT_TIMEOUT, "i20.biz", "BetFua2Feg");
+//    }
     if (machine_state.get_state() != MACHINE_STATE_SERVER_CONNECTING)
         machine_state.set_state_server_connecting();
     wifi.time_synced = TIME_NOT_SYNCED;
@@ -700,8 +653,6 @@ main(void)
     interrupt_initialize();
 	__enable_irq();
     rc522_pcd_select(RC522_PCD_1);
-//    __disable_irq();
-//    set_spi2_registers();
     set_spi_registers();
     rc522_set_pins();
     mfrc522_init();
@@ -717,8 +668,7 @@ main(void)
         Delay(1000);
         global_counter++;
         if (!wifi.is_connected_to_wifi && connection_scheduler.size() <= 1) {
-            Event<Esp8266> try2connect(connection_scheduler.get_current_time() + AP_CONNECT_TIMEOUT, &wifi, &Esp8266::connect_to_wifi);
-            connection_scheduler.push(try2connect);
+            connect_to_wifi(AP_CONNECT_TIMEOUT, "i20.biz", "BetFua2Feg");
         }
 
         if (wifi.is_connected_to_wifi && !wifi.is_connected_to_server && ticks % 2000 == 0) {
@@ -731,15 +681,8 @@ main(void)
             if (wifi.time_synced == TIME_NOT_SYNCED) {
                 wifi.sync_time();
             }
-            if (cache_handler.eventExist() && wifi.current_state == STATE_READY && ticks % SERVER_CONNECT_TIMEOUT == 10000) {
-
-                //tag_event buf = cache_handler.popOldestEvent();
-                //wifi.send_event(buf.tag_id, buf.node, buf.event_time, buf.access_result, buf.cache_status);
-            }
             if (machine_state.get_state() == MACHINE_STATE_SERVER_CONNECTING)
                 machine_state.set_state_idle();
-             //wifi.refresh_status();
-
         }
         cache_handler.deleteEventById(10);
         machine_state.get_state();

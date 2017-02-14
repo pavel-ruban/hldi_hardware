@@ -112,7 +112,7 @@ int strtoint( const char * str )
         }
 
         if (_esp->current_state == STATE_WAITING_IP_CONNECT) {
-            if (_esp->strstr_b(command, "OK", COMMAND_SIZE)) {
+            if (_esp->strstr_b(command, "CONNECT", COMMAND_SIZE)) {
                 _esp->awaiting_system_answer = 0;
                 _esp->attempts_done = 0;
                 _esp->is_connected_to_server = 1;
@@ -126,7 +126,7 @@ int strtoint( const char * str )
             if (_esp->strstr_b(command, "ERROR", COMMAND_SIZE) || _esp->strstr_b(command, "CLOSED", COMMAND_SIZE)) {
                 _esp->awaiting_system_answer = 0;
                 _esp->is_connected_to_server = 0;
-                _esp->attempts_done = 0;
+                //_esp->attempts_done = 0;
                 _esp->current_state = STATE_READY;
                 _esp->busy = 0;
                 return INTERNAL_RESPONSE;
@@ -383,7 +383,7 @@ void Esp8266::reset() {
     reset_time = 0;
     current_state = STATE_RESETTING;
     GPIO_ResetBits(ESP8266_RESET_PORT,ESP8266_RESET_PIN);
-    Delay(100);
+    Delay(500);
     GPIO_SetBits(ESP8266_RESET_PORT,ESP8266_RESET_PIN);
 }
 
