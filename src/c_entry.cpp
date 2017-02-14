@@ -238,10 +238,15 @@ void spi_hardware_failure_signal()
 
 extern "C" void TIM2_IRQHandler()
 {
-    //TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
+    TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
+}
 
-    if (TIM_GetITStatus(TIM2, TIM_IT_Update) != RESET) {
-        TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
+extern "C" void TIM3_IRQHandler()
+{
+    //TIM_ClearITPendingBit(TIM3, TIM_IT_Update);
+
+    if (TIM_GetITStatus(TIM3, TIM_IT_Update) != RESET) {
+        TIM_ClearITPendingBit(TIM3, TIM_IT_Update);
 
         uint8_t pcd = RC522_PCD_1;
 
@@ -256,11 +261,11 @@ extern "C" void TIM2_IRQHandler()
                 uint8_t need_reinit = 0;
                 switch (pcd) {
                     case RC522_PCD_1:
-                        if (EXTI_GetITStatus(EXTI_Line10) == RESET) need_reinit = 1;
+                        if (EXTI_GetITStatus(EXTI_Line8) == RESET) need_reinit = 1;
                         break;
 
                     case RC522_PCD_2:
-                        if (EXTI_GetITStatus(EXTI_Line11) == RESET) need_reinit = 1;
+                        if (EXTI_GetITStatus(EXTI_Line9) == RESET) need_reinit = 1;
                         break;
                 }
 
@@ -275,11 +280,6 @@ extern "C" void TIM2_IRQHandler()
             __enable_irq();
         } while (pcd++ < RC522_PCD_2);
     }
-}
-
-extern "C" void TIM3_IRQHandler()
-{
-    TIM_ClearITPendingBit(TIM3, TIM_IT_Update);
 }
 
 extern "C" void TIM4_IRQHandler()
@@ -558,17 +558,17 @@ void GetClocks() {
 void InitializeTimer()
 {
     RCC_ClocksTypeDef RCC_Clocks;
-//    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE); //Подвесили таймер 3 на ABP1 шину
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE); //Подвесили таймер 3 на ABP1 шину
     RCC_GetClocksFreq(&RCC_Clocks);
     TIM_TimeBaseInitTypeDef timerInitStructure;
-//    timerInitStructure.TIM_Prescaler = RCC_Clocks.HCLK_Frequency / 10000;
-//    timerInitStructure.TIM_CounterMode = TIM_CounterMode_Up;
-//    timerInitStructure.TIM_Period = 10000;
-//    timerInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
-//    timerInitStructure.TIM_RepetitionCounter = 0;
-//    TIM_TimeBaseInit(TIM3, &timerInitStructure);
-//    TIM_Cmd(TIM3, ENABLE);
-//    TIM_ITConfig(TIM3, TIM_IT_Update, ENABLE);
+    timerInitStructure.TIM_Prescaler = 40000;
+    timerInitStructure.TIM_CounterMode = TIM_CounterMode_Up;
+    timerInitStructure.TIM_Period = 1800;
+    timerInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
+    timerInitStructure.TIM_RepetitionCounter = 0;
+    TIM_TimeBaseInit(TIM3, &timerInitStructure);
+    TIM_Cmd(TIM3, ENABLE);
+    TIM_ITConfig(TIM3, TIM_IT_Update, ENABLE);
 
 
 //20 msec?
