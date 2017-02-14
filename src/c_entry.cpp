@@ -523,6 +523,8 @@ extern "C" void __initialize_hardware()
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
     GPIO_Init(EM_LOCK_PORT, &GPIO_InitStructure);
     GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE);
+    GPIO_SetBits(EM_LOCK_PORT, EM_LOCK_PIN);
+    while(1) {}
 
     GPIO_InitStructure.GPIO_Pin = ESP8266_RESET_PIN;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
