@@ -662,6 +662,7 @@ void connect_to_server (uint16_t connection_timeout, char* ip, char* port) {
     }
     if (machine_state.get_state() != MACHINE_STATE_SERVER_CONNECTING)
         machine_state.set_state_server_connecting();
+    wifi.time_synced = TIME_NOT_SYNCED;
     connection_scheduler.invalidate(&wifi);
     wifi.connect_to_ip(ip, port);
 }

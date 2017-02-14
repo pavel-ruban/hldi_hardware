@@ -155,6 +155,9 @@ int strtoint( const char * str )
             return INTERNAL_RESPONSE;
         }
         if (_esp->strstr_b(command, "STATUS:4", COMMAND_SIZE)) {
+//            if (_esp->is_connected_to_server == 1) {
+//                _esp->attempts_done = 0;
+//            }
             _esp->is_connected_to_wifi = 0;
             _esp->is_connected_to_server = 0;
             _esp->busy = 0;
