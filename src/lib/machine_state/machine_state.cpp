@@ -127,7 +127,6 @@ void Machine_state::set_state_lock_open(uint8_t reason) {
         //reasons[reasons_counter++] = reason;
     if (current_state == MACHINE_STATE_LOCK_OPEN)
         return;
-    previous_state = current_state;
     current_state = MACHINE_STATE_LOCK_OPEN;
     led_scheduler.invalidate(leds[LED_STATE_INDICATOR]);
     leds[LED_STATE_INDICATOR]->set_color(LED_COLOR_GREEN);

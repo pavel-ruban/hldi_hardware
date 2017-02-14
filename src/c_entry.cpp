@@ -475,15 +475,12 @@ extern "C" void initialize_systick();
 
 extern "C" void __initialize_hardware()
 {
-
     rc522_set_pins();
     rc522_2_set_pins();
     //enc28j60_set_pins();
 
     set_spi_registers();
     set_spi2_registers();
-
-
 
     // Bind GPIOA, GPIOB to APB2 bus.
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
@@ -626,25 +623,6 @@ extern "C" int
 main(void)
 {
     uint64_t global_counter;
-//    std::string ss("gxfdsfs");
-//    int x = 0;
-//    Uart uart2(UART2, 115200);
-//
-//    xx = (int *) malloc(334);
-//    while (1) {
-//        char s1[] = "Hello green cube";
-//        char s2[] = "Lets go further";
-//        int z = strlen(s1);
-//        int z2 = strlen(s2);
-//
-//        char s4[100];
-//
-//        sprintf(s4, "Hello my greeting is %s Usually I say it %d times!!!\n\n", s1, 5);
-//
-//        uart2.send(s4);
-//        ++x;
-//        int y = 1;
-//    }
     machine_state.bind_wifi(&wifi);
     led rgb_led(LED_TYPE_RGB, GPIOA, GPIO_Pin_1, GPIO_Pin_2, GPIO_Pin_3, LED_COLOR_WHITE);
     leds[LED_STATE_INDICATOR] =  &rgb_led;

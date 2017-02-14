@@ -13,8 +13,6 @@ int strtoint( const char * str )
 //    uint8_t first_digit = byte >>
 //}
 
-
-
     CmdHandler::CmdHandler() {
     }
     void CmdHandler::bind_uart(Uart *uart) {
@@ -255,9 +253,7 @@ int strtoint( const char * str )
         //Коннект к точке, без сервака - статус 5.
         //Нету коннекта к точке, (и к серваку, очевидно) - статус 4.
     }
-//char commandbuf[50][COMMAND_SIZE];
-//int commandpos[50][2];
-//int test_count = 0;
+
     void CmdHandler::handle_uart_queue() {
         uint8_t buf = 0;
         uint8_t buf_start = 0;
@@ -280,15 +276,6 @@ int strtoint( const char * str )
             _uart->cyclo_buffer.start_index = it.index;
             _uart->last_string_ready = 0;
             _uart->crlf_count = 0;
-//            if (command[0]) {
-//                commandpos[test_count][0] = buf_start;
-//                commandpos[test_count][1] = buf_end;
-//                strcpy(commandbuf[test_count], command);
-//                if (test_count >= 49) {
-//                    int dgd = 0;
-//                }
-//                test_count++;
-//            }
 
             if (command[0]) {
                 parse_command();
