@@ -339,6 +339,11 @@ extern "C" void TIM4_IRQHandler()
         check_amount++;
     }
 
+    if (uart.last_char_timing != 0 && (ticks - uart.last_char_timing) >= 5000) {
+        wifi.refresh_status();
+        check_amount++;
+    }
+
     if (tim4_counter % 32 == 0) {
         cache_handler.forceInvalidateStuckEntries();
         if (wifi.current_state == STATE_READY && (ticks - uart.last_char_timing) >= 4
@@ -652,6 +657,7 @@ void connect_to_server (uint16_t connection_timeout, char* ip, char* port) {
         return;
     }
     if (wifi.attempts_done == 255 && wifi.reset_time > ticks) {
+        machine_state.set_state_server_problem();
         connect_to_wifi(AP_CONNECT_TIMEOUT, "i20.biz", "BetFua2Feg");
     }
     if (machine_state.get_state() != MACHINE_STATE_SERVER_CONNECTING)

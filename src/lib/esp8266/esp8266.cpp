@@ -126,6 +126,7 @@ int strtoint( const char * str )
             if (_esp->strstr_b(command, "ERROR", COMMAND_SIZE) || _esp->strstr_b(command, "CLOSED", COMMAND_SIZE)) {
                 _esp->awaiting_system_answer = 0;
                 _esp->is_connected_to_server = 0;
+                _esp->attempts_done = 0;
                 _esp->current_state = STATE_READY;
                 _esp->busy = 0;
                 return INTERNAL_RESPONSE;
@@ -145,6 +146,9 @@ int strtoint( const char * str )
             return INTERNAL_RESPONSE;
         }
         if (_esp->strstr_b(command, "STATUS:5", COMMAND_SIZE)) {
+            if (_esp->is_connected_to_server == 1) {
+                _esp->attempts_done = 0;
+            }
             _esp->is_connected_to_wifi = 1;
             _esp->is_connected_to_server = 0;
             _esp->busy = 0;
