@@ -106,7 +106,7 @@ void Machine_state::set_state_idle() {
     leds[LED_STATE_INDICATOR]->set_color(LED_COLOR_WHITE);
     leds[LED_STATE_INDICATOR]->set_blink(0,1000,1000);
     leds[LED_STATE_INDICATOR]->on();
-    GPIO_SetBits(EM_LOCK_PORT,EM_LOCK_PIN);
+    GPIO_ResetBits(EM_LOCK_PORT,EM_LOCK_PIN);
 }
 
 void Machine_state::set_state_other_network_problem() {
@@ -120,7 +120,7 @@ void Machine_state::set_state_other_network_problem() {
     leds[LED_STATE_INDICATOR]->set_color(LED_COLOR_YELLOW);
     leds[LED_STATE_INDICATOR]->set_blink(0,1000,1000);
     leds[LED_STATE_INDICATOR]->on();
-    GPIO_SetBits(EM_LOCK_PORT,EM_LOCK_PIN);
+    GPIO_ResetBits(EM_LOCK_PORT,EM_LOCK_PIN);
 }
 
 void Machine_state::set_state_lock_open(uint8_t reason) {
@@ -135,7 +135,7 @@ void Machine_state::set_state_lock_open(uint8_t reason) {
     leds[LED_STATE_INDICATOR]->on();
     state_scheduler.invalidate(this);
     return_to_correct_state(CLOSE_TIME, previous_state);
-    GPIO_ResetBits(EM_LOCK_PORT,EM_LOCK_PIN);
+    GPIO_SetBits(EM_LOCK_PORT,EM_LOCK_PIN);
 }
 
 void Machine_state::set_state_access_denied() {
@@ -163,7 +163,7 @@ void Machine_state::set_state_guest_call() {
     leds[LED_STATE_INDICATOR]->on();
     state_scheduler.invalidate(this);
     return_to_correct_state(RING_TIME, previous_state);
-    GPIO_SetBits(EM_LOCK_PORT,EM_LOCK_PIN);
+    GPIO_ResetBits(EM_LOCK_PORT,EM_LOCK_PIN);
 }
 
 void Machine_state::set_state_network_problem() {
@@ -177,7 +177,7 @@ void Machine_state::set_state_network_problem() {
     leds[LED_STATE_INDICATOR]->set_color(LED_COLOR_RED);
     leds[LED_STATE_INDICATOR]->set_blink(1,700,700);
     leds[LED_STATE_INDICATOR]->on();
-    GPIO_SetBits(EM_LOCK_PORT,EM_LOCK_PIN);
+    GPIO_ResetBits(EM_LOCK_PORT,EM_LOCK_PIN);
 }
 
 void Machine_state::set_state_ap_connecting() {
@@ -191,7 +191,7 @@ void Machine_state::set_state_ap_connecting() {
     leds[LED_STATE_INDICATOR]->set_color(LED_COLOR_PURPLE);
     leds[LED_STATE_INDICATOR]->set_blink(1,700,700);
     leds[LED_STATE_INDICATOR]->on();
-    GPIO_SetBits(EM_LOCK_PORT,EM_LOCK_PIN);
+    GPIO_ResetBits(EM_LOCK_PORT,EM_LOCK_PIN);
 }
 
 void Machine_state::set_state_server_problem() {
@@ -205,7 +205,7 @@ void Machine_state::set_state_server_problem() {
     leds[LED_STATE_INDICATOR]->set_color(LED_COLOR_RED);
     leds[LED_STATE_INDICATOR]->set_blink(1,200,200);
     leds[LED_STATE_INDICATOR]->on();
-    GPIO_SetBits(EM_LOCK_PORT,EM_LOCK_PIN);
+    GPIO_ResetBits(EM_LOCK_PORT,EM_LOCK_PIN);
 }
 
 void Machine_state::set_state_server_connecting() {
@@ -219,5 +219,5 @@ void Machine_state::set_state_server_connecting() {
     leds[LED_STATE_INDICATOR]->set_color(LED_COLOR_PURPLE);
     leds[LED_STATE_INDICATOR]->set_blink(1,200,200);
     leds[LED_STATE_INDICATOR]->on();
-    GPIO_SetBits(EM_LOCK_PORT,EM_LOCK_PIN);
+    GPIO_ResetBits(EM_LOCK_PORT,EM_LOCK_PIN);
 }

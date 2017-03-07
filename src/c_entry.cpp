@@ -65,6 +65,7 @@ uint64_t tim4_counter = 0;
 Scheduler<Event<Machine_state>, 100> state_scheduler;
 Scheduler<Event<Esp8266>, 5> connection_scheduler;
 Uart uart(UART1, 115200);
+//Uart uart3(UART3, 9600);
 
 
 Esp8266 wifi(&uart, &machine_state, &cache_handler);
@@ -357,7 +358,7 @@ extern "C" void USART1_IRQHandler()
         }
     }
     // Transmission complete interrupt.
-    GPIO_ResetBits(EM_LOCK_PORT, EM_LOCK_PIN);
+    //GPIO_ResetBits(EM_LOCK_PORT, EM_LOCK_PIN);
 
     if (USART_GetITStatus(USART1, USART_IT_TC) != RESET)
     {
@@ -368,9 +369,9 @@ extern "C" void USART1_IRQHandler()
 char test_string;
 extern "C" void SysTick_Handler(void)
 {
-    led_scheduler.handle();
-    state_scheduler.handle();
-    connection_scheduler.handle();
+//    led_scheduler.handle();
+//    state_scheduler.handle();
+//    connection_scheduler.handle();
     //&& wifi._uart->crlf_count >= 2
     ticks++;
 }
@@ -624,47 +625,90 @@ main(void)
 {
     uint64_t global_counter;
     machine_state.bind_wifi(&wifi);
-    led rgb_led(LED_TYPE_RGB, GPIOA, GPIO_Pin_1, GPIO_Pin_2, GPIO_Pin_3, LED_COLOR_WHITE);
+    led rgb_led(LED_TYPE_RGB, GPIOA, GPIO_Pin_1, GPIO_Pin_2, GPIO_Pin_3, 0x0000FF);
     leds[LED_STATE_INDICATOR] =  &rgb_led;
+    leds[LED_STATE_INDICATOR]->set_blink(0,1000,1000);
     leds[LED_STATE_INDICATOR]->on();
+    machine_state.set_state_access_denied();
     InitializeTimer();
     interrupt_initialize();
 	__enable_irq();
-    rc522_pcd_select(RC522_PCD_1);
     set_spi_registers();
     rc522_set_pins();
-    mfrc522_init();
-    rc522_irq_prepare();
-    cache_handler.deleteEventById(10);
-    wifi.Delay(0);
-    uart.cyclo_buffer.data();
 
-    connect_to_wifi(AP_CONNECT_TIMEOUT, "i20.biz", "BetFua2Feg");
-    Delay(5000000);
+//    rc522_pcd_select(RC522_PCD_1);
+//    mfrc522_init();
+//
+//    rc522_pcd_select(RC522_PCD_2);
+//    mfrc522_init();
+//
+//    rc522_irq_prepare();
+//    Delay(500);
+//    rc522_pcd_select(RC522_PCD_1);
+//    rc522_irq_prepare();
+//    cache_handler.deleteEventById(10);
+//    wifi.Delay(0);
+//    uart.cyclo_buffer.data();
+
+
+    //connect_to_wifi(AP_CONNECT_TIMEOUT, "i20.biz", "BetFua2Feg");
+    Delay(1000000);
     while (1)
 	{
-        Delay(1000);
-        global_counter++;
-        if (!wifi.is_connected_to_wifi && connection_scheduler.size() <= 1) {
-            connect_to_wifi(AP_CONNECT_TIMEOUT, "i20.biz", "BetFua2Feg");
-        }
+        //mfrc522_write(0xFF, 0xFF);
+//        SPI_I2S_SendData(SPI2, 0xDD);
+        Delay(100000);
+//        leds[LED_STATE_INDICATOR]->set_color(LED_COLOR_BLUE);
+//        Delay(2000000);
+//        leds[LED_STATE_INDICATOR]->set_color(0x000000AF);
+//        Delay(2000000);
+//        leds[LED_STATE_INDICATOR]->set_color(0x0000005F);
+//        Delay(2000000);
+//        leds[LED_STATE_INDICATOR]->set_color(0x0000001F);
+//        Delay(2000000);
+//        leds[LED_STATE_INDICATOR]->set_color(0x00000000);
 
-        if (wifi.is_connected_to_wifi && !wifi.is_connected_to_server && ticks % 2000 == 0) {
-             connection_scheduler.invalidate(&wifi);
-             wifi.time_synced = TIME_NOT_SYNCED;
-             connect_to_server(10, "192.168.1.93", "2252");
-        }
-        if (wifi.is_connected_to_wifi && wifi.is_connected_to_server) {
-            connection_scheduler.invalidate(&wifi);
-            if (wifi.time_synced == TIME_NOT_SYNCED) {
-                wifi.sync_time();
-            }
-            if (machine_state.get_state() == MACHINE_STATE_SERVER_CONNECTING)
-                machine_state.set_state_idle();
-        }
-        cache_handler.deleteEventById(10);
-        machine_state.get_state();
-        wifi.Delay(0);
+//        Delay(2000000);
+//        leds[LED_STATE_INDICATOR]->set_color(LED_COLOR_RED);
+//        Delay(2000000);
+//        leds[LED_STATE_INDICATOR]->set_color(0x00AF0000);
+//        Delay(2000000);
+//        leds[LED_STATE_INDICATOR]->set_color(0x005F0000);
+//        Delay(2000000);
+//        leds[LED_STATE_INDICATOR]->set_color(0x001F0000);
+//        Delay(2000000);
+//        leds[LED_STATE_INDICATOR]->set_color(0x00000000);v
+//        machine_state.set_state_access_denied();
+//        Delay(10000000);
+//        machine_state.set_state_lock_open(1);
+//        Delay(10000000);
+
+        //uart.send_byte('a');
+        //GPIO_SetBits(EM_LOCK_PORT,EM_LOCK_PIN);
+
+       // Delay(1000000);
+//        uart.send_byte('a');
+//        global_counter++;
+//        if (!wifi.is_connected_to_wifi && connection_scheduler.size() <= 1) {
+//            connect_to_wifi(AP_CONNECT_TIMEOUT, "i20.biz", "BetFua2Feg");
+//        }
+//
+//        if (wifi.is_connected_to_wifi && !wifi.is_connected_to_server && ticks % 2000 == 0) {
+//             connection_scheduler.invalidate(&wifi);
+//             wifi.time_synced = TIME_NOT_SYNCED;
+//             connect_to_server(10, "192.168.1.93", "2252");
+//        }
+//        if (wifi.is_connected_to_wifi && wifi.is_connected_to_server) {
+//            connection_scheduler.invalidate(&wifi);
+//            if (wifi.time_synced == TIME_NOT_SYNCED) {
+//                wifi.sync_time();
+//            }
+//            if (machine_state.get_state() == MACHINE_STATE_SERVER_CONNECTING)
+//                machine_state.set_state_idle();
+//        }
+//        cache_handler.deleteEventById(10);
+//        machine_state.get_state();
+//        wifi.Delay(0);
 
 	}
 }
