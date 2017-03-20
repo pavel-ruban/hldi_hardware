@@ -36,18 +36,16 @@ extern "C"
 
 class Cache_handler
 {
-
 public:
-
     Cache_handler(uint32_t live_time);
     ~Cache_handler();
-
     uint8_t eventExist();
     tag_event popOldestEvent();
     void addEvent(uint8_t tag_id[4], uint8_t node, uint8_t access_result, uint8_t cache_status, uint32_t time, uint8_t needs_validation);
     void updateEvent(uint8_t tag_id[4], uint8_t node, uint8_t access_result, uint32_t time, uint8_t needs_validation);
     uint8_t checkCard(uint8_t tag_id[4]);
     void addCard(uint8_t tag_id[4], uint8_t status);
+    void updateCard(uint8_t tag_id[4], uint8_t status);
     void deleteEvent(uint8_t tag_id[4], uint8_t node,uint32_t time);
     void forceInvalidateStuckEntries();
     void deleteEventById(uint16_t id);
@@ -56,7 +54,6 @@ public:
     uint8_t currentlyProcessing();
 
 private:
-
     uint32_t time_of_proc_start = 0;
     uint16_t current_processing = EVENT_CACHE_SIZE + 1;
     uint32_t _live_time;
@@ -67,11 +64,7 @@ private:
         uint8_t status;
     } card_status;
 
-
-
     card_status card_cache[CARD_CACHE_SIZE];
     tag_event event_cache[EVENT_CACHE_SIZE] = {0};
-    //Queue<tag_cache_entry, 100> tag_cache;
-    //Queue<tag_event, EVENT_CACHE_SIZE> tag_events;
 };
 

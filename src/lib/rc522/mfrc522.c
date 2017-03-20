@@ -84,7 +84,7 @@ uint8_t mfrc522_read(uint8_t reg)
 
 void mfrc522_reset()
 {
-	mfrc522_write(CommandReg,SoftReset_CMD);
+	mfrc522_write(CommandReg, SoftReset_CMD);
 }
 
 uint8_t	mfrc522_request(uint8_t req_mode, uint8_t * tag_type)
