@@ -137,17 +137,6 @@ tag_event Cache_handler::popOldestEvent() {
     return event_cache[most_time_index];
 }
 
-void Cache_handler::updateCard(uint8_t tag_id[4], uint8_t status) {
-    uint16_t i;
-    for (i = 0; i < CARD_CACHE_SIZE; ++i) {
-        if (card_cache[i].tag_id[0] == tag_id[0] && card_cache[i].tag_id[1] == tag_id[1] &&
-            card_cache[i].tag_id[2] == tag_id[2] && card_cache[i].tag_id[3] == tag_id[3]) {
-            card_cache[i].status = status;
-            return;
-        }
-    }
-}
-
 void Cache_handler::addCard(uint8_t tag_id[4], uint8_t status) {
     uint16_t i;
     uint16_t first_empty = 0;

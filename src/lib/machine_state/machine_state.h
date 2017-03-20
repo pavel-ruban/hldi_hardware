@@ -70,5 +70,5 @@ private:
     uint8_t previous_state;
     led **leds;
     uint32_t delay;
-    uint8_t current_state = 0;
+    uint8_t current_state;
 };
