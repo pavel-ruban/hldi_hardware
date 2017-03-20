@@ -15,8 +15,8 @@
 
 extern "C" {
 	#include <stm32f10x_conf.h>
-    #include <binds.h>
-    #include <string.h>
+	#include <binds.h>
+	#include <string.h>
 }
 
 #include "lib/rc522/mfrc522.h"
@@ -30,8 +30,6 @@ extern "C" {
 #include "lib/cache_handler/cache_handler.h"
 #include "esp8266/esp8266.h"
 #include <stdio.h>
-
-
 
 #include "include/queue.h"
 #include "lib/array/array.h"
@@ -50,12 +48,10 @@ ErrorStatus HSEStartUpStatus;
 led *leds[LED_QUANTITY] = {NULL};
 Machine_state machine_state(leds);
 
-
 extern uint8_t mac_addr[6];
 extern uint8_t enc28j60_revid;
 volatile uint32_t ticks;
 int timerValue = 0;
-
 
 Scheduler<Event<led>, 100> led_scheduler;
 Cache_handler cache_handler(EXPIRATION_TIME);
@@ -66,7 +62,6 @@ Scheduler<Event<Machine_state>, 100> state_scheduler;
 Scheduler<Event<Esp8266>, 5> connection_scheduler;
 Uart uart(UART1, 115200);
 //Uart uart3(UART3, 9600);
-
 
 Esp8266 wifi(&uart, &machine_state, &cache_handler);
 /* Private function prototypes -----------------------------------------------*/
@@ -80,34 +75,34 @@ extern "C" void reset_asm();
 
 void Delay(uint32_t nCount)
 {
-    for(; nCount != 0; nCount--);
+	for(; nCount != 0; nCount--);
 }
 
 uint32_t test_ip_conn_counter = 0;
 void rc522_irq_prepare()
 {
-    mfrc522_write(BitFramingReg, 0x07); // TxLastBists = BitFramingReg[2..0]	???
+	mfrc522_write(BitFramingReg, 0x07); // TxLastBists = BitFramingReg[2..0]	???
 
-    // Clear all interrupts flags.
-    mfrc522_write(ComIrqReg, (uint8_t) ~0x80);
-    uint8_t status = mfrc522_read(Status1Reg);
-    // Start timer.
-    mfrc522_write(ControlReg, 1 << TStartNow);
+	// Clear all interrupts flags.
+	mfrc522_write(ComIrqReg, (uint8_t) ~0x80);
+	uint8_t status = mfrc522_read(Status1Reg);
+	// Start timer.
+	mfrc522_write(ControlReg, 1 << TStartNow);
 }
 
 char* strstr(char *haystack, const char *needle) {
-    if (haystack == NULL || needle == NULL) {
-        return NULL;
-    }
-    for ( ; *haystack; haystack++) {
-        const char *h, *n;
-        for (h = haystack, n = needle; *h && *n && (*h == *n); ++h, ++n) {
-        }
-        if (*n == '\0') {
-            return haystack;
-        }
-    }
-    return NULL;
+	if (haystack == NULL || needle == NULL) {
+		return NULL;
+	}
+	for ( ; *haystack; haystack++) {
+		const char *h, *n;
+		for (h = haystack, n = needle; *h && *n && (*h == *n); ++h, ++n) {
+		}
+		if (*n == '\0') {
+			return haystack;
+		}
+	}
+	return NULL;
 }
 
 extern "C" void __initialize_hardware_early()
@@ -140,86 +135,102 @@ void RTC_Configuration()
 
 uint8_t get_pcd_id()
 {
-    return rc522_select == rc522_2_select ? RC522_PCD_2 : RC522_PCD_1;
+	return rc522_select == rc522_2_select ? RC522_PCD_2 : RC522_PCD_1;
 }
 
 uint8_t somi_access_check_1(uint8_t tag_id[], uint8_t rc522_number)
 {
-    if (!(machine_state.get_state() == MACHINE_STATE_ACCESS_DENIED || machine_state.get_state() == MACHINE_STATE_LOCK_OPEN)) {
-        led_scheduler.invalidate(leds[LED_STATE_INDICATOR]);
-        leds[LED_STATE_INDICATOR]->set_color(LED_COLOR_BLUE);
-        leds[LED_STATE_INDICATOR]->set_blink(0,1000,1000);
-        leds[LED_STATE_INDICATOR]->on();
-    }
+	if (!(machine_state.get_state() == MACHINE_STATE_ACCESS_DENIED
+		|| machine_state.get_state() == MACHINE_STATE_LOCK_OPEN)) {
 
+		led_scheduler.invalidate(leds[LED_STATE_INDICATOR]);
+		leds[LED_STATE_INDICATOR]->set_color(LED_COLOR_BLUE);
+		leds[LED_STATE_INDICATOR]->set_blink(0,1000,1000);
+		leds[LED_STATE_INDICATOR]->on();
+	}
 
-    if (cache_handler.checkCard(tag_id) == NOT_CACHED) {
-        //machine_state.set_state_lock_open();
-        if (wifi.is_connected_to_server && wifi.is_connected_to_wifi) {
-            //Used for saving current time in sync usage. Between adding event and requesting some interrupts could be invoked.
-            uint32_t trigger_time = ticks;
-            cache_handler.addEvent(tag_id, rc522_number, CURRENTLY_UNKNOWN, NOT_CACHED, trigger_time, 0);
-            wifi.send_access_request(tag_id, rc522_number, trigger_time);
+	if (cache_handler.checkCard(tag_id) == NOT_CACHED) {
+		//machine_state.set_state_lock_open();
+		if (wifi.is_connected_to_server && wifi.is_connected_to_wifi) {
+			// Used for saving current time in sync usage. Between adding event and requesting
+			// some interrupts could be invoked.
+			uint32_t trigger_time = ticks;
+			cache_handler.addEvent(tag_id, rc522_number, CURRENTLY_UNKNOWN, NOT_CACHED, trigger_time, 0);
+			wifi.send_access_request(tag_id, rc522_number, trigger_time);
 
-            Event<Machine_state> deny_access(state_scheduler.get_current_time() + SERVER_CONNECT_TIMEOUT, &machine_state, &Machine_state::set_state_access_denied);
-            state_scheduler.push(deny_access);
+			Event<Machine_state> deny_access(
+				state_scheduler.get_current_time() + SERVER_CONNECT_TIMEOUT,
+				&machine_state,
+				&Machine_state::set_state_access_denied
+			);
 
-        } else {
-            if (!(wifi.is_connected_to_server && wifi.is_connected_to_wifi)) {
-                cache_handler.addEvent(tag_id, rc522_number, DEFAULT_NOT_CACHED_BEHAVIOUR, NOT_CACHED, ticks, 1);
-                if (DEFAULT_NOT_CACHED_BEHAVIOUR == ACCESS_DENIED)
-                    machine_state.set_state_access_denied();
-                else
-                    machine_state.set_state_lock_open(2);
-            }
-        }
-        return DEFAULT_NOT_CACHED_BEHAVIOUR;
-    }
+			state_scheduler.push(deny_access);
 
+		} else {
+			if (!(wifi.is_connected_to_server && wifi.is_connected_to_wifi)) {
+				cache_handler.addEvent(
+					tag_id,
+					rc522_number,
+					DEFAULT_NOT_CACHED_BEHAVIOUR,
+					NOT_CACHED,
+					ticks,
+					1
+				);
 
-    if (cache_handler.checkCard(tag_id) == ACCESS_GRANTED) {
-        machine_state.set_state_lock_open(3);
-        cache_handler.addEvent(tag_id, rc522_number, ACCESS_GRANTED, CACHED, ticks, 1);
-        return ACCESS_GRANTED;
-    }
+				if (DEFAULT_NOT_CACHED_BEHAVIOUR == ACCESS_DENIED) {
+					machine_state.set_state_access_denied();
+				}
+				else {
+					machine_state.set_state_lock_open(2);
+				}
+			}
+		}
 
-    if (cache_handler.checkCard(tag_id) == ACCESS_DENIED) {
-        machine_state.set_state_access_denied();
-            cache_handler.addEvent(tag_id, rc522_number, ACCESS_DENIED, CACHED, ticks, 1);
-        return ACCESS_DENIED;
-    }
+		return DEFAULT_NOT_CACHED_BEHAVIOUR;
+	}
 
-    return 0xff;
+	if (cache_handler.checkCard(tag_id) == ACCESS_GRANTED) {
+		machine_state.set_state_lock_open(3);
+		cache_handler.addEvent(tag_id, rc522_number, ACCESS_GRANTED, CACHED, ticks, 1);
+		return ACCESS_GRANTED;
+	}
+
+	if (cache_handler.checkCard(tag_id) == ACCESS_DENIED) {
+		machine_state.set_state_access_denied();
+		cache_handler.addEvent(tag_id, rc522_number, ACCESS_DENIED, CACHED, ticks, 1);
+		return ACCESS_DENIED;
+	}
+
+	return 0xff;
 }
 
 void access_denied_signal()
 {
-    for(;;)
-    {}
+	for(;;) {}
 }
 
-
-
 uint32_t last_time_triggered = 0;
+
 void rfid_irq_tag_handler()
 {
-    __disable_irq();
+	__disable_irq();
 
-    uint8_t tag_id[16];
-    memset(tag_id, 0, sizeof(tag_id));
-    uint8_t status = mfrc522_get_card_serial(tag_id);
-    __enable_irq();
+	uint8_t tag_id[16];
+	memset(tag_id, 0, sizeof(tag_id));
+	uint8_t status = mfrc522_get_card_serial(tag_id);
+	__enable_irq();
 
-    if (status == CARD_FOUND) {
-        if (ticks - last_time_triggered > 800) //Delay between triggers; 600?
-        {
-            last_time_triggered = ticks;
-            somi_access_check_1(tag_id, get_pcd_id());
-        }
-    }
+	if (status == CARD_FOUND) {
+		// Delay between triggers. 600?
+		if (ticks - last_time_triggered > 800)
+		{
+			last_time_triggered = ticks;
+			somi_access_check_1(tag_id, get_pcd_id());
+		}
+	}
 
-    // Activate timer.
-    rc522_irq_prepare();
+	// Activate timer.
+	rc522_irq_prepare();
 }
 
 extern "C" void WRONG_IRQ_EXCEPTION()
@@ -229,305 +240,300 @@ extern "C" void WRONG_IRQ_EXCEPTION()
 
 extern "C" void EXTI4_IRQHandler()
 {
-    EXTI_ClearITPendingBit(EXTI_Line4);
+	EXTI_ClearITPendingBit(EXTI_Line4);
 }
 
 void spi_hardware_failure_signal()
 {
-    // @todo fire pink color for 1-1.5 seconds.
+	// @todo fire pink color for 1-1.5 seconds.
 }
 
 extern "C" void TIM2_IRQHandler()
 {
-    TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
+	TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
 }
 
 extern "C" void TIM3_IRQHandler()
 {
-    //TIM_ClearITPendingBit(TIM3, TIM_IT_Update);
+	//TIM_ClearITPendingBit(TIM3, TIM_IT_Update);
 
-    if (TIM_GetITStatus(TIM3, TIM_IT_Update) != RESET) {
-        TIM_ClearITPendingBit(TIM3, TIM_IT_Update);
+	if (TIM_GetITStatus(TIM3, TIM_IT_Update) != RESET) {
+		TIM_ClearITPendingBit(TIM3, TIM_IT_Update);
 
-        uint8_t pcd = RC522_PCD_1;
+		uint8_t pcd = RC522_PCD_1;
 
-        do {
-            // Chose rfid device.
-            rc522_pcd_select(pcd);
-            uint8_t status = mfrc522_read(Status1Reg);
+		do {
+			// Chose rfid device.
+			rc522_pcd_select(pcd);
+			uint8_t status = mfrc522_read(Status1Reg);
 
-            __disable_irq();
-            // If timer is not running and interrupt timer flag is not active reinit device.
-            if (!(status & TRunning)) {
-                uint8_t need_reinit = 0;
-                switch (pcd) {
-                    case RC522_PCD_1:
-                        if (EXTI_GetITStatus(EXTI_Line8) == RESET) need_reinit = 1;
-                        break;
+			__disable_irq();
+			// If timer is not running and interrupt timer flag is not active reinit device.
+			if (!(status & TRunning)) {
+				uint8_t need_reinit = 0;
+				switch (pcd) {
+					case RC522_PCD_1:
+						if (EXTI_GetITStatus(EXTI_Line8) == RESET) need_reinit = 1;
+						break;
 
-                    case RC522_PCD_2:
-                        if (EXTI_GetITStatus(EXTI_Line9) == RESET) need_reinit = 1;
-                        break;
-                }
+					case RC522_PCD_2:
+						if (EXTI_GetITStatus(EXTI_Line9) == RESET) need_reinit = 1;
+						break;
+				}
 
-                if (need_reinit) {
-                    spi_hardware_failure_signal();
+				if (need_reinit) {
+					spi_hardware_failure_signal();
 
-                    mfrc522_init();
-                    __enable_irq();
-                    rc522_irq_prepare();
-                }
-            }
-            __enable_irq();
-        } while (pcd++ < RC522_PCD_2);
-    }
+					mfrc522_init();
+					__enable_irq();
+					rc522_irq_prepare();
+				}
+			}
+			__enable_irq();
+		} while (pcd++ < RC522_PCD_2);
+	}
 }
 
 extern "C" void TIM4_IRQHandler()
 {
-    ++tim4_counter;
-    TIM_ClearITPendingBit(TIM4, TIM_IT_Update);
+	++tim4_counter;
+	TIM_ClearITPendingBit(TIM4, TIM_IT_Update);
 
-    if (uart.last_char_timing != 0 && (ticks - uart.last_char_timing) >= 4
-    	&& uart.cyclo_buffer.end_index != uart.cyclo_buffer.start_index ) {
+	if (uart.last_char_timing != 0 && (ticks - uart.last_char_timing) >= 4
+			&& uart.cyclo_buffer.end_index != uart.cyclo_buffer.start_index ) {
 
-        wifi.invoke_uart_handler();
-        check_amount++;
-    }
+		wifi.invoke_uart_handler();
+		check_amount++;
+	}
 
-    if (uart.last_char_timing != 0 && (ticks - uart.last_char_timing) >= 5000) {
-        wifi.refresh_status();
-        check_amount++;
-    }
+	if (uart.last_char_timing != 0 && (ticks - uart.last_char_timing) >= 5000) {
+		wifi.refresh_status();
+		check_amount++;
+	}
 
-    if (tim4_counter % 32 == 0) {
-        cache_handler.forceInvalidateStuckEntries();
-        if (wifi.current_state == STATE_READY && (ticks - uart.last_char_timing) >= 4
-		&& wifi.is_connected_to_server) {
-            if (cache_handler.eventExist() && !cache_handler.currentlyProcessing()) {
-                tag_event buf_event = cache_handler.popOldestEvent();
-                wifi.send_event(
-			buf_event.tag_id,
-			buf_event.node,
-			buf_event.event_time,
-			buf_event.access_result,
-			buf_event.cache_status
-		);
-            }
-        }
+	if (tim4_counter % 32 == 0) {
+		cache_handler.forceInvalidateStuckEntries();
+		if (wifi.current_state == STATE_READY && (ticks - uart.last_char_timing) >= 4
+			&& wifi.is_connected_to_server) {
 
-        wifi.timeout_invalidation();
-    }
+			if (cache_handler.eventExist() && !cache_handler.currentlyProcessing()) {
+				tag_event buf_event = cache_handler.popOldestEvent();
+
+				wifi.send_event(
+					buf_event.tag_id,
+					buf_event.node,
+					buf_event.event_time,
+					buf_event.access_result,
+					buf_event.cache_status
+				);
+			}
+		}
+
+		wifi.timeout_invalidation();
+	}
 }
-
 
 extern "C" void EXTI2_IRQHandler()
 {
-    EXTI_ClearITPendingBit(EXTI_Line2);
+	EXTI_ClearITPendingBit(EXTI_Line2);
 }
-
-
 
 extern "C" void USART3_IRQHandler()
 {
-    if (USART_GetITStatus(USART3, USART_IT_TC) != RESET)
-    {
-        USART_ClearITPendingBit(USART3, USART_IT_TC);
-    }
+	if (USART_GetITStatus(USART3, USART_IT_TC) != RESET)
+	{
+		USART_ClearITPendingBit(USART3, USART_IT_TC);
+	}
 }
-
 
 extern "C" void USART1_IRQHandler()
 {
-    // Receive Data register not empty interrupt.
-    if (USART_GetITStatus(USART1, USART_IT_RXNE) != RESET) {
-        uart.prev_byte = uart.last_byte;
-        uart.last_byte = USART_ReceiveData(USART1);
-        //GPIO_SetBits(EM_LOCK_PORT, EM_LOCK_PIN);
-        //counter++;
-//        if (uart.prev_byte == '\r' && uart.last_byte == '\n') {
-//            uart.crlf_count++;
-//        }
-//        if (uart.prev_byte == '+' && uart.last_byte == 'I') {
-//            uart.crlf_count++;
-//        }
-        uart.last_char_timing = ticks;
-        uart.cyclo_buffer.push_back(uart.last_byte);
-        if (uart.last_byte == '\n') {
-            uart.last_string_ready = 1;
-        }
-    }
-    // Transmission complete interrupt.
-    //GPIO_ResetBits(EM_LOCK_PORT, EM_LOCK_PIN);
+	// Receive Data register not empty interrupt.
+	if (USART_GetITStatus(USART1, USART_IT_RXNE) != RESET) {
+		uart.prev_byte = uart.last_byte;
+		uart.last_byte = USART_ReceiveData(USART1);
+		//GPIO_SetBits(EM_LOCK_PORT, EM_LOCK_PIN);
+		//counter++;
+		//        if (uart.prev_byte == '\r' && uart.last_byte == '\n') {
+		//            uart.crlf_count++;
+		//        }
+		//        if (uart.prev_byte == '+' && uart.last_byte == 'I') {
+		//            uart.crlf_count++;
+		//        }
+		uart.last_char_timing = ticks;
+		uart.cyclo_buffer.push_back(uart.last_byte);
+		if (uart.last_byte == '\n') {
+			uart.last_string_ready = 1;
+		}
+	}
 
-    if (USART_GetITStatus(USART1, USART_IT_TC) != RESET)
-    {
-        USART_ClearITPendingBit(USART1, USART_IT_TC);
-    }
+	// Transmission complete interrupt.
+	//GPIO_ResetBits(EM_LOCK_PORT, EM_LOCK_PIN);
+
+	if (USART_GetITStatus(USART1, USART_IT_TC) != RESET)
+	{
+		USART_ClearITPendingBit(USART1, USART_IT_TC);
+	}
 }
 
 char test_string;
+
 extern "C" void SysTick_Handler(void)
 {
-    led_scheduler.handle();
-    state_scheduler.handle();
-    connection_scheduler.handle();
-    //&& wifi._uart->crlf_count >= 2
-    ticks++;
+	led_scheduler.handle();
+	state_scheduler.handle();
+	connection_scheduler.handle();
+	//&& wifi._uart->crlf_count >= 2
+	ticks++;
 }
 
 extern "C" void EXTI0_IRQHandler()
 {
-    if (!(machine_state.get_state() == MACHINE_STATE_LOCK_OPEN)) {
-        machine_state.set_state_lock_open(4);
-    }
-	EXTI_ClearITPendingBit(EXTI_Line0);
+	if (!(machine_state.get_state() == MACHINE_STATE_LOCK_OPEN)) {
+		machine_state.set_state_lock_open(4);
+	}
 
+	EXTI_ClearITPendingBit(EXTI_Line0);
 }
 
 extern "C" void EXTI1_IRQHandler()
 {
-    if (!(machine_state.get_state() == MACHINE_STATE_GUEST_CALL)) {
-        machine_state.set_state_guest_call();
-    }
-    EXTI_ClearITPendingBit(EXTI_Line1);
+	if (!(machine_state.get_state() == MACHINE_STATE_GUEST_CALL)) {
+		machine_state.set_state_guest_call();
+	}
+	EXTI_ClearITPendingBit(EXTI_Line1);
 }
 
-
-extern "C" void EXTI15_10_IRQHandler()
-{
-
-}
+extern "C" void EXTI15_10_IRQHandler() {}
 
 extern "C" void EXTI9_5_IRQHandler()
 {
-    if (EXTI_GetITStatus(EXTI_Line8) == SET)
-    {
-        rc522_pcd_select(RC522_PCD_1);
-    }
-    else if (EXTI_GetITStatus(EXTI_Line9) == SET)
-    {
-        rc522_pcd_select(RC522_PCD_2);
-    }
+	if (EXTI_GetITStatus(EXTI_Line8) == SET)
+	{
+		rc522_pcd_select(RC522_PCD_1);
+	}
+	else if (EXTI_GetITStatus(EXTI_Line9) == SET)
+	{
+		rc522_pcd_select(RC522_PCD_2);
+	}
 
-    // Get active interrupts from RC522.
-    uint8_t mfrc522_com_irq_reg = mfrc522_read(ComIrqReg);
+	// Get active interrupts from RC522.
+	uint8_t mfrc522_com_irq_reg = mfrc522_read(ComIrqReg);
 
-    // If some PICC answered handle it to retrieve additional data from it.
-    if (mfrc522_com_irq_reg & (1 << RxIEn)) {
-        //static uint8_t led_state = 0;
+	// If some PICC answered handle it to retrieve additional data from it.
+	if (mfrc522_com_irq_reg & (1 << RxIEn)) {
+		//static uint8_t led_state = 0;
 
-        // Acknowledge receive irq.
-        mfrc522_write(ComIrqReg, 1 << RxIEn);
+		// Acknowledge receive irq.
+		mfrc522_write(ComIrqReg, 1 << RxIEn);
 
-        // Attempt to retrieve tag ID and in case of success check node access.
-        rfid_irq_tag_handler();
+		// Attempt to retrieve tag ID and in case of success check node access.
+		rfid_irq_tag_handler();
 
-        rc522_irq_prepare();
-    }
-        // If it's timer IRQ then request RC522 to start looking for CARD again
-        // and back control to the main thread.
-    else if (mfrc522_com_irq_reg & TimerIEn) {
-        // Down timer irq.
-        mfrc522_write(ComIrqReg, TimerIEn);
+		rc522_irq_prepare();
+	}
+	// If it's timer IRQ then request RC522 to start looking for CARD again
+	// and back control to the main thread.
+	else if (mfrc522_com_irq_reg & TimerIEn) {
+		// Down timer irq.
+		mfrc522_write(ComIrqReg, TimerIEn);
 
-        // As was checked, after Transceive_CMD the FIFO is emptied, so we need put PICC_REQALL
-        // here again, otherwise PICC won't be able response to RC522.
-        mfrc522_write(FIFOLevelReg, mfrc522_read(FIFOLevelReg) | 0x80); // flush FIFO data
-        mfrc522_write(FIFODataReg, PICC_REQALL);
+		// As was checked, after Transceive_CMD the FIFO is emptied, so we need put PICC_REQALL
+		// here again, otherwise PICC won't be able response to RC522.
+		mfrc522_write(FIFOLevelReg, mfrc522_read(FIFOLevelReg) | 0x80); // flush FIFO data
+		mfrc522_write(FIFODataReg, PICC_REQALL);
 
-        // Unfortunately Transceive seems not terminates receive stage automatically if PICC doesn't respond.
-        // so we again need activate command to enter transmitter state to pass PICC_REQALL cmd to PICC
-        // otherwise it won't response due to the ISO 14443 standard.
-        mfrc522_write(CommandReg, Transceive_CMD);
+		// Unfortunately Transceive seems not terminates receive stage automatically if PICC doesn't respond.
+		// so we again need activate command to enter transmitter state to pass PICC_REQALL cmd to PICC
+		// otherwise it won't response due to the ISO 14443 standard.
+		mfrc522_write(CommandReg, Transceive_CMD);
 
-        // When data and command are correct issue the transmit operation.
-        mfrc522_write(BitFramingReg, mfrc522_read(BitFramingReg) | 0x80);
+		// When data and command are correct issue the transmit operation.
+		mfrc522_write(BitFramingReg, mfrc522_read(BitFramingReg) | 0x80);
 
-        // Start timer. When it will end it again cause this IRQ handler to search the PICC.
+		// Start timer. When it will end it again cause this IRQ handler to search the PICC.
 
-        // Clear STM32 irq bit.
-        if (rc522_select == rc522_1_select)
-        {
-            EXTI_ClearITPendingBit(EXTI_Line8);
-        }
-        else if (rc522_select == rc522_2_select)
-        {
-            EXTI_ClearITPendingBit(EXTI_Line9);
-        }
+		// Clear STM32 irq bit.
+		if (rc522_select == rc522_1_select)
+		{
+			EXTI_ClearITPendingBit(EXTI_Line8);
+		}
+		else if (rc522_select == rc522_2_select)
+		{
+			EXTI_ClearITPendingBit(EXTI_Line9);
+		}
 
-        mfrc522_write(ControlReg, 1 << TStartNow);
-        return;
-    }
+		mfrc522_write(ControlReg, 1 << TStartNow);
+		return;
+	}
 
-    if (rc522_select == rc522_1_select)
-    {
-        EXTI_ClearITPendingBit(EXTI_Line8);
-    }
-    else if (rc522_select == rc522_2_select)
-    {
-        EXTI_ClearITPendingBit(EXTI_Line9);
-    }
+	if (rc522_select == rc522_1_select)
+	{
+		EXTI_ClearITPendingBit(EXTI_Line8);
+	}
+	else if (rc522_select == rc522_2_select)
+	{
+		EXTI_ClearITPendingBit(EXTI_Line9);
+	}
 }
-
 
 extern "C" void interrupt_initialize();
 extern "C" void initialize_systick();
 
 extern "C" void __initialize_hardware()
 {
-    rc522_set_pins();
-    rc522_2_set_pins();
-    //enc28j60_set_pins();
+	rc522_set_pins();
+	rc522_2_set_pins();
+	//enc28j60_set_pins();
 
-    set_spi_registers();
-    set_spi2_registers();
+	set_spi_registers();
+	set_spi2_registers();
 
-    // Bind GPIOA, GPIOB to APB2 bus.
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
+	// Bind GPIOA, GPIOB to APB2 bus.
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE);
 
-    // Configure GPIO.
-    // RGB led pins.
-    GPIO_InitStructure.GPIO_Pin = LED_INDICATOR_PIN_RED | LED_INDICATOR_PIN_GREEN | LED_INDICATOR_PIN_BLUE;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD;
-    GPIO_Init(LED_INDICATOR_PORT, &GPIO_InitStructure);
+	// Configure GPIO.
+	// RGB led pins.
+	GPIO_InitStructure.GPIO_Pin = LED_INDICATOR_PIN_RED | LED_INDICATOR_PIN_GREEN | LED_INDICATOR_PIN_BLUE;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD;
+	GPIO_Init(LED_INDICATOR_PORT, &GPIO_InitStructure);
 
-    //----------------test
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;
-    /* Configure SCK and MOSI pins as Alternate Function Push Pull */
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
-    //----------------end test
+	//----------------test
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;
+	/* Configure SCK and MOSI pins as Alternate Function Push Pull */
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_Init(GPIOA, &GPIO_InitStructure);
+	//----------------end test
 
-    // Buttons pins (BTN_OPEN, BTN_CALL).
-    GPIO_InitStructure.GPIO_Pin = BTN_OPEN_PIN | BTN_CALL_PIN;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
-    GPIO_Init(BTN_CALL_PORT, &GPIO_InitStructure);
+	// Buttons pins (BTN_OPEN, BTN_CALL).
+	GPIO_InitStructure.GPIO_Pin = BTN_OPEN_PIN | BTN_CALL_PIN;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
+	GPIO_Init(BTN_CALL_PORT, &GPIO_InitStructure);
 
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
-    GPIO_Init(GPIOB, &GPIO_InitStructure);
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
+	GPIO_Init(GPIOB, &GPIO_InitStructure);
 
-    // Em lock pin.
-    GPIO_InitStructure.GPIO_Pin = EM_LOCK_PIN;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-    GPIO_Init(EM_LOCK_PORT, &GPIO_InitStructure);
-    GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE);
+	// Em lock pin.
+	GPIO_InitStructure.GPIO_Pin = EM_LOCK_PIN;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+	GPIO_Init(EM_LOCK_PORT, &GPIO_InitStructure);
+	GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE);
 
-    GPIO_InitStructure.GPIO_Pin = ESP8266_RESET_PIN;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-    GPIO_Init(ESP8266_RESET_PORT, &GPIO_InitStructure);
-   // GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE);
+	GPIO_InitStructure.GPIO_Pin = ESP8266_RESET_PIN;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+	GPIO_Init(ESP8266_RESET_PORT, &GPIO_InitStructure);
+	// GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE);
 
-    GPIO_ResetBits(ESP8266_RESET_PORT,ESP8266_RESET_PIN);
-    GPIO_SetBits(ESP8266_RESET_PORT,ESP8266_RESET_PIN);
+	GPIO_ResetBits(ESP8266_RESET_PORT,ESP8266_RESET_PIN);
+	GPIO_SetBits(ESP8266_RESET_PORT,ESP8266_RESET_PIN);
 
 	initialize_systick();
 }
@@ -538,144 +544,158 @@ extern "C" void __reset_hardware()
 }
 
 void GetClocks() {
-    RCC_ClocksTypeDef clocks;
-    RCC_GetClocksFreq(&clocks);
+	RCC_ClocksTypeDef clocks;
+	RCC_GetClocksFreq(&clocks);
 
-    uint32_t APB1_TIMCLK_Frequency;
-    uint32_t APB2_TIMCLK_Frequency;
+	uint32_t APB1_TIMCLK_Frequency;
+	uint32_t APB2_TIMCLK_Frequency;
 
-    if (clocks.HCLK_Frequency == clocks.PCLK1_Frequency)
-        APB1_TIMCLK_Frequency = clocks.PCLK1_Frequency;
-    else
-        APB1_TIMCLK_Frequency = 2 * clocks.PCLK1_Frequency;
+	if (clocks.HCLK_Frequency == clocks.PCLK1_Frequency) {
+		APB1_TIMCLK_Frequency = clocks.PCLK1_Frequency;
+	}
+	else {
+		APB1_TIMCLK_Frequency = 2 * clocks.PCLK1_Frequency;
+	}
 
-    if (clocks.HCLK_Frequency == clocks.PCLK2_Frequency)
-        APB2_TIMCLK_Frequency = clocks.PCLK2_Frequency;
-    else
-        APB2_TIMCLK_Frequency = 2 * clocks.PCLK2_Frequency;
-    //APB1, APB2 - 72MHz;
+	// APB1, APB2 - 72MHz.
+	if (clocks.HCLK_Frequency == clocks.PCLK2_Frequency) {
+		APB2_TIMCLK_Frequency = clocks.PCLK2_Frequency;
+	}
+	else {
+		APB2_TIMCLK_Frequency = 2 * clocks.PCLK2_Frequency;
+	}
 }
 
 void InitializeTimer()
 {
-    RCC_ClocksTypeDef RCC_Clocks;
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE); //Подвесили таймер 3 на ABP1 шину
-    RCC_GetClocksFreq(&RCC_Clocks);
-    TIM_TimeBaseInitTypeDef timerInitStructure;
-    timerInitStructure.TIM_Prescaler = 40000;
-    timerInitStructure.TIM_CounterMode = TIM_CounterMode_Up;
-    timerInitStructure.TIM_Period = 1800;
-    timerInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
-    timerInitStructure.TIM_RepetitionCounter = 0;
-    TIM_TimeBaseInit(TIM3, &timerInitStructure);
-    TIM_Cmd(TIM3, ENABLE);
-    TIM_ITConfig(TIM3, TIM_IT_Update, ENABLE);
+	RCC_ClocksTypeDef RCC_Clocks;
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE); //Подвесили таймер 3 на ABP1 шину
+	RCC_GetClocksFreq(&RCC_Clocks);
+	TIM_TimeBaseInitTypeDef timerInitStructure;
+	timerInitStructure.TIM_Prescaler = 40000;
+	timerInitStructure.TIM_CounterMode = TIM_CounterMode_Up;
+	timerInitStructure.TIM_Period = 1800;
+	timerInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
+	timerInitStructure.TIM_RepetitionCounter = 0;
+	TIM_TimeBaseInit(TIM3, &timerInitStructure);
+	TIM_Cmd(TIM3, ENABLE);
+	TIM_ITConfig(TIM3, TIM_IT_Update, ENABLE);
 
-
-//20 msec?
-    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
-    timerInitStructure.TIM_Prescaler = 720000-1;
-    timerInitStructure.TIM_CounterMode = TIM_CounterMode_Up;
-    timerInitStructure.TIM_Period = 10;
-    timerInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
-    timerInitStructure.TIM_RepetitionCounter = 0;
-    TIM_TimeBaseInit(TIM4, &timerInitStructure);
-    TIM_Cmd(TIM4, ENABLE);
-    TIM_ITConfig(TIM4, TIM_IT_Update, ENABLE);
-
+	// 20 msec?
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
+	timerInitStructure.TIM_Prescaler = 720000-1;
+	timerInitStructure.TIM_CounterMode = TIM_CounterMode_Up;
+	timerInitStructure.TIM_Period = 10;
+	timerInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
+	timerInitStructure.TIM_RepetitionCounter = 0;
+	TIM_TimeBaseInit(TIM4, &timerInitStructure);
+	TIM_Cmd(TIM4, ENABLE);
+	TIM_ITConfig(TIM4, TIM_IT_Update, ENABLE);
 }
 
-void connect_to_wifi (uint16_t connection_timeout, char* ssid, char* password) {
-    wifi.save_creditals(ssid, password);
-    wifi.connect_to_wifi();
-    state_scheduler.invalidate(&machine_state);
-    machine_state.set_state_ap_connecting();
-    connection_scheduler.invalidate(&wifi);
-    Event<Esp8266> try2connect(connection_scheduler.get_current_time() + connection_timeout, &wifi, &Esp8266::connect_to_wifi);
-    connection_scheduler.push(try2connect);
-    Event<Esp8266> try2connect1(connection_scheduler.get_current_time() + connection_timeout * 2, &wifi, &Esp8266::connect_to_wifi);
-    connection_scheduler.push(try2connect1);
-    Event<Esp8266> try2connect2(connection_scheduler.get_current_time() + connection_timeout * 3, &wifi, &Esp8266::connect_to_wifi);
-    connection_scheduler.push(try2connect2);
+void connect_to_wifi (uint16_t connection_timeout, char* ssid, char* password)
+{
+	wifi.save_creditals(ssid, password);
+	wifi.connect_to_wifi();
+	state_scheduler.invalidate(&machine_state);
+	machine_state.set_state_ap_connecting();
+	connection_scheduler.invalidate(&wifi);
+
+	for (int i = 1; i <= 3; ++i) {
+		Event<Esp8266> connect_attempt(
+			connection_scheduler.get_current_time() + connection_timeout * i,
+			&wifi,
+			&Esp8266::connect_to_wifi
+		);
+
+		connection_scheduler.push(connect_attempt);
+	}
 }
 
-void connect_to_server (uint16_t connection_timeout, char* ip, char* port) {
-    //wifi.set_server_timeout(connection_timeout);
-//    if (wifi.attempts_done == 10) {
-//        wifi.attempts_done = 255;
-//        wifi.reset_time = ticks + TO_SERVER_PROBLEM;
-//        machine_state.set_state_server_problem();
-//        return;
-//    }
-//    if (wifi.attempts_done == 255 && wifi.reset_time > ticks) {
-//        machine_state.set_state_server_problem();
-//        connect_to_wifi(AP_CONNECT_TIMEOUT, "i20.biz", "BetFua2Feg");
-//    }
-    if (machine_state.get_state() != MACHINE_STATE_SERVER_CONNECTING)
-        machine_state.set_state_server_connecting();
-    wifi.time_synced = TIME_NOT_SYNCED;
-    connection_scheduler.invalidate(&wifi);
-    wifi.connect_to_ip(ip, port);
-}
+void connect_to_server (uint16_t connection_timeout, char* ip, char* port)
+{
+	//wifi.set_server_timeout(connection_timeout);
+	//    if (wifi.attempts_done == 10) {
+	//        wifi.attempts_done = 255;
+	//        wifi.reset_time = ticks + TO_SERVER_PROBLEM;
+	//        machine_state.set_state_server_problem();
+	//        return;
+	//    }
+	//    if (wifi.attempts_done == 255 && wifi.reset_time > ticks) {
+	//        machine_state.set_state_server_problem();
+	//        connect_to_wifi(AP_CONNECT_TIMEOUT, "i20.biz", "BetFua2Feg");
+	//    }
+	//
+	
+	if (machine_state.get_state() != MACHINE_STATE_SERVER_CONNECTING) {
+		machine_state.set_state_server_connecting();
+	}
 
+	wifi.time_synced = TIME_NOT_SYNCED;
+	connection_scheduler.invalidate(&wifi);
+	wifi.connect_to_ip(ip, port);
+}
 
 int *xx;
 extern "C" int
+
 main(void)
 {
-    uint64_t global_counter;
-    machine_state.bind_wifi(&wifi);
-    led rgb_led(LED_TYPE_RGB, GPIOA, GPIO_Pin_1, GPIO_Pin_2, GPIO_Pin_3, 0x000000);
-    leds[LED_STATE_INDICATOR] =  &rgb_led;
-    leds[LED_STATE_INDICATOR]->set_blink(0,1000,1000);
-    leds[LED_STATE_INDICATOR]->on();
-    machine_state.set_state_idle();
-    InitializeTimer();
-    interrupt_initialize();
+	uint64_t global_counter;
+	machine_state.bind_wifi(&wifi);
+	led rgb_led(LED_TYPE_RGB, GPIOA, GPIO_Pin_1, GPIO_Pin_2, GPIO_Pin_3, 0x000000);
+	leds[LED_STATE_INDICATOR] =  &rgb_led;
+	leds[LED_STATE_INDICATOR]->set_blink(0,1000,1000);
+	leds[LED_STATE_INDICATOR]->on();
+	machine_state.set_state_idle();
+	InitializeTimer();
+	interrupt_initialize();
 	__enable_irq();
-    set_spi_registers();
-    rc522_set_pins();
+	set_spi_registers();
+	rc522_set_pins();
 
-//    rc522_pcd_select(RC522_PCD_1);
-//    mfrc522_init();
-//
-//    rc522_pcd_select(RC522_PCD_2);
-//    mfrc522_init();
-//
-//    rc522_irq_prepare();
-//    Delay(500);
-//    rc522_pcd_select(RC522_PCD_1);
-//    rc522_irq_prepare();
-//    cache_handler.deleteEventById(10);
-    wifi.Delay(0);
-//    uart.cyclo_buffer.data();
+	//    rc522_pcd_select(RC522_PCD_1);
+	//    mfrc522_init();
+	//
+	//    rc522_pcd_select(RC522_PCD_2);
+	//    mfrc522_init();
+	//
+	//    rc522_irq_prepare();
+	//    Delay(500);
+	//    rc522_pcd_select(RC522_PCD_1);
+	//    rc522_irq_prepare();
+	//    cache_handler.deleteEventById(10);
+	wifi.Delay(0);
+	//    uart.cyclo_buffer.data();
 
-
-    connect_to_wifi(AP_CONNECT_TIMEOUT, "i20.biz", "BetFua2Feg");
-    Delay(1000000);
-    while (1)
+	connect_to_wifi(AP_CONNECT_TIMEOUT, WIFI_SSID, WIFI_PASSWORD);
+	Delay(1000000);
+	while (1)
 	{
-        global_counter++;
-        if (!wifi.is_connected_to_wifi && connection_scheduler.size() <= 1) {
-            connect_to_wifi(AP_CONNECT_TIMEOUT, "i20.biz", "BetFua2Feg");
-        }
+		global_counter++;
+		if (!wifi.is_connected_to_wifi && connection_scheduler.size() <= 1) {
+			connect_to_wifi(AP_CONNECT_TIMEOUT, WIFI_SSID, WIFI_PASSWORD);
+		}
 
-        if (wifi.is_connected_to_wifi && !wifi.is_connected_to_server && ticks % 2000 == 0) {
-             connection_scheduler.invalidate(&wifi);
-             wifi.time_synced = TIME_NOT_SYNCED;
-             connect_to_server(10, "192.168.1.164", "2252");
-        }
-        if (wifi.is_connected_to_wifi && wifi.is_connected_to_server) {
-            connection_scheduler.invalidate(&wifi);
-            if (wifi.time_synced == TIME_NOT_SYNCED) {
-                wifi.sync_time();
-            }
-            if (machine_state.get_state() == MACHINE_STATE_SERVER_CONNECTING)
-                machine_state.set_state_idle();
-        }
-        cache_handler.deleteEventById(10);
-        machine_state.get_state();
-        wifi.Delay(0);
+		if (wifi.is_connected_to_wifi && !wifi.is_connected_to_server && ticks % 2000 == 0) {
+			connection_scheduler.invalidate(&wifi);
+			wifi.time_synced = TIME_NOT_SYNCED;
+			connect_to_server(10, SMART_OFFICE_SRV_IP, SMART_OFFICE_SRV_PORT);
+		}
+
+		if (wifi.is_connected_to_wifi && wifi.is_connected_to_server) {
+			connection_scheduler.invalidate(&wifi);
+			if (wifi.time_synced == TIME_NOT_SYNCED) {
+				wifi.sync_time();
+			}
+
+			if (machine_state.get_state() == MACHINE_STATE_SERVER_CONNECTING) {
+				machine_state.set_state_idle();
+			}
+		}
+		cache_handler.deleteEventById(10);
+		machine_state.get_state();
+		wifi.Delay(0);
 
 	}
 }
@@ -691,14 +711,14 @@ void interrupt_initialize()
 	// Connect EXTI Lines to Button Pins
 	// BTN_OPEN.
 	GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource0);
-    // BTN_CALL.
-    GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource1);
+	// BTN_CALL.
+	GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource1);
 
-    GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource4);
+	GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource4);
 
-    GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource9);
+	GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource9);
 
-    GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource8);
+	GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource8);
 
 	// IRQ Driven Button BTN_OPEN.
 	EXTI_InitStructure.EXTI_Line = EXTI_Line0;
@@ -707,69 +727,69 @@ void interrupt_initialize()
 	EXTI_InitStructure.EXTI_LineCmd = ENABLE;
 	EXTI_Init(&EXTI_InitStructure);
 
-    NVIC_InitStructure.NVIC_IRQChannel = EXTI0_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x0B;
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x0B;
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-    NVIC_Init(&NVIC_InitStructure);
+	NVIC_InitStructure.NVIC_IRQChannel = EXTI0_IRQn;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x0B;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x0B;
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+	NVIC_Init(&NVIC_InitStructure);
 
-    // IRQ Driven Button BTN_CALL.
-    EXTI_InitStructure.EXTI_Line = EXTI_Line1;
-    EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
-    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
-    EXTI_InitStructure.EXTI_LineCmd = ENABLE;
-    EXTI_Init(&EXTI_InitStructure);
+	// IRQ Driven Button BTN_CALL.
+	EXTI_InitStructure.EXTI_Line = EXTI_Line1;
+	EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+	EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
+	EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+	EXTI_Init(&EXTI_InitStructure);
 
-    NVIC_InitStructure.NVIC_IRQChannel = EXTI1_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x0A;
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x0A;
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-    NVIC_Init(&NVIC_InitStructure);
-//
-//    EXTI_InitStructure.EXTI_Line = EXTI_Line4;
-//    EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
-//    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
-//    EXTI_InitStructure.EXTI_LineCmd = ENABLE;
-//    EXTI_Init(&EXTI_InitStructure);
-//
-//    NVIC_InitStructure.NVIC_IRQChannel =  EXTI4_IRQn;
-//    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x08;
-//    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x08;
-//    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-//    NVIC_Init(&NVIC_InitStructure);
-    //----------------------------------------------
-    EXTI_InitStructure.EXTI_Line = EXTI_Line8;
-    EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
-    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
-    EXTI_InitStructure.EXTI_LineCmd = ENABLE;
-    EXTI_Init(&EXTI_InitStructure);
+	NVIC_InitStructure.NVIC_IRQChannel = EXTI1_IRQn;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x0A;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x0A;
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+	NVIC_Init(&NVIC_InitStructure);
+	//
+	//    EXTI_InitStructure.EXTI_Line = EXTI_Line4;
+	//    EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+	//    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
+	//    EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+	//    EXTI_Init(&EXTI_InitStructure);
+	//
+	//    NVIC_InitStructure.NVIC_IRQChannel =  EXTI4_IRQn;
+	//    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x08;
+	//    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x08;
+	//    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+	//    NVIC_Init(&NVIC_InitStructure);
+	//----------------------------------------------
+	EXTI_InitStructure.EXTI_Line = EXTI_Line8;
+	EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+	EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
+	EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+	EXTI_Init(&EXTI_InitStructure);
 
-    EXTI_InitStructure.EXTI_Line = EXTI_Line9;
-    EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
-    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
-    EXTI_InitStructure.EXTI_LineCmd = ENABLE;
-    EXTI_Init(&EXTI_InitStructure);
+	EXTI_InitStructure.EXTI_Line = EXTI_Line9;
+	EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+	EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
+	EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+	EXTI_Init(&EXTI_InitStructure);
 
-    // RC522 Timer And PICC Receive Interrupt.
-    NVIC_InitStructure.NVIC_IRQChannel = EXTI9_5_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x09;
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x09;
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-    NVIC_Init(&NVIC_InitStructure);
-//----------------------------------------------
-//    EXTI_InitStructure.EXTI_Line = EXTI_Line10;
-//    EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
-//    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
-//    EXTI_InitStructure.EXTI_LineCmd = ENABLE;
-//    EXTI_Init(&EXTI_InitStructure);
-//
-//    // RC522 Timer And PICC Receive Interrupt.
-//    NVIC_InitStructure.NVIC_IRQChannel = EXTI15_10_IRQn;
-//    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x09;
-//    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x09;
-//    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-//    NVIC_Init(&NVIC_InitStructure);
-//----------------------------------------------
+	// RC522 Timer And PICC Receive Interrupt.
+	NVIC_InitStructure.NVIC_IRQChannel = EXTI9_5_IRQn;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x09;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x09;
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+	NVIC_Init(&NVIC_InitStructure);
+	//----------------------------------------------
+	//    EXTI_InitStructure.EXTI_Line = EXTI_Line10;
+	//    EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+	//    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
+	//    EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+	//    EXTI_Init(&EXTI_InitStructure);
+	//
+	//    // RC522 Timer And PICC Receive Interrupt.
+	//    NVIC_InitStructure.NVIC_IRQChannel = EXTI15_10_IRQn;
+	//    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x09;
+	//    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x09;
+	//    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+	//    NVIC_Init(&NVIC_InitStructure);
+	//----------------------------------------------
 	// TIM2 timer, used as on second watchdog for enc28j60, rc522.
 	// Also do some periodical not priority calls.
 	NVIC_InitStructure.NVIC_IRQChannel = TIM3_IRQn;
@@ -778,12 +798,12 @@ void interrupt_initialize()
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);
 
-    //USART handler timer
-    NVIC_InitStructure.NVIC_IRQChannel = TIM4_IRQn;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x05;
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x05;
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-    NVIC_Init(&NVIC_InitStructure);
+	//USART handler timer
+	NVIC_InitStructure.NVIC_IRQChannel = TIM4_IRQn;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x05;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x05;
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+	NVIC_Init(&NVIC_InitStructure);
 
 	// Systick timer, used for milliseconds granularity
 	// and milliseconds set timeouts.
@@ -793,21 +813,21 @@ void interrupt_initialize()
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);
 
-    NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn; //канал
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x01; //приоритет
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x01;//приоритет субгруппы
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE; //включаем канал
-    NVIC_Init(&NVIC_InitStructure); //инициализируем
-    USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
+	NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn; //канал
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x01; //приоритет
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x01;//приоритет субгруппы
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE; //включаем канал
+	NVIC_Init(&NVIC_InitStructure); //инициализируем
+	USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
 }
 
 extern "C" void initialize_systick()
 {
-   RCC_ClocksTypeDef RCC_Clocks;
-   RCC_GetClocksFreq(&RCC_Clocks);
+	RCC_ClocksTypeDef RCC_Clocks;
+	RCC_GetClocksFreq(&RCC_Clocks);
 
-   // 1 millisecond tick.
-   SysTick_Config(RCC_Clocks.HCLK_Frequency / (1000));
+	// 1 millisecond tick.
+	SysTick_Config(RCC_Clocks.HCLK_Frequency / (1000));
 }
 
 /*******************************************************************************
@@ -865,7 +885,7 @@ void RCC_Configuration(void)
 	RCC_PCLK2Config(RCC_HCLK_Div2);
 
 	//enable AFIO clock
-    	RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
 
 	/* Enable GPIO clock for SPIz */
 	RCC_APB2PeriphClockCmd(SPIz_GPIO_CLK | RCC_APB2Periph_AFIO, ENABLE);
@@ -892,7 +912,6 @@ void NVIC_Configuration(void)
 #endif
 }
 
-
 #ifdef  DEBUG
 /*******************************************************************************
  * Function Name  : assert_failed
@@ -909,11 +928,6 @@ void assert_failed(uint8_t *file, uint32_t line)
 ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
 
 	/* Infinite loop */
-	while (1)
-	{
-	}
+	while (1) {}
 }
 #endif
-
-/******************* (C) COPYRIGHT 2007 STMicroelectronics *****END OF FILE****/
-
