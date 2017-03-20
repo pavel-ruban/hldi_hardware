@@ -90,10 +90,11 @@ void rc522_irq_prepare()
 	mfrc522_write(ControlReg, 1 << TStartNow);
 }
 
-char* strstr(char *haystack, const char *needle) {
+char * strstr(char *haystack, const char *needle) {
 	if (haystack == NULL || needle == NULL) {
 		return NULL;
 	}
+
 	for ( ; *haystack; haystack++) {
 		const char *h, *n;
 		for (h = haystack, n = needle; *h && *n && (*h == *n); ++h, ++n) {
@@ -102,6 +103,7 @@ char* strstr(char *haystack, const char *needle) {
 			return haystack;
 		}
 	}
+
 	return NULL;
 }
 
@@ -626,7 +628,7 @@ void connect_to_server (uint16_t connection_timeout, char* ip, char* port)
 	//        connect_to_wifi(AP_CONNECT_TIMEOUT, "i20.biz", "BetFua2Feg");
 	//    }
 	//
-	
+
 	if (machine_state.get_state() != MACHINE_STATE_SERVER_CONNECTING) {
 		machine_state.set_state_server_connecting();
 	}
@@ -707,17 +709,14 @@ void interrupt_initialize()
 	// NVIC structure to set up NVIC controller
 	NVIC_InitTypeDef NVIC_InitStructure;
 
-	// GPIO structure used to initialize Button pins
-	// Connect EXTI Lines to Button Pins
+	// GPIO structure used to initialize Button pins.
+	// Connect EXTI Lines to Button Pins.
 	// BTN_OPEN.
 	GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource0);
 	// BTN_CALL.
 	GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource1);
-
 	GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource4);
-
 	GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource9);
-
 	GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource8);
 
 	// IRQ Driven Button BTN_OPEN.

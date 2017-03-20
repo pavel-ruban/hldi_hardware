@@ -40,11 +40,12 @@
 class Esp8266;
 class Machine_state;
 
-class CmdHandler {
+class CmdHandler
+{
 private:
 
-    Uart *_uart;
-    Esp8266 *_esp;
+    Uart *_uart = 0;
+    Esp8266 *_esp = 0;
     uint32_t packets_recv_prev = 0;
     uint32_t packets_recv = 0;
     uint8_t parse_command();
@@ -52,8 +53,9 @@ private:
 public:
     char command[COMMAND_SIZE];
 
-    CmdHandler();
+    CmdHandler(Uart *, Esp8266 *);
     ~CmdHandler();
+
     void bind_uart(Uart *uart);
     void bind_esp(Esp8266 *esp);
     void handle_uart_queue();
@@ -61,7 +63,8 @@ public:
     uint8_t parse_uid(char* uid_string, uint8_t* uid_bytes);
 };
 
-class Esp8266{
+class Esp8266
+{
 private:
     CmdHandler hndl;
     char last_string[RECV_STRING_MAX_SIZE];
@@ -69,6 +72,9 @@ private:
     uint64_t request_time = 0;
     char buf[10] = {0};
 public:
+    Esp8266(Uart *uart, Machine_state *machine_state, Cache_handler *cache_handler);
+    ~Esp8266();
+
     void timeout_invalidation();
     uint8_t awaiting_system_answer = 0;
     uint32_t reset_time = 0;
@@ -102,8 +108,7 @@ public:
     char* strstr_b(char *haystack, const char *needle, uint16_t size);
     Machine_state *_machine_state;
     Uart *_uart;
-    Esp8266(Uart *uart, Machine_state *machine_state, Cache_handler *cache_handler);
-    ~Esp8266();
+
     uint8_t wifi_connected;
     uint32_t ip_address;
     void send_request(char* request, uint8_t w8resp);
