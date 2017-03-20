@@ -26,6 +26,10 @@
 
 #define TO_SERVER_PROBLEM 20 * 1000
 
+#define TIME_SYNCED 1
+#define TIME_NOT_SYNCED 0
+#define TIME_SYNC_IN_PROGRESS 2
+
 //Esp8266
 
 //Esp8266 response types
@@ -94,7 +98,7 @@ public:
     uint8_t connect_after_reset = 0;
     uint8_t current_state;
     uint8_t busy;
-    uint8_t time_synced = 0;
+    uint8_t time_synced = TIME_NOT_SYNCED;
     char* strstr_b(char *haystack, const char *needle, uint16_t size);
     Machine_state *_machine_state;
     Uart *_uart;
