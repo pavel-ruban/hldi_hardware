@@ -19,17 +19,18 @@ extern "C" {
 	#include <string.h>
 }
 
-#include "lib/rc522/mfrc522.h"
+//#include "lib/rc522/mfrc522.h"
 #include "include/utils.h"
-#include <led/led.hpp>
-#include "machine_state/machine_state.h"
+//#include <led/led.hpp>
+//#include "machine_state/machine_state.h"
 #include <scheduler/include/scheduler.h>
 #include <config.h>
-#include "lib/led/led.hpp"
+//#include "lib/led/led.hpp"
 #include "uart/uart.h"
 #include "lib/cache_handler/cache_handler.h"
-#include "esp8266/esp8266.h"
+//#include "esp8266/esp8266.h"
 #include <stdio.h>
+#include <servo.h>
 
 #include "include/queue.h"
 #include "lib/array/array.h"
@@ -45,25 +46,28 @@ extern "C" {
 SPI_InitTypeDef SPI_InitStructure;
 GPIO_InitTypeDef GPIO_InitStructure;
 ErrorStatus HSEStartUpStatus;
-led *leds[LED_QUANTITY] = {NULL};
-Machine_state machine_state(leds);
+//led *leds[LED_QUANTITY] = {NULL};
+//Machine_state machine_state(leds);
 
-extern uint8_t mac_addr[6];
-extern uint8_t enc28j60_revid;
+//extern uint8_t mac_addr[6];
+//extern uint8_t enc28j60_revid;
 volatile uint32_t ticks;
 int timerValue = 0;
 
-Scheduler<Event<led>, 100> led_scheduler;
-Cache_handler cache_handler(EXPIRATION_TIME);
+//Scheduler<Event<led>, 100> led_scheduler;
+//Cache_handler cache_handler(EXPIRATION_TIME);
 uint32_t check_amount = 0;
 uint64_t tim4_counter = 0;
 
-Scheduler<Event<Machine_state>, 100> state_scheduler;
-Scheduler<Event<Esp8266>, 5> connection_scheduler;
+//Scheduler<Event<Machine_state>, 100> state_scheduler;
+//Scheduler<Event<Esp8266>, 5> connection_scheduler;
 Uart uart(UART1, 115200);
 //Uart uart3(UART3, 9600);
 
-Esp8266 wifi(&uart, &machine_state, &cache_handler);
+// DC brushed motor controller.
+Servo::Servo servo;
+
+//Esp8266 wifi(&uart, &machine_state, &cache_handler);
 /* Private function prototypes -----------------------------------------------*/
 void RCC_Configuration(void);
 void NVIC_Configuration(void);
@@ -135,76 +139,6 @@ void RTC_Configuration()
 	RCC_LSEConfig(RCC_LSE_ON);
 }
 
-uint8_t get_pcd_id()
-{
-	return rc522_select == rc522_2_select ? RC522_PCD_2 : RC522_PCD_1;
-}
-
-uint8_t somi_access_check_1(uint8_t tag_id[], uint8_t rc522_number)
-{
-	if (!(machine_state.get_state() == MACHINE_STATE_ACCESS_DENIED
-		|| machine_state.get_state() == MACHINE_STATE_LOCK_OPEN)) {
-
-		led_scheduler.invalidate(leds[LED_STATE_INDICATOR]);
-		leds[LED_STATE_INDICATOR]->set_color(LED_COLOR_BLUE);
-		leds[LED_STATE_INDICATOR]->set_blink(0,1000,1000);
-		leds[LED_STATE_INDICATOR]->on();
-	}
-
-	if (cache_handler.checkCard(tag_id) == NOT_CACHED) {
-		//machine_state.set_state_lock_open();
-		if (wifi.is_connected_to_server && wifi.is_connected_to_wifi) {
-			// Used for saving current time in sync usage. Between adding event and requesting
-			// some interrupts could be invoked.
-			uint32_t trigger_time = ticks;
-			cache_handler.addEvent(tag_id, rc522_number, CURRENTLY_UNKNOWN, NOT_CACHED, trigger_time, 0);
-			wifi.send_access_request(tag_id, rc522_number, trigger_time);
-
-			Event<Machine_state> deny_access(
-				state_scheduler.get_current_time() + SERVER_CONNECT_TIMEOUT,
-				&machine_state,
-				&Machine_state::set_state_access_denied
-			);
-
-			state_scheduler.push(deny_access);
-
-		} else {
-			if (!(wifi.is_connected_to_server && wifi.is_connected_to_wifi)) {
-				cache_handler.addEvent(
-					tag_id,
-					rc522_number,
-					DEFAULT_NOT_CACHED_BEHAVIOUR,
-					NOT_CACHED,
-					ticks,
-					1
-				);
-
-				if (DEFAULT_NOT_CACHED_BEHAVIOUR == ACCESS_DENIED) {
-					machine_state.set_state_access_denied();
-				}
-				else {
-					machine_state.set_state_lock_open(2);
-				}
-			}
-		}
-
-		return DEFAULT_NOT_CACHED_BEHAVIOUR;
-	}
-
-	if (cache_handler.checkCard(tag_id) == ACCESS_GRANTED) {
-		machine_state.set_state_lock_open(3);
-		cache_handler.addEvent(tag_id, rc522_number, ACCESS_GRANTED, CACHED, ticks, 1);
-		return ACCESS_GRANTED;
-	}
-
-	if (cache_handler.checkCard(tag_id) == ACCESS_DENIED) {
-		machine_state.set_state_access_denied();
-		cache_handler.addEvent(tag_id, rc522_number, ACCESS_DENIED, CACHED, ticks, 1);
-		return ACCESS_DENIED;
-	}
-
-	return 0xff;
-}
 
 void access_denied_signal()
 {
@@ -212,28 +146,6 @@ void access_denied_signal()
 }
 
 uint32_t last_time_triggered = 0;
-
-void rfid_irq_tag_handler()
-{
-	__disable_irq();
-
-	uint8_t tag_id[16];
-	memset(tag_id, 0, sizeof(tag_id));
-	uint8_t status = mfrc522_get_card_serial(tag_id);
-	__enable_irq();
-
-	if (status == CARD_FOUND) {
-		// Delay between triggers. 600?
-		if (ticks - last_time_triggered > 800)
-		{
-			last_time_triggered = ticks;
-			somi_access_check_1(tag_id, get_pcd_id());
-		}
-	}
-
-	// Activate timer.
-	rc522_irq_prepare();
-}
 
 extern "C" void WRONG_IRQ_EXCEPTION()
 {
@@ -296,42 +208,162 @@ extern "C" void TIM3_IRQHandler()
 	}
 }
 
+#define COMMAND_SIZE 300
+char command[COMMAND_SIZE];
+
+char * strstr_b(char *haystack, const char *needle, uint16_t size)
+{
+    if (haystack == NULL || needle == NULL) {
+        return NULL;
+    }
+
+    for (uint16_t passed = 0 ; passed < size; passed++, haystack++) {
+        const char *h, *n;
+        for (h = haystack, n = needle; *h && *n && (*h == *n); ++h, ++n);
+
+        if (*n == '\0') {
+            return haystack;
+        }
+    }
+
+    return NULL;
+}
+
+void parse_command()
+{
+    if (strstr_b(command, "motor off", COMMAND_SIZE)) {
+        servo.off();
+        uart.send("motor was disabled\n\r");
+    }
+    else if (strstr_b(command, "motor on", COMMAND_SIZE)) {
+        servo.on();
+        uart.send("motor was enabled\n\r");
+    }
+    else if (strstr_b(command, "motor cw", COMMAND_SIZE)) {
+        servo.dir_cw();
+        uart.send("motor direction is clockwise\n\r");
+    }
+    else if (strstr_b(command, "motor ccw", COMMAND_SIZE)) {
+        servo.dir_ccw();
+        uart.send("motor direction is counter clockwise\n\r");
+    }
+    else if (strstr_b(command, "motor pwm", COMMAND_SIZE)) {
+	    char int_str[4];
+
+	    // Get number's characters & store it into int_str array.
+	    for (int i = 10, p = 0; i < 14; ++i, ++p)
+	    {
+		    // Stop string gather if \0 or s\ found.
+			if (!command[i] || command[i] == ' ' || command[i] == '\n' || command[i] == '\r')
+			{
+				int_str[p] = 0;
+				break;
+			}
+
+		    // If non digit given return false.
+		    if (command[i] < 0x30 || command[i] > 0x39) {
+			    uart.send("Error, non int value given as argument\n\r");
+			    return;
+		    }
+
+		    int_str[p] = command[i];
+	    }
+
+	    char *end;
+
+	    long pwm2 = strtol(command, &end, 10);
+	    pwm2 = strtol(command, &end, 10);
+
+	    long pwm = strtol(int_str, &end, 10);
+        servo.pwm((uint8_t) (pwm & 0xFF));
+
+	    char buf[100] = "motor pwm was set to ";
+	    strcat(buf, int_str);
+
+        uart.send(strcat(buf, "\n\r"));
+    }
+}
+
+void uart_cmd_handler()
+{
+    // Avoid queue handler invoke if internal classes weren't set.
+    if (!uart.initialized) return;
+
+    uint8_t buf = 0;
+    uint8_t buf_start = 0;
+    uint16_t iter = 0;
+
+    memset(command, '\0', COMMAND_SIZE);
+
+    //_uart.cyclo_buffer.back() == '\n'
+
+    if (true)
+    {
+        typename Queue<uint8_t, USART_RING_BUFFER_SIZE>::iterator it
+                = uart.cyclo_buffer.begin();
+
+        int buf_start = uart.cyclo_buffer.start_index;
+        int buf_end = uart.cyclo_buffer.end_index;
+
+        while (it.index != uart.cyclo_buffer.end_index) {
+            buf = it.index;
+            command[iter] = *it;
+            ++it;
+            if (buf <= it.index) iter++;
+        }
+
+        command[iter] = '\0';
+
+        uart.cyclo_buffer.start_index = it.index;
+        uart.last_string_ready = 0;
+        uart.crlf_count = 0;
+
+        if (command[0]) {
+            uart.send("parsing...\n\rreceived: ");
+            uart.send(command);
+            uart.send("\n\r");
+            parse_command();
+        }
+    }
+}
+
 extern "C" void TIM4_IRQHandler()
 {
 	++tim4_counter;
 	TIM_ClearITPendingBit(TIM4, TIM_IT_Update);
 
 	if (uart.last_char_timing != 0 && (ticks - uart.last_char_timing) >= 4
-			&& uart.cyclo_buffer.end_index != uart.cyclo_buffer.start_index ) {
+			&& uart.cyclo_buffer.end_index != uart.cyclo_buffer.start_index) {
 
-		wifi.invoke_uart_handler();
+        uart.send("handler invoke...\n\r");
+
+        uart_cmd_handler();
 		check_amount++;
 	}
 
 	if (uart.last_char_timing != 0 && (ticks - uart.last_char_timing) >= 5000) {
-		wifi.refresh_status();
 		check_amount++;
 	}
 
 	if (tim4_counter % 32 == 0) {
-		cache_handler.forceInvalidateStuckEntries();
-		if (wifi.current_state == STATE_READY && (ticks - uart.last_char_timing) >= 4
-			&& wifi.is_connected_to_server) {
+//		cache_handler.forceInvalidateStuckEntries();
+//		if (wifi.current_state == STATE_READY && (ticks - uart.last_char_timing) >= 4
+//			&& wifi.is_connected_to_server) {
+//
+//			if (cache_handler.eventExist() && !cache_handler.currentlyProcessing()) {
+//				tag_event buf_event = cache_handler.popOldestEvent();
+//
+//				wifi.send_event(
+//					buf_event.tag_id,
+//					buf_event.node,
+//					buf_event.event_time,
+//					buf_event.access_result,
+//					buf_event.cache_status
+//				);
+//			}
+//		}
 
-			if (cache_handler.eventExist() && !cache_handler.currentlyProcessing()) {
-				tag_event buf_event = cache_handler.popOldestEvent();
-
-				wifi.send_event(
-					buf_event.tag_id,
-					buf_event.node,
-					buf_event.event_time,
-					buf_event.access_result,
-					buf_event.cache_status
-				);
-			}
-		}
-
-		wifi.timeout_invalidation();
+//		wifi.timeout_invalidation();
 	}
 }
 
@@ -382,27 +414,27 @@ char test_string;
 
 extern "C" void SysTick_Handler(void)
 {
-	led_scheduler.handle();
-	state_scheduler.handle();
-	connection_scheduler.handle();
+//	led_scheduler.handle();
+//	state_scheduler.handle();
+//	connection_scheduler.handle();
 	//&& wifi._uart->crlf_count >= 2
 	ticks++;
 }
 
 extern "C" void EXTI0_IRQHandler()
 {
-	if (!(machine_state.get_state() == MACHINE_STATE_LOCK_OPEN)) {
-		machine_state.set_state_lock_open(4);
-	}
+//	if (!(machine_state.get_state() == MACHINE_STATE_LOCK_OPEN)) {
+//		machine_state.set_state_lock_open(4);
+//	}
 
 	EXTI_ClearITPendingBit(EXTI_Line0);
 }
 
 extern "C" void EXTI1_IRQHandler()
 {
-	if (!(machine_state.get_state() == MACHINE_STATE_GUEST_CALL)) {
-		machine_state.set_state_guest_call();
-	}
+//	if (!(machine_state.get_state() == MACHINE_STATE_GUEST_CALL)) {
+//		machine_state.set_state_guest_call();
+//	}
 	EXTI_ClearITPendingBit(EXTI_Line1);
 }
 
@@ -410,73 +442,73 @@ extern "C" void EXTI15_10_IRQHandler() {}
 
 extern "C" void EXTI9_5_IRQHandler()
 {
-	if (EXTI_GetITStatus(EXTI_Line8) == SET)
-	{
-		rc522_pcd_select(RC522_PCD_1);
-	}
-	else if (EXTI_GetITStatus(EXTI_Line9) == SET)
-	{
-		rc522_pcd_select(RC522_PCD_2);
-	}
-
-	// Get active interrupts from RC522.
-	uint8_t mfrc522_com_irq_reg = mfrc522_read(ComIrqReg);
-
-	// If some PICC answered handle it to retrieve additional data from it.
-	if (mfrc522_com_irq_reg & (1 << RxIEn)) {
-		//static uint8_t led_state = 0;
-
-		// Acknowledge receive irq.
-		mfrc522_write(ComIrqReg, 1 << RxIEn);
-
-		// Attempt to retrieve tag ID and in case of success check node access.
-		rfid_irq_tag_handler();
-
-		rc522_irq_prepare();
-	}
-	// If it's timer IRQ then request RC522 to start looking for CARD again
-	// and back control to the main thread.
-	else if (mfrc522_com_irq_reg & TimerIEn) {
-		// Down timer irq.
-		mfrc522_write(ComIrqReg, TimerIEn);
-
-		// As was checked, after Transceive_CMD the FIFO is emptied, so we need put PICC_REQALL
-		// here again, otherwise PICC won't be able response to RC522.
-		mfrc522_write(FIFOLevelReg, mfrc522_read(FIFOLevelReg) | 0x80); // flush FIFO data
-		mfrc522_write(FIFODataReg, PICC_REQALL);
-
-		// Unfortunately Transceive seems not terminates receive stage automatically if PICC doesn't respond.
-		// so we again need activate command to enter transmitter state to pass PICC_REQALL cmd to PICC
-		// otherwise it won't response due to the ISO 14443 standard.
-		mfrc522_write(CommandReg, Transceive_CMD);
-
-		// When data and command are correct issue the transmit operation.
-		mfrc522_write(BitFramingReg, mfrc522_read(BitFramingReg) | 0x80);
-
-		// Start timer. When it will end it again cause this IRQ handler to search the PICC.
-
-		// Clear STM32 irq bit.
-		if (rc522_select == rc522_1_select)
-		{
-			EXTI_ClearITPendingBit(EXTI_Line8);
-		}
-		else if (rc522_select == rc522_2_select)
-		{
-			EXTI_ClearITPendingBit(EXTI_Line9);
-		}
-
-		mfrc522_write(ControlReg, 1 << TStartNow);
-		return;
-	}
-
-	if (rc522_select == rc522_1_select)
-	{
+//	if (EXTI_GetITStatus(EXTI_Line8) == SET)
+//	{
+//		rc522_pcd_select(RC522_PCD_1);
+//	}
+//	else if (EXTI_GetITStatus(EXTI_Line9) == SET)
+//	{
+//		rc522_pcd_select(RC522_PCD_2);
+//	}
+//
+//	// Get active interrupts from RC522.
+//	uint8_t mfrc522_com_irq_reg = mfrc522_read(ComIrqReg);
+//
+//	// If some PICC answered handle it to retrieve additional data from it.
+//	if (mfrc522_com_irq_reg & (1 << RxIEn)) {
+//		//static uint8_t led_state = 0;
+//
+//		// Acknowledge receive irq.
+//		mfrc522_write(ComIrqReg, 1 << RxIEn);
+//
+//		// Attempt to retrieve tag ID and in case of success check node access.
+//		rfid_irq_tag_handler();
+//
+//		rc522_irq_prepare();
+//	}
+//	// If it's timer IRQ then request RC522 to start looking for CARD again
+//	// and back control to the main thread.
+//	else if (mfrc522_com_irq_reg & TimerIEn) {
+//		// Down timer irq.
+//		mfrc522_write(ComIrqReg, TimerIEn);
+//
+//		// As was checked, after Transceive_CMD the FIFO is emptied, so we need put PICC_REQALL
+//		// here again, otherwise PICC won't be able response to RC522.
+//		mfrc522_write(FIFOLevelReg, mfrc522_read(FIFOLevelReg) | 0x80); // flush FIFO data
+//		mfrc522_write(FIFODataReg, PICC_REQALL);
+//
+//		// Unfortunately Transceive seems not terminates receive stage automatically if PICC doesn't respond.
+//		// so we again need activate command to enter transmitter state to pass PICC_REQALL cmd to PICC
+//		// otherwise it won't response due to the ISO 14443 standard.
+//		mfrc522_write(CommandReg, Transceive_CMD);
+//
+//		// When data and command are correct issue the transmit operation.
+//		mfrc522_write(BitFramingReg, mfrc522_read(BitFramingReg) | 0x80);
+//
+//		// Start timer. When it will end it again cause this IRQ handler to search the PICC.
+//
+//		// Clear STM32 irq bit.
+//		if (rc522_select == rc522_1_select)
+//		{
+//			EXTI_ClearITPendingBit(EXTI_Line8);
+//		}
+//		else if (rc522_select == rc522_2_select)
+//		{
+//			EXTI_ClearITPendingBit(EXTI_Line9);
+//		}
+//
+//		mfrc522_write(ControlReg, 1 << TStartNow);
+//		return;
+//	}
+//
+//	if (rc522_select == rc522_1_select)
+//	{
 		EXTI_ClearITPendingBit(EXTI_Line8);
-	}
-	else if (rc522_select == rc522_2_select)
-	{
+//	}
+//	else if (rc522_select == rc522_2_select)
+//	{
 		EXTI_ClearITPendingBit(EXTI_Line9);
-	}
+//	}
 }
 
 extern "C" void interrupt_initialize();
@@ -484,12 +516,12 @@ extern "C" void initialize_systick();
 
 extern "C" void __initialize_hardware()
 {
-	rc522_set_pins();
-	rc522_2_set_pins();
+//	rc522_set_pins();
+//	rc522_2_set_pins();
 	//enc28j60_set_pins();
 
-	set_spi_registers();
-	set_spi2_registers();
+//	set_spi_registers();
+//	set_spi2_registers();
 
 	// Bind GPIOA, GPIOB to APB2 bus.
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
@@ -497,45 +529,45 @@ extern "C" void __initialize_hardware()
 
 	// Configure GPIO.
 	// RGB led pins.
-	GPIO_InitStructure.GPIO_Pin = LED_INDICATOR_PIN_RED | LED_INDICATOR_PIN_GREEN | LED_INDICATOR_PIN_BLUE;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD;
-	GPIO_Init(LED_INDICATOR_PORT, &GPIO_InitStructure);
+//	GPIO_InitStructure.GPIO_Pin = LED_INDICATOR_PIN_RED | LED_INDICATOR_PIN_GREEN | LED_INDICATOR_PIN_BLUE;
+//	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
+//	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD;
+//	GPIO_Init(LED_INDICATOR_PORT, &GPIO_InitStructure);
 
 	//----------------test
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;
+//	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;
 	/* Configure SCK and MOSI pins as Alternate Function Push Pull */
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_Init(GPIOA, &GPIO_InitStructure);
+//	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
+//	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+//	GPIO_Init(GPIOA, &GPIO_InitStructure);
 	//----------------end test
 
 	// Buttons pins (BTN_OPEN, BTN_CALL).
-	GPIO_InitStructure.GPIO_Pin = BTN_OPEN_PIN | BTN_CALL_PIN;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
-	GPIO_Init(BTN_CALL_PORT, &GPIO_InitStructure);
+//	GPIO_InitStructure.GPIO_Pin = BTN_OPEN_PIN | BTN_CALL_PIN;
+//	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
+//	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
+//	GPIO_Init(BTN_CALL_PORT, &GPIO_InitStructure);
 
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
-	GPIO_Init(GPIOB, &GPIO_InitStructure);
+//	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;
+//	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
+//	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
+//	GPIO_Init(GPIOB, &GPIO_InitStructure);
 
 	// Em lock pin.
-	GPIO_InitStructure.GPIO_Pin = EM_LOCK_PIN;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-	GPIO_Init(EM_LOCK_PORT, &GPIO_InitStructure);
-	GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE);
+//	GPIO_InitStructure.GPIO_Pin = EM_LOCK_PIN;
+//	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
+//	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+//	GPIO_Init(EM_LOCK_PORT, &GPIO_InitStructure);
+//	GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE);
 
-	GPIO_InitStructure.GPIO_Pin = ESP8266_RESET_PIN;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-	GPIO_Init(ESP8266_RESET_PORT, &GPIO_InitStructure);
+//	GPIO_InitStructure.GPIO_Pin = ESP8266_RESET_PIN;
+//	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;
+//	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+//	GPIO_Init(ESP8266_RESET_PORT, &GPIO_InitStructure);
 	// GPIO_PinRemapConfig(GPIO_Remap_SWJ_JTAGDisable, ENABLE);
 
-	GPIO_ResetBits(ESP8266_RESET_PORT,ESP8266_RESET_PIN);
-	GPIO_SetBits(ESP8266_RESET_PORT,ESP8266_RESET_PIN);
+//	GPIO_ResetBits(ESP8266_RESET_PORT,ESP8266_RESET_PIN);
+//	GPIO_SetBits(ESP8266_RESET_PORT,ESP8266_RESET_PIN);
 
 	initialize_systick();
 }
@@ -595,25 +627,6 @@ void InitializeTimer()
 	TIM_ITConfig(TIM4, TIM_IT_Update, ENABLE);
 }
 
-void connect_to_wifi (uint16_t connection_timeout, char* ssid, char* password)
-{
-	wifi.save_creditals(ssid, password);
-	wifi.connect_to_wifi();
-	state_scheduler.invalidate(&machine_state);
-	machine_state.set_state_ap_connecting();
-	connection_scheduler.invalidate(&wifi);
-
-	for (int i = 1; i <= 3; ++i) {
-		Event<Esp8266> connect_attempt(
-			connection_scheduler.get_current_time() + connection_timeout * i,
-			&wifi,
-			&Esp8266::connect_to_wifi
-		);
-
-		connection_scheduler.push(connect_attempt);
-	}
-}
-
 void connect_to_server (uint16_t connection_timeout, char* ip, char* port)
 {
 	//wifi.set_server_timeout(connection_timeout);
@@ -629,13 +642,13 @@ void connect_to_server (uint16_t connection_timeout, char* ip, char* port)
 	//    }
 	//
 
-	if (machine_state.get_state() != MACHINE_STATE_SERVER_CONNECTING) {
-		machine_state.set_state_server_connecting();
-	}
-
-	wifi.time_synced = TIME_NOT_SYNCED;
-	connection_scheduler.invalidate(&wifi);
-	wifi.connect_to_ip(ip, port);
+//	if (machine_state.get_state() != MACHINE_STATE_SERVER_CONNECTING) {
+//		machine_state.set_state_server_connecting();
+//	}
+//
+//	wifi.time_synced = TIME_NOT_SYNCED;
+//	connection_scheduler.invalidate(&wifi);
+//	wifi.connect_to_ip(ip, port);
 }
 
 int *xx;
@@ -644,17 +657,17 @@ extern "C" int
 main(void)
 {
 	uint64_t global_counter;
-	machine_state.bind_wifi(&wifi);
-	led rgb_led(LED_TYPE_RGB, GPIOA, GPIO_Pin_1, GPIO_Pin_2, GPIO_Pin_3, 0x000000);
-	leds[LED_STATE_INDICATOR] =  &rgb_led;
-	leds[LED_STATE_INDICATOR]->set_blink(0,1000,1000);
-	leds[LED_STATE_INDICATOR]->on();
-	machine_state.set_state_idle();
+//	machine_state.bind_wifi(&wifi);
+//	led rgb_led(LED_TYPE_RGB, GPIOA, GPIO_Pin_1, GPIO_Pin_2, GPIO_Pin_3, 0x000000);
+//	leds[LED_STATE_INDICATOR] =  &rgb_led;
+//	leds[LED_STATE_INDICATOR]->set_blink(0,1000,1000);
+//	leds[LED_STATE_INDICATOR]->on();
+//	machine_state.set_state_idle();
 	InitializeTimer();
 	interrupt_initialize();
 	__enable_irq();
-	set_spi_registers();
-	rc522_set_pins();
+//	set_spi_registers();
+//	rc522_set_pins();
 
 	//    rc522_pcd_select(RC522_PCD_1);
 	//    mfrc522_init();
@@ -667,38 +680,39 @@ main(void)
 	//    rc522_pcd_select(RC522_PCD_1);
 	//    rc522_irq_prepare();
 	//    cache_handler.deleteEventById(10);
-	wifi.Delay(0);
+//	wifi.Delay(0);
 	//    uart.cyclo_buffer.data();
 
-	connect_to_wifi(AP_CONNECT_TIMEOUT, WIFI_SSID, WIFI_PASSWORD);
-	Delay(1000000);
+//	connect_to_wifi(AP_CONNECT_TIMEOUT, WIFI_SSID, WIFI_PASSWORD);
 	while (1)
 	{
-		global_counter++;
-		if (!wifi.is_connected_to_wifi && connection_scheduler.size() <= 1) {
-			connect_to_wifi(AP_CONNECT_TIMEOUT, WIFI_SSID, WIFI_PASSWORD);
-		}
+//		global_counter++;
+//		if (!wifi.is_connected_to_wifi && connection_scheduler.size() <= 1) {
+//			connect_to_wifi(AP_CONNECT_TIMEOUT, WIFI_SSID, WIFI_PASSWORD);
+//		}
+//
+//		if (wifi.is_connected_to_wifi && !wifi.is_connected_to_server && ticks % 2000 == 0) {
+//			connection_scheduler.invalidate(&wifi);
+//			wifi.time_synced = TIME_NOT_SYNCED;
+//			connect_to_server(10, SMART_OFFICE_SRV_IP, SMART_OFFICE_SRV_PORT);
+//		}
 
-		if (wifi.is_connected_to_wifi && !wifi.is_connected_to_server && ticks % 2000 == 0) {
-			connection_scheduler.invalidate(&wifi);
-			wifi.time_synced = TIME_NOT_SYNCED;
-			connect_to_server(10, SMART_OFFICE_SRV_IP, SMART_OFFICE_SRV_PORT);
-		}
+//		if (wifi.is_connected_to_wifi && wifi.is_connected_to_server) {
+//			connection_scheduler.invalidate(&wifi);
+//			if (wifi.time_synced == TIME_NOT_SYNCED) {
+//				wifi.sync_time();
+//			}
+//
+//			if (machine_state.get_state() == MACHINE_STATE_SERVER_CONNECTING) {
+//				machine_state.set_state_idle();
+//			}
+//		}
+//		cache_handler.deleteEventById(10);
+//		machine_state.get_state();
+//		wifi.Delay(0);
 
-		if (wifi.is_connected_to_wifi && wifi.is_connected_to_server) {
-			connection_scheduler.invalidate(&wifi);
-			if (wifi.time_synced == TIME_NOT_SYNCED) {
-				wifi.sync_time();
-			}
-
-			if (machine_state.get_state() == MACHINE_STATE_SERVER_CONNECTING) {
-				machine_state.set_state_idle();
-			}
-		}
-		cache_handler.deleteEventById(10);
-		machine_state.get_state();
-		wifi.Delay(0);
-
+		uart.send("idle\n\r");
+		Delay(10000000);
 	}
 }
 
@@ -712,38 +726,38 @@ void interrupt_initialize()
 	// GPIO structure used to initialize Button pins.
 	// Connect EXTI Lines to Button Pins.
 	// BTN_OPEN.
-	GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource0);
+//	GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource0);
 	// BTN_CALL.
-	GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource1);
+//	GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource1);
 	GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource4);
 	GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource9);
 	GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource8);
 
 	// IRQ Driven Button BTN_OPEN.
-	EXTI_InitStructure.EXTI_Line = EXTI_Line0;
-	EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
-	EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
-	EXTI_InitStructure.EXTI_LineCmd = ENABLE;
-	EXTI_Init(&EXTI_InitStructure);
-
-	NVIC_InitStructure.NVIC_IRQChannel = EXTI0_IRQn;
-	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x0B;
-	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x0B;
-	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-	NVIC_Init(&NVIC_InitStructure);
-
-	// IRQ Driven Button BTN_CALL.
-	EXTI_InitStructure.EXTI_Line = EXTI_Line1;
-	EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
-	EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
-	EXTI_InitStructure.EXTI_LineCmd = ENABLE;
-	EXTI_Init(&EXTI_InitStructure);
-
-	NVIC_InitStructure.NVIC_IRQChannel = EXTI1_IRQn;
-	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x0A;
-	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x0A;
-	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-	NVIC_Init(&NVIC_InitStructure);
+//	EXTI_InitStructure.EXTI_Line = EXTI_Line0;
+//	EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+//	EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
+//	EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+//	EXTI_Init(&EXTI_InitStructure);
+//
+//	NVIC_InitStructure.NVIC_IRQChannel = EXTI0_IRQn;
+//	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x0B;
+//	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x0B;
+//	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+//	NVIC_Init(&NVIC_InitStructure);
+//
+//	// IRQ Driven Button BTN_CALL.
+//	EXTI_InitStructure.EXTI_Line = EXTI_Line1;
+//	EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+//	EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
+//	EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+//	EXTI_Init(&EXTI_InitStructure);
+//
+//	NVIC_InitStructure.NVIC_IRQChannel = EXTI1_IRQn;
+//	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x0A;
+//	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x0A;
+//	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+//	NVIC_Init(&NVIC_InitStructure);
 	//
 	//    EXTI_InitStructure.EXTI_Line = EXTI_Line4;
 	//    EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
@@ -757,24 +771,24 @@ void interrupt_initialize()
 	//    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	//    NVIC_Init(&NVIC_InitStructure);
 	//----------------------------------------------
-	EXTI_InitStructure.EXTI_Line = EXTI_Line8;
-	EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
-	EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
-	EXTI_InitStructure.EXTI_LineCmd = ENABLE;
-	EXTI_Init(&EXTI_InitStructure);
-
-	EXTI_InitStructure.EXTI_Line = EXTI_Line9;
-	EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
-	EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
-	EXTI_InitStructure.EXTI_LineCmd = ENABLE;
-	EXTI_Init(&EXTI_InitStructure);
+//	EXTI_InitStructure.EXTI_Line = EXTI_Line8;
+//	EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+//	EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
+//	EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+//	EXTI_Init(&EXTI_InitStructure);
+//
+//	EXTI_InitStructure.EXTI_Line = EXTI_Line9;
+//	EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+//	EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
+//	EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+//	EXTI_Init(&EXTI_InitStructure);
 
 	// RC522 Timer And PICC Receive Interrupt.
-	NVIC_InitStructure.NVIC_IRQChannel = EXTI9_5_IRQn;
-	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x09;
-	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x09;
-	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-	NVIC_Init(&NVIC_InitStructure);
+//	NVIC_InitStructure.NVIC_IRQChannel = EXTI9_5_IRQn;
+//	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x09;
+//	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x09;
+//	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+//	NVIC_Init(&NVIC_InitStructure);
 	//----------------------------------------------
 	//    EXTI_InitStructure.EXTI_Line = EXTI_Line10;
 	//    EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
@@ -791,11 +805,11 @@ void interrupt_initialize()
 	//----------------------------------------------
 	// TIM2 timer, used as on second watchdog for enc28j60, rc522.
 	// Also do some periodical not priority calls.
-	NVIC_InitStructure.NVIC_IRQChannel = TIM3_IRQn;
-	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x0f;
-	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x0f;
-	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-	NVIC_Init(&NVIC_InitStructure);
+//	NVIC_InitStructure.NVIC_IRQChannel = TIM3_IRQn;
+//	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x0f;
+//	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x0f;
+//	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+//	NVIC_Init(&NVIC_InitStructure);
 
 	//USART handler timer
 	NVIC_InitStructure.NVIC_IRQChannel = TIM4_IRQn;

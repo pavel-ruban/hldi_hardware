@@ -14,3 +14,5 @@ tools.txt
 *.backup
 .idea
 CMakeLists.txt
+src/gdb.txt
+cmake-build-debug

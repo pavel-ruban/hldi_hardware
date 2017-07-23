@@ -11,6 +11,14 @@ GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD;               \
 GPIO_Init(PORT, &GPIO_InitStructure);                       \
 GPIO_ResetBits(PORT, PINS)
 
+#define PINS_OUT_PD(PORT, PINS)                             \
+GPIO_ResetBits(PORT, PINS);                                 \
+GPIO_InitStructure.GPIO_Pin = PINS;                         \
+GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;           \
+GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;            \
+GPIO_Init(PORT, &GPIO_InitStructure);                       \
+GPIO_ResetBits(PORT, PINS)
+
 #define PINS_ON(PORT, PINS)                                 \
 GPIO_InitStructure.GPIO_Pin = PINS;                         \
 GPIO_InitStructure.GPIO_Speed = GPIO_Speed_10MHz;           \

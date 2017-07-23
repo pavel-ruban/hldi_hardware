@@ -15,6 +15,7 @@
 #define UART3 3
 
 class Uart {
+
 public:
     Queue<uint8_t, USART_RING_BUFFER_SIZE> cyclo_buffer;
     Uart(uint8_t uart_number, uint32_t speed);
@@ -22,6 +23,7 @@ public:
     uint8_t current_uart_number;
     void send_byte(uint8_t data);
     void send(char *string);
+    uint8_t initialized;
     uint8_t prev_byte;
     uint8_t last_byte;
     uint16_t crlf_count = 0;
@@ -31,6 +33,8 @@ public:
     uint8_t last_string_ready;
     uint8_t last_string_parsed;
     uint32_t last_char_timing = 0;
+
 private:
     void init_uart(uint32_t speed, uint8_t uart = UART1);
+
 };
