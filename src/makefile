@@ -1,30 +1,30 @@
 # setup
-TARGET_OPTS =                                                               \
+TARGET_OPTS =																	\
  -mcpu=cortex-m3\
  -mthumb
 
-COMPILE_OPTS = \
- $(TARGET_OPTS) \
- -DSTM32F10X_MD \
- -DUSE_STDPERIPH_DRIVER \
- -DHSE_VALUE=8000000 \
- -Wall \
+COMPILE_OPTS =																	\
+ $(TARGET_OPTS)																	\
+ -DSTM32F10X_MD																	\
+ -DUSE_STDPERIPH_DRIVER															\
+ -DHSE_VALUE=8000000															\
+ -Wall																			\
  -nostdinc
 
-INCLUDE_DIRS =                                                           \
- -I lib                                                                  \
- -I include                                                              \
- -I system/include/cmsis                                                 \
- -I system/include/stm32f1-stdperiph                                     \
- -I system/include                                                       \
- -I binds/include                                                        \
- -I lib/ethernet                                                         \
- -I lib/enc28j60                                                         \
- -I system/arm-none-eabi/include                                         \
- -I system/arm-none-eabi/gcc/arm-none-eabi/6.2.0/include                 \
- -I system/arm-none-eabi/gcc/arm-none-eabi/6.2.0/include-fixed           \
- -I lib/rc522                                                            \
- -I binds                                                                \
+INCLUDE_DIRS =																	\
+ -I lib																			\
+ -I include																		\
+ -I system/include/cmsis														\
+ -I system/include/stm32f1-stdperiph											\
+ -I system/include																\
+ -I binds/include																\
+ -I lib/ethernet																\
+ -I lib/enc28j60																\
+ -I system/arm-none-eabi/include												\
+ -I system/arm-none-eabi/gcc/arm-none-eabi/6.2.0/include						\
+ -I system/arm-none-eabi/gcc/arm-none-eabi/6.2.0/include-fixed					\
+ -I lib/rc522																	\
+ -I binds																		\
  -I lib/cache_handler
 
 LIBS_INCLUDE_DIRS = -I $(HARDWARE_LIBS_DIR)/rc522 -I$(HARDWARE_LIBS_DIR)/led
@@ -48,7 +48,9 @@ ASFLAGS = $(COMPILE_OPTS) $(INCLUDE_DIRS) -c
 
 LD = arm-none-eabi-gcc
 
-LDFLAGS = -Wl,--gc-sections,-Map=$@.map,-cref,-u,Reset_Handler $(INCLUDE_DIRS) $(LIBRARY_DIRS) -T mem.ld -T sections.ld -L ldscripts -nostartfiles -nostdlib
+LDFLAGS = -Wl,--gc-sections,-Map=$@.map,-cref,-u,Reset_Handler					\
+ $(INCLUDE_DIRS) $(LIBRARY_DIRS) -T mem.ld -T sections.ld						\
+ -L ldscripts -nostartfiles -nostdlib
 
 OBJCP = arm-none-eabi-objcopy
 OBJCPFLAGS = -O binary
@@ -89,16 +91,24 @@ HARDWARE_LIBS_OUT = $(HARDWARE_LIBS_DIR)/hardware_libs.a
 
 FIRMWARE_OBJS = c_entry.o entry.o newlib_stubs.o
 
-STDLIB =										                    	\
-                system/arm-none-eabi/armv7-m/libc.a						\
-                system/arm-none-eabi/armv7-m/libg.a						\
-                system/arm-none-eabi/armv7-m/libgcc.a
-
-                #/usr/arm-none-eabi/lib/armv7-m/libstdc++.a             \
+STDLIB =																		\
+	system/arm-none-eabi/armv7-m/libc.a											\
+	system/arm-none-eabi/armv7-m/libg.a											\
+	system/arm-none-eabi/armv7-m/libgcc.a
+	#/usr/arm-none-eabi/lib/armv7-m/libstdc++.a									\
 
 # main
 $(FIRMWARE_ELF): $(FIRMWARE_OBJS) $(BINDS_OUT) $(LIBSTM32_OUT) $(NEWLIB_OUT) $(HARDWARE_LIBS_OUT)
-	$(LD) $(LDFLAGS) c_entry.o entry.o $(HARDWARE_LIBS_OUT) $(BINDS_OUT) $(LIBSTM32_OUT) $(STDLIB) $(NEWLIB_OUT) newlib_stubs.o --output $@
+	$(LD) $(LDFLAGS)															\
+	c_entry.o																	\
+	entry.o																		\
+	$(HARDWARE_LIBS_OUT)														\
+	$(BINDS_OUT)																\
+	$(LIBSTM32_OUT)																\
+	$(STDLIB)																	\
+	$(NEWLIB_OUT)																\
+	newlib_stubs.o																\
+	--output $@
 
 $(FIRMWARE_BIN): $(FIRMWARE_ELF)
 	$(OBJCP) $(OBJCPFLAGS) $< $@
@@ -129,36 +139,36 @@ size:
 debug: gdbsrv
 	$(GDB)  -ex 'set confirm off' -iex 'target remote :4242' -iex 'file $(FIRMWARE_ELF)'
 
-NEWLIB_OBJS =											            \
-	$(NEWLIB_DIR)/_syscalls.o								        \
+NEWLIB_OBJS =																	\
+	$(NEWLIB_DIR)/_syscalls.o													\
 	$(NEWLIB_DIR)/_startup.o
 
 $(NEWLIB_OUT): $(NEWLIB_OBJS)
 	$(AR) $(ARFLAGS) $@ $(NEWLIB_OBJS)
 
-LIBSTM32_OBJS =										            	\
-	$(STD_PERIPH_DIR)/stm32f10x_adc.o							    \
-	$(STD_PERIPH_DIR)/stm32f10x_bkp.o							    \
-	$(STD_PERIPH_DIR)/stm32f10x_can.o							    \
-	$(STD_PERIPH_DIR)/stm32f10x_cec.o							    \
-	$(STD_PERIPH_DIR)/stm32f10x_crc.o							    \
-	$(STD_PERIPH_DIR)/stm32f10x_dac.o							    \
-	$(STD_PERIPH_DIR)/stm32f10x_dbgmcu.o							\
-	$(STD_PERIPH_DIR)/stm32f10x_dma.o							    \
-	$(STD_PERIPH_DIR)/stm32f10x_exti.o							    \
-	$(STD_PERIPH_DIR)/stm32f10x_flash.o							    \
-	$(STD_PERIPH_DIR)/stm32f10x_fsmc.o							    \
-	$(STD_PERIPH_DIR)/stm32f10x_gpio.o							    \
-	$(STD_PERIPH_DIR)/stm32f10x_i2c.o							    \
-	$(STD_PERIPH_DIR)/stm32f10x_iwdg.o							    \
-	$(STD_PERIPH_DIR)/stm32f10x_pwr.o							    \
-	$(STD_PERIPH_DIR)/stm32f10x_rcc.o							    \
-	$(STD_PERIPH_DIR)/stm32f10x_rtc.o							    \
-	$(STD_PERIPH_DIR)/stm32f10x_sdio.o							    \
-	$(STD_PERIPH_DIR)/stm32f10x_spi.o							    \
-	$(STD_PERIPH_DIR)/stm32f10x_tim.o							    \
-	$(STD_PERIPH_DIR)/stm32f10x_usart.o							    \
-	$(STD_PERIPH_DIR)/misc.o						    		    \
+LIBSTM32_OBJS =																	\
+	$(STD_PERIPH_DIR)/stm32f10x_adc.o											\
+	$(STD_PERIPH_DIR)/stm32f10x_bkp.o											\
+	$(STD_PERIPH_DIR)/stm32f10x_can.o											\
+	$(STD_PERIPH_DIR)/stm32f10x_cec.o											\
+	$(STD_PERIPH_DIR)/stm32f10x_crc.o											\
+	$(STD_PERIPH_DIR)/stm32f10x_dac.o											\
+	$(STD_PERIPH_DIR)/stm32f10x_dbgmcu.o										\
+	$(STD_PERIPH_DIR)/stm32f10x_dma.o											\
+	$(STD_PERIPH_DIR)/stm32f10x_exti.o											\
+	$(STD_PERIPH_DIR)/stm32f10x_flash.o											\
+	$(STD_PERIPH_DIR)/stm32f10x_fsmc.o											\
+	$(STD_PERIPH_DIR)/stm32f10x_gpio.o											\
+	$(STD_PERIPH_DIR)/stm32f10x_i2c.o											\
+	$(STD_PERIPH_DIR)/stm32f10x_iwdg.o											\
+	$(STD_PERIPH_DIR)/stm32f10x_pwr.o											\
+	$(STD_PERIPH_DIR)/stm32f10x_rcc.o											\
+	$(STD_PERIPH_DIR)/stm32f10x_rtc.o											\
+	$(STD_PERIPH_DIR)/stm32f10x_sdio.o											\
+	$(STD_PERIPH_DIR)/stm32f10x_spi.o											\
+	$(STD_PERIPH_DIR)/stm32f10x_tim.o											\
+	$(STD_PERIPH_DIR)/stm32f10x_usart.o											\
+	$(STD_PERIPH_DIR)/misc.o													\
 	$(STD_PERIPH_DIR)/stm32f10x_wwdg.o
 
 $(LIBSTM32_OBJS): include/stm32f10x_conf.h
@@ -166,32 +176,32 @@ $(LIBSTM32_OBJS): include/stm32f10x_conf.h
 $(LIBSTM32_OUT): $(LIBSTM32_OBJS)
 	$(AR) $(ARFLAGS) $@ $(LIBSTM32_OBJS)
 
-BINDS_OBJS =								        			    \
-	$(BINDS_DIR)/spi_binds.o						    		    \
-	$(BINDS_DIR)/rc522_binds.o						    		    \
+BINDS_OBJS =																	\
+	$(BINDS_DIR)/spi_binds.o													\
 	$(BINDS_DIR)/ethernet_binds.o
 
 $(BINDS_OUT): $(BINDS_OBJS)
 	$(AR) $(ARFLAGS) $@ $(BINDS_OBJS)
 
-HARDWARE_LIBS_OBJS =								        		\
-	$(HARDWARE_LIBS_DIR)/rc522/mfrc522.o							\
-	$(HARDWARE_LIBS_DIR)/ethernet/arp.o				    			\
-	$(HARDWARE_LIBS_DIR)/ethernet/ethernet.o						\
-	$(HARDWARE_LIBS_DIR)/ethernet/icmp.o							\
-	$(HARDWARE_LIBS_DIR)/ethernet/ip.o				    			\
-	$(HARDWARE_LIBS_DIR)/ethernet/tcp.o				    			\
-	$(HARDWARE_LIBS_DIR)/ethernet/dhcp.o							\
-	$(HARDWARE_LIBS_DIR)/ethernet/udp.o				    			\
-	$(HARDWARE_LIBS_DIR)/ethernet/dns.o				    			\
-	$(HARDWARE_LIBS_DIR)/enc28j60/enc28j60.o						\
-	$(HARDWARE_LIBS_DIR)/led/led.o					    			\
-	$(HARDWARE_LIBS_DIR)/scheduler/event.o							\
-	$(HARDWARE_LIBS_DIR)/scheduler/scheduler.o						\
-	$(HARDWARE_LIBS_DIR)/machine_state/machine_state.o				\
-	$(HARDWARE_LIBS_DIR)/uart/uart.o							    \
-	$(HARDWARE_LIBS_DIR)/esp8266/esp8266.o 							\
-	$(HARDWARE_LIBS_DIR)/servo/servo.o  							\
+HARDWARE_LIBS_OBJS =															\
+	$(HARDWARE_LIBS_DIR)/ethernet/arp.o											\
+	$(HARDWARE_LIBS_DIR)/ethernet/ethernet.o									\
+	$(HARDWARE_LIBS_DIR)/ethernet/icmp.o										\
+	$(HARDWARE_LIBS_DIR)/ethernet/ip.o											\
+	$(HARDWARE_LIBS_DIR)/ethernet/tcp.o											\
+	$(HARDWARE_LIBS_DIR)/ethernet/dhcp.o										\
+	$(HARDWARE_LIBS_DIR)/ethernet/udp.o											\
+	$(HARDWARE_LIBS_DIR)/ethernet/dns.o											\
+	$(HARDWARE_LIBS_DIR)/enc28j60/enc28j60.o									\
+	$(HARDWARE_LIBS_DIR)/led/led.o												\
+	$(HARDWARE_LIBS_DIR)/scheduler/event.o										\
+	$(HARDWARE_LIBS_DIR)/scheduler/scheduler.o									\
+	$(HARDWARE_LIBS_DIR)/machine_state/machine_state.o							\
+	$(HARDWARE_LIBS_DIR)/uart/uart.o											\
+	$(HARDWARE_LIBS_DIR)/esp8266/esp8266.o										\
+	$(HARDWARE_LIBS_DIR)/servo/servo.o											\
+	$(HARDWARE_LIBS_DIR)/servo/motor.o											\
+	$(HARDWARE_LIBS_DIR)/servo/encoder.o										\
 	$(HARDWARE_LIBS_DIR)/cache_handler/cache_handler.o
 
 $(HARDWARE_LIBS_OUT): $(HARDWARE_LIBS_OBJS)

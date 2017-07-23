@@ -18,6 +18,12 @@
 #define HBRIDGE_DC2 GPIO_Pin_12
 #define HBRIDGE_DC3 GPIO_Pin_13
 
+#define ENCODER_A_PORT GPIOA
+#define ENCODER_A_CH1_PIN GPIO_Pin_6
+#define ENCODER_A_CH2_PIN GPIO_Pin_7
+#define DEFAULT_ENCODER_TIM_PRESCALER 0
+#define DEFAULT_ENCODER_TIM_PERIOD 0xffff
+
 // Caution!!! Chage this value only understanding what you doing, if you set it
 // too low MOSFETs won't have time to open fully & due to the POWER on the chip
 // it will be burned out. Actually current software was writted for HCPL3120, so
@@ -29,7 +35,6 @@
 #define CLOCKWISE 1
 
 namespace Servo {
-    extern int hardware_initialized;
 
     class Servo {
 
@@ -67,5 +72,19 @@ namespace Servo {
 	    // motor doesn't rotate.
 	    // 0-255 Stores set pwm value.
 	    uint8_t _pwm = 255;
+    };
+
+    class Encoder {
+
+    public:
+        Encoder();
+        Encoder(uint16_t cpr);
+
+	    // Retunr current encoder position.
+        uint16_t get_value();
+
+    private:
+        // Pulses per rotation.
+        uint8_t _cpr;
     };
 }

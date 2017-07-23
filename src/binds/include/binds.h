@@ -4,7 +4,6 @@
 #include <stdint.h>
 
 #include "spi_binds.h"
-#include "rc522_binds.h"
 #include "ethernet_binds.h"
 #include <stm32f10x_conf.h>
 

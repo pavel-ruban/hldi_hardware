@@ -26,7 +26,7 @@
 #include <stdint.h>
 #include "mfrc522_reg.h"
 #include "mfrc522_cmd.h"
-#include "rc522_binds.h"
+//#include "rc522_binds.h"
 #include "spi_binds.h"
 
 
