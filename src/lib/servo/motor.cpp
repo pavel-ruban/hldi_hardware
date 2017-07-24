@@ -3,9 +3,9 @@
 
 namespace Servo {
 
-    GPIO_InitTypeDef GPIO_InitStructure;
+    extern GPIO_InitTypeDef GPIO_InitStructure;
 
-	uint8_t hardware_initialized = 0;
+	static uint8_t hardware_initialized = 0;
 
     Servo::Servo() {
         // Init pins if we create the instance of class per current MCU session.

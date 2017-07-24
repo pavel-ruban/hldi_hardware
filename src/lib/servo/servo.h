@@ -36,6 +36,20 @@
 
 namespace Servo {
 
+	class Encoder {
+
+	public:
+		Encoder();
+		Encoder(uint16_t cpr);
+
+		// Retunr current encoder position.
+		uint16_t get_value();
+
+	private:
+		// Pulses per rotation.
+		uint8_t _cpr;
+	};
+
     class Servo {
 
     public:
@@ -65,6 +79,9 @@ namespace Servo {
         void pwm(uint8_t duty);
 
     private:
+		// Quadrature incremental hardware timer encoder initialization.
+	    Encoder encoder;
+
         // Direction, used when motor is enabled / disabled to keep the same direction.
         uint8_t _cw;
 
@@ -72,19 +89,7 @@ namespace Servo {
 	    // motor doesn't rotate.
 	    // 0-255 Stores set pwm value.
 	    uint8_t _pwm = 255;
+
     };
 
-    class Encoder {
-
-    public:
-        Encoder();
-        Encoder(uint16_t cpr);
-
-	    // Retunr current encoder position.
-        uint16_t get_value();
-
-    private:
-        // Pulses per rotation.
-        uint8_t _cpr;
-    };
 }

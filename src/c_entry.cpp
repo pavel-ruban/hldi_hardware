@@ -346,8 +346,16 @@ main(void)
 
 	while (1)
 	{
-		uart.send("idle\n\r");
-		Delay(10000000);
+		char buf[100];
+
+		uint16_t encoder = TIM_GetCounter(TIM3);
+
+		uart.send("idle\n");
+
+		sprintf(buf, "encoder: %u\n", encoder);
+
+		uart.send(buf);
+		Delay(100000);
 	}
 }
 
