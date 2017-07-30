@@ -201,6 +201,7 @@ HARDWARE_LIBS_OBJS =															\
 	$(HARDWARE_LIBS_DIR)/esp8266/esp8266.o										\
 	$(HARDWARE_LIBS_DIR)/servo/servo.o											\
 	$(HARDWARE_LIBS_DIR)/servo/motor.o											\
+	$(HARDWARE_LIBS_DIR)/servo/pid.o											\
 	$(HARDWARE_LIBS_DIR)/servo/encoder.o										\
 	$(HARDWARE_LIBS_DIR)/cache_handler/cache_handler.o
 

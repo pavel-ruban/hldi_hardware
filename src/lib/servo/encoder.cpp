@@ -7,6 +7,12 @@ namespace Servo
 
 	static uint8_t hardware_initialized = 0;
 
+	Encoder::Encoder(uint16_t ppr) {
+		this->ppr = ppr;
+
+		Encoder();
+	}
+
 	Encoder::Encoder()
 	{
 		if (hardware_initialized) return;
@@ -38,26 +44,24 @@ namespace Servo
 		TIM_ICInitStructure.TIM_Channel = TIM_Channel_1 | TIM_Channel_2;
 		TIM_ICStructInit(&TIM_ICInitStructure);
 
-		TIM_ICInitStructure.TIM_ICFilter = 6; //ICx_FILTER;
+		// ICx_FILTER.
+		TIM_ICInitStructure.TIM_ICFilter = 6;
 
 		TIM_ICInit(TIM3, &TIM_ICInitStructure);
 		TIM_Cmd(TIM3, ENABLE);
-		// Configure TIM output channel for specified pwm.
-//		TIM_OCInitTypeDef TIM_OCInitStructure;
-//
-//		// TIM_OCStructInit(&TIM_OCInitStructure).
-//		TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
-//		TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
-//		TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
-//
-//		// PB[10, 11] pins use TIM2 counter, but each pin is mapped to own OC -
-//		// timer channel, it's value determines the PWM duty cyle alongside with
-//		// other settings (PWM mode, polarity etc).
-//		TIM_OC4Init(TIM2, &TIM_OCInitStructure);
-//		TIM_OC3Init(TIM2, &TIM_OCInitStructure);
-//
-//		TIM_Cmd(TIM2, ENABLE);
+
+		TIM_ITConfig(TIM3, TIM_IT_Update, ENABLE);
 
 		hardware_initialized = 1;
+	}
+
+	void Encoder::overflow(uint8_t negative)
+	{
+		overflows += negative ? -1 : 1;
+	}
+
+	int32_t Encoder::pos()
+	{
+		return (int32_t) TIM_GetCounter(TIM3) + (int32_t) (overflows * 0xFFFF);
 	}
 }

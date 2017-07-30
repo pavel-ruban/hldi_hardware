@@ -5,9 +5,11 @@ namespace Servo {
 
     extern GPIO_InitTypeDef GPIO_InitStructure;
 
+	class Servo;
+
 	static uint8_t hardware_initialized = 0;
 
-    Servo::Servo() {
+    Motor::Motor(Servo *servo) {
         // Init pins if we create the instance of class per current MCU session.
         if (!hardware_initialized) {
             // Ensure bus is tact. Bind GPIOA, GPIOB to APB2 bus.
@@ -66,18 +68,22 @@ namespace Servo {
 
 	        TIM_Cmd(TIM2, ENABLE);
 
+	        this->servo = servo;
+
             hardware_initialized = 1;
         }
 
     }
 
-    Servo::Servo(uint8_t __pwm) {
-	    _pwm = __pwm;
+    Motor::Motor(uint8_t _pwm, Servo *servo) {
+	    this->_pwm = _pwm;
 
-        Servo();
+	    this->servo = servo;
+
+        Motor(this->servo);
     }
 
-    void Servo::set_pins() {
+    void Motor::set_pins() {
         // Disable all pins to avoid unexpected short circuit.
         GPIO_ResetBits(HBRIDGE_PORT, HBRIDGE_DC2 | HBRIDGE_DC3);
 	    PINS_OUT_PD(HBRIDGE_PORT, HBRIDGE_DC0 | HBRIDGE_DC1);
@@ -97,34 +103,34 @@ namespace Servo {
 	    }
     }
 
-    void Servo::on() {
+    void Motor::on() {
         set_pins();
     }
 
-    void Servo::off() {
+    void Motor::off() {
 	    // Disable all pins to avoid unexpected short circuit.
         GPIO_ResetBits(HBRIDGE_PORT, HBRIDGE_DC2 | HBRIDGE_DC3);
 	    PINS_OUT_PD(HBRIDGE_PORT, HBRIDGE_DC0 | HBRIDGE_DC1);
     }
 
-    void Servo::dir_cw() {
+    void Motor::dir_cw() {
         if (!_cw) {
             dir_toggle();
         }
     }
 
-    void Servo::dir_ccw() {
+    void Motor::dir_ccw() {
         if (_cw) {
             dir_toggle();
         }
     }
 
-    void Servo::dir_toggle() {
+    void Motor::dir_toggle() {
         _cw ^= 1;
         set_pins();
     }
 
-    void Servo::pwm(uint8_t pwm) {
+    void Motor::pwm(uint8_t pwm) {
 	    _pwm = pwm;
 
 	    TIM_SetCompare3(TIM2, _pwm);

@@ -1,12 +1,13 @@
-#pragma once
-#pragma pack(1)
-
 /**
  * This is software to control DC brushhed motor over H-bridge on N & P mosftes.
  *
  * @author Pavel Ruban http://pavelruban.org
  * @email apps.pavelruban@gmail.com
  */
+
+#pragma once
+#pragma pack(1)
+
 #include <stdint.h>
 #include <stm32f10x_conf.h>
 
@@ -35,30 +36,78 @@
 #define CLOCKWISE 1
 
 namespace Servo {
+	class Servo;
+
+	class PID {
+
+	public:
+		PID(float Kp, float Ki, float Kd, Servo *servo);
+
+		// Sets desired setpoint.
+		void set_setpoint(float point);
+
+		// CV, see PID theory for reference.
+		int16_t get_ctrl_var();
+
+		// Sets proportional, integral, derivative terms.
+		void set_terms(float Kp, float Ki, float Kd);
+
+		void set_kp_term(float Kp);
+		void set_ki_term(float Ki);
+		void set_kd_term(float Kd);
+
+		// Desired value that PID attempts to reach.
+		float get_setpoint();
+
+	private:
+		// Servo system current PID belongs to.
+		Servo *servo;
+
+		// Last calculation time for dt capability.
+		uint32_t last_ticks;
+
+		// Proportional, integral, derivative terms.
+		float Kp, Ki, Kd;
+		float setpoint;
+
+		// Internal data used for calucaltions.
+		float integral, previous_error;
+	};
 
 	class Encoder {
+		friend class Servo;
 
 	public:
 		Encoder();
-		Encoder(uint16_t cpr);
+		Encoder(uint16_t ppr);
 
-		// Retunr current encoder position.
-		uint16_t get_value();
+		// Return current encoder position.
+		int32_t pos();
+
+		// Trigger overflow buffer logic.
+		void overflow(uint8_t negative);
 
 	private:
-		// Pulses per rotation.
-		uint8_t _cpr;
+		// Encoder overflows. Encoder is implemented with hardware timer encoder interface.
+		// Timer is 16 bits so if encoder overflows up/down it increases/decreases this
+		// overflows counter accordingly so logic can use TIMER_CNT + overflows * 0xFFFF
+		// formula to determine how much timer ticker have been occurred since system boot.
+		int overflows;
+
+		// Pulses per revolution.
+		uint16_t ppr;
 	};
 
-    class Servo {
+    class Motor {
+		friend class Servo;
 
     public:
-        Servo();
+	    Motor(Servo *servo);
 
         // Allows to set initial pwm value.
-        Servo(uint8_t pwm);
+        Motor(uint8_t pwm, Servo *servo);
 
-        // Enables motor current. Direct is that was before.
+	    // Enables motor current. Direct is that was before.
         void on();
 
         // Disables motor current.
@@ -72,15 +121,15 @@ namespace Servo {
         // Toggles direction.
         void dir_toggle();
 
-        // Apllies set direction.
+        // Applies set direction.
         void set_pins();
 
         // Sets PWM between 0-255, 255 100% duty cycle.
         void pwm(uint8_t duty);
 
     private:
-		// Quadrature incremental hardware timer encoder initialization.
-	    Encoder encoder;
+	    // Servo system current motor belongs to.
+	    Servo *servo;
 
         // Direction, used when motor is enabled / disabled to keep the same direction.
         uint8_t _cw;
@@ -89,6 +138,54 @@ namespace Servo {
 	    // motor doesn't rotate.
 	    // 0-255 Stores set pwm value.
 	    uint8_t _pwm = 255;
+
+    };
+
+    class Servo {
+	    // Share encoder to PID & some other private vars.
+		friend class PID;
+	    friend class Encoder;
+
+    public:
+        Servo();
+        Servo(uint16_t ppr, float pitch);
+
+	    // PID controllers.
+	    PID speed_pid;
+	    PID position_pid;
+	    PID acceleration_pid;
+
+	    // Enables motor current. Direct is that was before.
+	    void on();
+
+	    // Disables motor current.
+	    void off();
+
+	    // Clockwise, counter cw direction control.
+	    void dir_cw();
+
+	    void dir_ccw();
+
+	    // Get current direction.
+	    uint8_t get_dir();
+
+	    // Toggles direction.
+	    void dir_toggle();
+	    // Sets pwm duty cycle = [0, 255].
+	    void pwm(uint8_t pwm);
+
+	    // Get current positin in mm.
+	    float position();
+
+	    // Quadrature incremental hardware timer encoder initialization.
+	    Encoder encoder;
+
+    private:
+	    // DC brushed 24V motor.
+	    Motor motor;
+
+	    // Pitch is how much linear path done  by one ratation of motor shaft.
+	    float pitch;
 
     };
 

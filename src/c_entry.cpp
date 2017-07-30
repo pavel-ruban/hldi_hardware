@@ -38,7 +38,7 @@ volatile uint32_t ticks;
 Uart uart(UART1, 115200);
 
 // DC brushed motor controller.
-Servo::Servo servo;
+Servo::Servo servo(2000, 40);
 
 /* Private function prototypes -----------------------------------------------*/
 void RCC_Configuration(void);
@@ -122,6 +122,8 @@ extern "C" void TIM3_IRQHandler()
 {
 	if (TIM_GetITStatus(TIM3, TIM_IT_Update) != RESET) {
 		TIM_ClearITPendingBit(TIM3, TIM_IT_Update);
+
+		servo.encoder.overflow(TIM_GetCounter(TIM3) == 0xFFFF);
 	}
 }
 
@@ -192,6 +194,150 @@ void parse_command() {
         servo.pwm((uint8_t) (pwm & 0xFF));
 
 	    char buf[100] = "motor pwm was set to ";
+	    strcat(buf, int_str);
+
+        uart.send(strcat(buf, "\n\r"));
+    }
+	else if (strstr_b(command, "motor pos", COMMAND_SIZE))
+	{
+	    char int_str[4];
+		int p = 0;
+
+	    // Get number's characters & store it into int_str array.
+	    for (int i = 10; i < 17; ++i, ++p)
+	    {
+		    // Stop string gather if \0 or s\ found.
+			if (!command[i] || command[i] == ' ' || command[i] == '\n' || command[i] == '\r')
+			{
+				int_str[p] = 0;
+				break;
+			}
+
+		    // If non float given return false.
+		    if ((command[i] < 0x30 || command[i] > 0x39) && command[i] != 0x2E) {
+			    uart.send("Error, non float value given as argument\n\r");
+			    return;
+		    }
+
+		    int_str[p] = command[i];
+	    }
+
+		int_str[++p] = 0;
+
+	    char *end;
+
+	    float pos = strtof(int_str, &end);
+        servo.position_pid.set_setpoint(pos);
+
+	    char buf[100] = "motor pos was set to ";
+	    strcat(buf, int_str);
+
+        uart.send(strcat(buf, "\n\r"));
+    }
+	else if (strstr_b(command, "pid kp", COMMAND_SIZE))
+	{
+	    char int_str[4];
+		int p = 0;
+
+	    // Get number's characters & store it into int_str array.
+	    for (int i = 7; i < 14; ++i, ++p)
+	    {
+		    // Stop string gather if \0 or s\ found.
+			if (!command[i] || command[i] == ' ' || command[i] == '\n' || command[i] == '\r')
+			{
+				int_str[p] = 0;
+				break;
+			}
+
+		    // If non float given return false.
+		    if ((command[i] < 0x30 || command[i] > 0x39) && command[i] != 0x2E) {
+			    uart.send("Error, non float value given as argument\n\r");
+			    return;
+		    }
+
+		    int_str[p] = command[i];
+	    }
+
+		int_str[++p] = 0;
+
+	    char *end;
+
+	    float term = strtof(int_str, &end);
+        servo.position_pid.set_kp_term(term);
+
+	    char buf[100] = "PID Kp was set to ";
+	    strcat(buf, int_str);
+
+        uart.send(strcat(buf, "\n\r"));
+    }
+	else if (strstr_b(command, "pid kd", COMMAND_SIZE))
+	{
+	    char int_str[4];
+		int p = 0;
+
+	    // Get number's characters & store it into int_str array.
+	    for (int i = 7; i < 14; ++i, ++p)
+	    {
+		    // Stop string gather if \0 or s\ found.
+			if (!command[i] || command[i] == ' ' || command[i] == '\n' || command[i] == '\r')
+			{
+				int_str[p] = 0;
+				break;
+			}
+
+		    // If non float given return false.
+		    if ((command[i] < 0x30 || command[i] > 0x39) && command[i] != 0x2E) {
+			    uart.send("Error, non float value given as argument\n\r");
+			    return;
+		    }
+
+		    int_str[p] = command[i];
+	    }
+
+		int_str[++p] = 0;
+
+	    char *end;
+
+	    float term = strtof(int_str, &end);
+        servo.position_pid.set_kd_term(term);
+
+	    char buf[100] = "PID Kd was set to ";
+	    strcat(buf, int_str);
+
+        uart.send(strcat(buf, "\n\r"));
+    }
+	else if (strstr_b(command, "pid ki", COMMAND_SIZE))
+	{
+	    char int_str[4];
+		int p = 0;
+
+	    // Get number's characters & store it into int_str array.
+	    for (int i = 7; i < 14; ++i, ++p)
+	    {
+		    // Stop string gather if \0 or s\ found.
+			if (!command[i] || command[i] == ' ' || command[i] == '\n' || command[i] == '\r')
+			{
+				int_str[p] = 0;
+				break;
+			}
+
+		    // If non float given return false.
+		    if ((command[i] < 0x30 || command[i] > 0x39) && command[i] != 0x2E) {
+			    uart.send("Error, non float value given as argument\n\r");
+			    return;
+		    }
+
+		    int_str[p] = command[i];
+	    }
+
+		int_str[++p] = 0;
+
+	    char *end;
+
+	    float term = strtof(int_str, &end);
+        servo.position_pid.set_ki_term(term);
+
+	    char buf[100] = "PID Ki was set to ";
 	    strcat(buf, int_str);
 
         uart.send(strcat(buf, "\n\r"));
@@ -344,18 +490,59 @@ main(void)
 	interrupt_initialize();
 	__enable_irq();
 
+	uint32_t last_processed_ticks;
+
 	while (1)
 	{
 		char buf[100];
 
 		uint16_t encoder = TIM_GetCounter(TIM3);
 
-		uart.send("idle\n");
+//		uart.send("idle\n");
 
 		sprintf(buf, "encoder: %u\n", encoder);
 
 		uart.send(buf);
-		Delay(100000);
+
+		// Process PID every 10 ticks (1 tick is 1 millisecond).
+		if (ticks >= last_processed_ticks + 10) {
+			last_processed_ticks = ticks;
+
+			int16_t pwm = servo.position_pid.get_ctrl_var();
+
+			// If motors turns opposite direction toggle it.
+			if ((pwm < 0 && !servo.get_dir()) || (pwm > 0 && servo.get_dir())) {
+				if (servo.get_dir()) {
+//					servo.off();
+
+					uart.send("toggling dir\n");
+					if (pwm > 0) {
+						uart.send("positive dir\n");
+					} else {
+						uart.send("negative dir\n");
+					}
+					// Do some delay to decrease a bit motor inertia.
+					// @todo implement acceleration control.
+					Delay(10000000000);
+
+//					servo.dir_toggle();
+//					servo.on();
+				}
+			}
+
+			sprintf(buf, "PID CV: %i\n", pwm);
+			uart.send(buf);
+
+			sprintf(buf, "Servo setpoint: %f\n", servo.position_pid.get_setpoint());
+			uart.send(buf);
+
+			sprintf(buf, "Servo position: %f\n", servo.position());
+			uart.send(buf);
+
+//			servo.pwm((uint8_t) abs(pwm));
+		}
+
+		Delay(1000000);
 	}
 }
 
@@ -370,6 +557,12 @@ void interrupt_initialize()
 	NVIC_InitStructure.NVIC_IRQChannel = TIM4_IRQn;
 	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x05;
 	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x05;
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+	NVIC_Init(&NVIC_InitStructure);
+
+	NVIC_InitStructure.NVIC_IRQChannel = TIM3_IRQn;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x0f;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x0f;
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);
 
