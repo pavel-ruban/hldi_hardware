@@ -69,6 +69,7 @@ namespace Servo {
 	        TIM_Cmd(TIM2, ENABLE);
 
 	        this->servo = servo;
+	        _on = 0;
 
             hardware_initialized = 1;
         }
@@ -105,12 +106,15 @@ namespace Servo {
 
     void Motor::on() {
         set_pins();
+	    _on = 1;
     }
 
     void Motor::off() {
 	    // Disable all pins to avoid unexpected short circuit.
         GPIO_ResetBits(HBRIDGE_PORT, HBRIDGE_DC2 | HBRIDGE_DC3);
 	    PINS_OUT_PD(HBRIDGE_PORT, HBRIDGE_DC0 | HBRIDGE_DC1);
+
+	    _on = 0;
     }
 
     void Motor::dir_cw() {
@@ -127,7 +131,12 @@ namespace Servo {
 
     void Motor::dir_toggle() {
         _cw ^= 1;
+
+	    servo->position_pid.reset_integral();
+
         set_pins();
+
+	    servo->position_pid.reset_ignore_error_level();
     }
 
     void Motor::pwm(uint8_t pwm) {

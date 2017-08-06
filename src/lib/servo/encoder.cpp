@@ -38,19 +38,19 @@ namespace Servo
 		TIM_TimeBaseInitStructure.TIM_CounterMode = TIM_CounterMode_Up;
 		TIM_TimeBaseInit(TIM3, &TIM_TimeBaseInitStructure);
 
-		TIM_EncoderInterfaceConfig(TIM3, TIM_EncoderMode_TI12, TIM_ICPolarity_Falling, TIM_ICPolarity_Falling);
-
 		TIM_ICInitTypeDef TIM_ICInitStructure;
 		TIM_ICInitStructure.TIM_Channel = TIM_Channel_1 | TIM_Channel_2;
 		TIM_ICStructInit(&TIM_ICInitStructure);
 
 		// ICx_FILTER.
-		TIM_ICInitStructure.TIM_ICFilter = 6;
-
+//		TIM_ICInitStructure.TIM_ICFilter = 6;
 		TIM_ICInit(TIM3, &TIM_ICInitStructure);
-		TIM_Cmd(TIM3, ENABLE);
+
+		TIM_EncoderInterfaceConfig(TIM3, TIM_EncoderMode_TI12, TIM_ICPolarity_Rising, TIM_ICPolarity_Falling);
 
 		TIM_ITConfig(TIM3, TIM_IT_Update, ENABLE);
+
+		TIM_Cmd(TIM3, ENABLE);
 
 		hardware_initialized = 1;
 	}

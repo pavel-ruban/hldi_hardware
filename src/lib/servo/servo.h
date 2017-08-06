@@ -41,23 +41,28 @@ namespace Servo {
 	class PID {
 
 	public:
-		PID(float Kp, float Ki, float Kd, Servo *servo);
+		PID(double Kp, double Ki, double Kd, Servo *servo);
 
 		// Sets desired setpoint.
-		void set_setpoint(float point);
+		void set_setpoint(double point);
 
 		// CV, see PID theory for reference.
 		int16_t get_ctrl_var();
 
 		// Sets proportional, integral, derivative terms.
-		void set_terms(float Kp, float Ki, float Kd);
+		void set_terms(double Kp, double Ki, double Kd);
 
-		void set_kp_term(float Kp);
-		void set_ki_term(float Ki);
-		void set_kd_term(float Kd);
+		void set_kp_term(double Kp);
+		void set_ki_term(double Ki);
+		void set_kd_term(double Kd);
 
 		// Desired value that PID attempts to reach.
-		float get_setpoint();
+		double get_setpoint();
+
+		double get_integral();
+		double get_prev_error();
+		void reset_integral();
+		void reset_ignore_error_level();
 
 	private:
 		// Servo system current PID belongs to.
@@ -67,11 +72,16 @@ namespace Servo {
 		uint32_t last_ticks;
 
 		// Proportional, integral, derivative terms.
-		float Kp, Ki, Kd;
-		float setpoint;
+		double Kp, Ki, Kd;
+		double setpoint;
 
 		// Internal data used for calucaltions.
-		float integral, previous_error;
+		double integral, previous_error;
+
+		// When error reach some threshould say it's between -2 & 2 then minimal
+		// motor pwm is not considered & pid calculates pure signal, this variable
+		// is used to ignore this calculation but only until toggling direction.
+		uint8_t ignore_error_level;
 	};
 
 	class Encoder {
@@ -100,6 +110,7 @@ namespace Servo {
 
     class Motor {
 		friend class Servo;
+		friend class PID;
 
     public:
 	    Motor(Servo *servo);
@@ -133,6 +144,7 @@ namespace Servo {
 
         // Direction, used when motor is enabled / disabled to keep the same direction.
         uint8_t _cw;
+        uint8_t _on;
 
 	    // Set motor power by default to 100% to avoid cases when user invokes ::on() but
 	    // motor doesn't rotate.
@@ -148,7 +160,7 @@ namespace Servo {
 
     public:
         Servo();
-        Servo(uint16_t ppr, float pitch);
+        Servo(uint16_t ppr, double pitch);
 
 	    // PID controllers.
 	    PID speed_pid;
@@ -174,8 +186,10 @@ namespace Servo {
 	    // Sets pwm duty cycle = [0, 255].
 	    void pwm(uint8_t pwm);
 
+	    uint8_t get_pwm();
+
 	    // Get current positin in mm.
-	    float position();
+	    double position();
 
 	    // Quadrature incremental hardware timer encoder initialization.
 	    Encoder encoder;
@@ -185,7 +199,7 @@ namespace Servo {
 	    Motor motor;
 
 	    // Pitch is how much linear path done  by one ratation of motor shaft.
-	    float pitch;
+	    double pitch;
 
     };
 

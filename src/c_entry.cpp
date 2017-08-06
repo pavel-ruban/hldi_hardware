@@ -36,6 +36,7 @@ ErrorStatus HSEStartUpStatus;
 volatile uint32_t ticks;
 
 Uart uart(UART1, 115200);
+Uart *puart = &uart;
 
 // DC brushed motor controller.
 Servo::Servo servo(2000, 40);
@@ -123,7 +124,7 @@ extern "C" void TIM3_IRQHandler()
 	if (TIM_GetITStatus(TIM3, TIM_IT_Update) != RESET) {
 		TIM_ClearITPendingBit(TIM3, TIM_IT_Update);
 
-		servo.encoder.overflow(TIM_GetCounter(TIM3) == 0xFFFF);
+		servo.encoder.overflow(TIM_GetCounter(TIM3) > 0xFF);
 	}
 }
 
@@ -149,6 +150,8 @@ char * strstr_b(char *haystack, const char *needle, uint16_t size)
 }
 
 void parse_command() {
+	char buf[30];
+
 	if (strstr_b(command, "motor off", COMMAND_SIZE)) {
 		servo.off();
 		uart.send("motor was disabled\n\r");
@@ -164,6 +167,14 @@ void parse_command() {
 	else if (strstr_b(command, "motor ccw", COMMAND_SIZE)) {
 		servo.dir_ccw();
 		uart.send("motor direction is counter clockwise\n\r");
+	}
+	else if (strstr_b(command, "motor resi", COMMAND_SIZE)) {
+		servo.position_pid.reset_integral();
+		uart.send("motor pid integral was reset\n\r");
+	}
+	else if (strstr_b(command, "motor geti", COMMAND_SIZE)) {
+		sprintf(buf, "motor pid integral is %f\n\r", servo.position_pid.get_integral());
+		uart.send(buf);
 	}
 	else if (strstr_b(command, "motor pwm", COMMAND_SIZE))
 	{
@@ -226,13 +237,10 @@ void parse_command() {
 
 	    char *end;
 
-	    float pos = strtof(int_str, &end);
-        servo.position_pid.set_setpoint(pos);
+        servo.position_pid.set_setpoint(strtod(int_str, &end));
 
-	    char buf[100] = "motor pos was set to ";
-	    strcat(buf, int_str);
-
-        uart.send(strcat(buf, "\n\r"));
+		sprintf(buf, "setpos: %f\n", servo.position_pid.get_setpoint());
+		uart.send(buf);
     }
 	else if (strstr_b(command, "pid kp", COMMAND_SIZE))
 	{
@@ -494,55 +502,66 @@ main(void)
 
 	while (1)
 	{
-		char buf[100];
-
 		uint16_t encoder = TIM_GetCounter(TIM3);
 
 //		uart.send("idle\n");
 
-		sprintf(buf, "encoder: %u\n", encoder);
-
-		uart.send(buf);
+		char buf[30];
 
 		// Process PID every 10 ticks (1 tick is 1 millisecond).
 		if (ticks >= last_processed_ticks + 10) {
+			char buf[30];
+
+//			sprintf(buf, "encoder: %u\n", encoder);
+//			uart.send(buf);
+
 			last_processed_ticks = ticks;
 
 			int16_t pwm = servo.position_pid.get_ctrl_var();
 
+//			sprintf(buf, "Servi dir: %i\n", servo.get_dir());
+//			uart.send(buf);
+
 			// If motors turns opposite direction toggle it.
-			if ((pwm < 0 && !servo.get_dir()) || (pwm > 0 && servo.get_dir())) {
-				if (servo.get_dir()) {
-//					servo.off();
+			if ((pwm < 0 && servo.get_dir()) || (pwm > 0 && !servo.get_dir())) {
+				servo.off();
 
-					uart.send("toggling dir\n");
-					if (pwm > 0) {
-						uart.send("positive dir\n");
-					} else {
-						uart.send("negative dir\n");
-					}
-					// Do some delay to decrease a bit motor inertia.
-					// @todo implement acceleration control.
-					Delay(10000000000);
+//				uart.send("toggling dir\n");
+//				if (pwm > 0) {
+//					uart.send("positive dir\n");
+//				} else {
+//					uart.send("negative dir\n");
+//				}
+				// Do some delay to decrease a bit motor inertia.
+				// @todo implement acceleration control.
+				Delay(100);
 
-//					servo.dir_toggle();
-//					servo.on();
+				if (servo.get_pwm() > 20) {
+					servo.pwm(20);
+				}
+
+				servo.dir_toggle();
+
+				servo.on();
+
+				if (abs(pwm) > 20) {
+					Delay(1000000);
 				}
 			}
 
+			servo.pwm((uint8_t) abs(pwm));
+
+			sprintf(buf, "pid i: %f\n", servo.position_pid.get_integral());
+			uart.send(buf);
+
 			sprintf(buf, "PID CV: %i\n", pwm);
 			uart.send(buf);
-
-			sprintf(buf, "Servo setpoint: %f\n", servo.position_pid.get_setpoint());
-			uart.send(buf);
-
-			sprintf(buf, "Servo position: %f\n", servo.position());
-			uart.send(buf);
-
-//			servo.pwm((uint8_t) abs(pwm));
 		}
 
-		Delay(1000000);
+		sprintf(buf, "pos: %f\n", servo.position());
+		uart.send(buf);
+
+		Delay(100000);
 	}
 }
 
